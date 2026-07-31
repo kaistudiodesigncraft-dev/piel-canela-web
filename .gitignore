@@ -1,0 +1,45 @@
+# dependencies
+/node_modules
+/.pnpm-store/
+/.pnp
+.pnp.*
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# synchronized and internal project material
+/sources/
+/codex-handoff/
+/design/
+/docs/
+/presentation/
+/design-qa.md
+/AGENTS.md
+
+# local environment
+.env*
+!.env.example
+
+# platform
+.DS_Store
+Thumbs.db
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
