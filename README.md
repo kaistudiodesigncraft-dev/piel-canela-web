@@ -8,7 +8,9 @@ Web pública, catálogo de tratamientos, pre-reservas y administración operativ
 - La fundación remota vive en Supabase, proyecto `dlrdlwjighvcyhirwgfu`.
 - La fuente de datos se cambia mediante `NEXT_PUBLIC_DATA_SOURCE`.
 - El backend permite simultaneidad entre especialidades distintas e impide solapamientos dentro de una misma especialidad.
-- La administración puede definir horarios habituales por especialidad.
+- La administración dispone de agenda filtrable, asignación manual de turnos, horarios habituales, bloqueos y aperturas excepcionales.
+- Las especialidades pueden crearse como activas o futuras y controlan la capacidad simultánea.
+- Los Especiales del mes se crean y editan desde el panel con vigencia, precio e imagen.
 - `/admin/contenido` permite modificar los textos y la imagen principal sobre una estructura fija. Requiere sesión administrativa y un segundo código temporal.
 
 ## Desarrollo
