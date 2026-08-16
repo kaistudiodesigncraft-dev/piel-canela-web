@@ -10,7 +10,12 @@ export const metadata: Metadata = {
 };
 
 interface AdminPageProps {
-  searchParams: Promise<{ availabilitySaved?: string; availabilityError?: string }>;
+  searchParams: Promise<{
+    availabilitySaved?: string;
+    availabilityError?: string;
+    bookingSaved?: string;
+    bookingError?: string;
+  }>;
 }
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
@@ -25,11 +30,19 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     supabase.from("profiles").select("full_name").eq("user_id", userId).single(),
     supabase.from("specialties").select("id,name").eq("is_active", true).order("display_order"),
     supabase.from("availability_rules").select("id,specialty_id,weekday,start_time,end_time,slot_interval_minutes").eq("is_active", true).order("weekday").order("start_time"),
-    supabase.from("bookings").select("status"),
+    supabase
+      .from("bookings")
+      .select("id,booking_code,status,starts_at,duration_snapshot_minutes,applied_price_snapshot_cents,customer_notes,internal_notes,customer:customers(full_name,phone,email),treatment:treatments(name)")
+      .order("starts_at", { ascending: true })
+      .limit(50),
   ]);
 
   if (profileResult.error || !profileResult.data) redirect("/admin/login?error=profile");
-  const bookings = bookingsResult.data ?? [];
+  const bookings = (bookingsResult.data ?? []).map((booking) => ({
+    ...booking,
+    customer: Array.isArray(booking.customer) ? (booking.customer[0] ?? null) : booking.customer,
+    treatment: Array.isArray(booking.treatment) ? (booking.treatment[0] ?? null) : booking.treatment,
+  }));
   const query = await searchParams;
 
   return (
@@ -40,8 +53,11 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       bookingCount={bookings.length}
       pendingCount={bookings.filter((item) => item.status === "pending" || item.status === "awaiting_deposit").length}
       confirmedCount={bookings.filter((item) => item.status === "confirmed").length}
+      bookings={bookings}
       availabilitySaved={query.availabilitySaved === "1"}
       availabilityError={query.availabilityError}
+      bookingSaved={query.bookingSaved === "1"}
+      bookingError={query.bookingError}
     />
   );
 }

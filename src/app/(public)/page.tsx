@@ -5,15 +5,22 @@ import { CategoryEntryCard } from "@/components/treatments/CategoryEntryCard";
 import { MonthlySpecialsSection } from "@/components/specials/MonthlySpecialsSection";
 import { getPublicMonthlySpecials } from "@/lib/treatments";
 import { getPublicCatalogSnapshot } from "@/lib/supabase/public-catalog";
+import { getSiteContent } from "@/lib/supabase/site-content";
+import { siteContentMap } from "@/domain/site-content";
 
 export const revalidate = 3600;
 
 export default async function HomePage() {
-  const {
+  const [{
     categories: treatmentCategories,
     treatments,
     monthlySpecials,
-  } = await getPublicCatalogSnapshot();
+  }, siteFields] = await Promise.all([
+    getPublicCatalogSnapshot(),
+    getSiteContent(),
+  ]);
+  const content = siteContentMap(siteFields);
+  const text = (key: Parameters<typeof content.get>[0]) => content.get(key)?.value ?? "";
   const publicSpecials = getPublicMonthlySpecials(monthlySpecials);
 
   return (
@@ -21,10 +28,10 @@ export default async function HomePage() {
       <section className="home-hero">
         <div className="site-container home-hero__grid">
           <div className="home-hero__content">
-            <p className="eyebrow">Bienestar, estética y recuperación</p>
-            <h1>Cuidado profesional para cada momento.</h1>
+            <p className="eyebrow">{text("hero_eyebrow")}</p>
+            <h1>{text("hero_title")}</h1>
             <p className="home-hero__lead">
-              Conocé cada tratamiento, entendé qué podés esperar y elegí el momento que mejor se adapte a vos.
+              {text("hero_lead")}
             </p>
             <div className="button-row">
               <Link className="button button--primary" href="/tratamientos">
@@ -44,15 +51,15 @@ export default async function HomePage() {
           <div className="home-hero__visual" aria-label="Imagen conceptual de muestra">
             <div className="home-hero__image-frame">
               <Image
-                src="/images/treatment-massage-concept.png"
-                alt="Fotografía conceptual de muestra de un tratamiento corporal"
+                src={text("hero_image")}
+                alt={content.get("hero_image")?.imageAlt ?? "Imagen principal de Piel Canela"}
                 fill
                 priority
                 sizes="(max-width: 767px) 92vw, 48vw"
                 style={{ objectPosition: "38% 50%" }}
               />
             </div>
-            <p className="home-hero__caption">Un recorrido simple desde la elección hasta la pre-reserva.</p>
+            <p className="home-hero__caption">{text("hero_image_caption")}</p>
           </div>
         </div>
       </section>
@@ -60,9 +67,9 @@ export default async function HomePage() {
       <section className="section section--categories" aria-labelledby="categories-title">
         <div className="site-container">
           <div className="section-heading section-heading--centered">
-            <p className="eyebrow">Encontrá tu recorrido</p>
-            <h2 id="categories-title">Nuestros tratamientos</h2>
-            <p>Elegí el camino que mejor se adapta a lo que necesitás hoy.</p>
+            <p className="eyebrow">{text("categories_eyebrow")}</p>
+            <h2 id="categories-title">{text("categories_title")}</h2>
+            <p>{text("categories_lead")}</p>
           </div>
           <div className="category-entry-grid">
             {treatmentCategories.map((category) => (
@@ -81,15 +88,15 @@ export default async function HomePage() {
       <section className="section section--approach" id="piel-canela" aria-labelledby="approach-title">
         <div className="site-container approach-grid">
           <div className="approach-grid__intro">
-            <p className="eyebrow">Una elección informada</p>
-            <h2 id="approach-title">Cuidado cercano, información concreta.</h2>
+            <p className="eyebrow">{text("approach_eyebrow")}</p>
+            <h2 id="approach-title">{text("approach_title")}</h2>
           </div>
           <div className="approach-grid__copy">
             <p>
-              Piel Canela reúne propuestas de bienestar, estética y recuperación dentro del entorno de Espacio O2. La web organiza esa variedad para que puedas entender cada opción antes de consultar.
+              {text("approach_body_primary")}
             </p>
             <p>
-              Cuando un tratamiento necesita una evaluación previa, lo indicamos con claridad. La reserva queda pendiente hasta confirmar la seña por WhatsApp.
+              {text("approach_body_secondary")}
             </p>
           </div>
         </div>
@@ -98,14 +105,14 @@ export default async function HomePage() {
       <section className="section section--steps" aria-labelledby="steps-title">
         <div className="site-container">
           <div className="section-heading">
-            <p className="eyebrow">Reservar es simple</p>
-            <h2 id="steps-title">Elegí con claridad y confirmá por WhatsApp.</h2>
+            <p className="eyebrow">{text("booking_eyebrow")}</p>
+            <h2 id="steps-title">{text("booking_title")}</h2>
           </div>
           <ol className="booking-steps">
-            <li><span>Elegí</span><p>Explorá categorías y abrí el detalle completo.</p></li>
-            <li><span>Seleccioná</span><p>Indicá el tratamiento que querés reservar.</p></li>
-            <li><span>Completá</span><p>La fecha y el horario se incorporarán en la próxima fase.</p></li>
-            <li><span>Confirmá</span><p>La seña y la confirmación final se coordinan por WhatsApp.</p></li>
+            <li><span>{text("booking_step_1_title")}</span><p>{text("booking_step_1_text")}</p></li>
+            <li><span>{text("booking_step_2_title")}</span><p>{text("booking_step_2_text")}</p></li>
+            <li><span>{text("booking_step_3_title")}</span><p>{text("booking_step_3_text")}</p></li>
+            <li><span>{text("booking_step_4_title")}</span><p>{text("booking_step_4_text")}</p></li>
           </ol>
         </div>
       </section>
@@ -113,21 +120,21 @@ export default async function HomePage() {
       <section className="section section--faq" aria-labelledby="faq-title">
         <div className="site-container faq-grid">
           <div className="section-heading">
-            <p className="eyebrow">Antes de reservar</p>
-            <h2 id="faq-title">Preguntas frecuentes</h2>
+            <p className="eyebrow">{text("faq_eyebrow")}</p>
+            <h2 id="faq-title">{text("faq_title")}</h2>
           </div>
           <div className="faq-list">
             <details>
-              <summary>¿La pre-reserva confirma mi turno?</summary>
-              <p>No. El horario se confirma cuando Piel Canela valida la seña por WhatsApp.</p>
+              <summary>{text("faq_1_question")}</summary>
+              <p>{text("faq_1_answer")}</p>
             </details>
             <details>
-              <summary>¿Necesito crear una cuenta?</summary>
-              <p>No. Solo se pedirán los datos mínimos para identificar y coordinar tu solicitud.</p>
+              <summary>{text("faq_2_question")}</summary>
+              <p>{text("faq_2_answer")}</p>
             </details>
             <details>
-              <summary>¿Qué pasa si no sé qué tratamiento elegir?</summary>
-              <p>Podés explorar por categoría y consultar cuando una evaluación previa sea necesaria.</p>
+              <summary>{text("faq_3_question")}</summary>
+              <p>{text("faq_3_answer")}</p>
             </details>
           </div>
         </div>

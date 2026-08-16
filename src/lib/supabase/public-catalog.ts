@@ -18,6 +18,15 @@ export interface PublicCatalogSnapshot {
   source: "fixtures" | "supabase";
 }
 
+export async function getPublicBookingSettings() {
+  if (!usesSupabaseDataSource()) return { whatsappNumber: null };
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("get_public_booking_settings");
+  if (error) return { whatsappNumber: null };
+  const row = (data as { whatsapp_number: string | null }[] | null)?.[0];
+  return { whatsappNumber: row?.whatsapp_number ?? null };
+}
+
 interface CategoryRow {
   id: string;
   name: string;
@@ -80,6 +89,15 @@ function focalPoint(x: number | string, y: number | string) {
   return `${Math.round(Number(x) * 100)}% ${Math.round(Number(y) * 100)}%` as const;
 }
 
+function publicImageUrl(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  bucket: string,
+  path: string,
+) {
+  if (path.startsWith("/") || path.startsWith("https://")) return path;
+  return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+}
+
 export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot> {
   if (!usesSupabaseDataSource()) {
     return {
@@ -122,7 +140,6 @@ export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot>
   }));
 
   const treatments = (treatmentsResult.data as TreatmentRow[]).map((row) => {
-    const image = supabase.storage.from("treatment-media").getPublicUrl(row.image_path);
     return {
       id: row.id,
       categoryId: row.category_id,
@@ -141,7 +158,7 @@ export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot>
       contraindications: row.contraindications,
       professional: null,
       image: {
-        src: image.data.publicUrl,
+        src: publicImageUrl(supabase, "treatment-media", row.image_path),
         alt: row.image_alt,
         focalPoint: focalPoint(row.image_focal_x, row.image_focal_y),
         width: 1086,
@@ -155,7 +172,6 @@ export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot>
   });
 
   const monthlySpecials = (specialsResult.data as MonthlySpecialRow[]).map((row) => {
-    const image = supabase.storage.from("treatment-media").getPublicUrl(row.image_path);
     return {
       id: row.id,
       treatmentId: row.treatment_id,
@@ -167,7 +183,7 @@ export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot>
       startsAt: row.starts_at,
       endsAt: row.ends_at,
       image: {
-        src: image.data.publicUrl,
+        src: publicImageUrl(supabase, "treatment-media", row.image_path),
         alt: row.image_alt,
         focalPoint: focalPoint(row.image_focal_x, row.image_focal_y),
         width: 1086,

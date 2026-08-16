@@ -18,6 +18,26 @@ const availabilityRuleSchema = z.object({
   slotIntervalMinutes: z.coerce.number().int().min(5).max(120),
 });
 
+const bookingStatusSchema = z.enum([
+  "pending",
+  "awaiting_deposit",
+  "confirmed",
+  "completed",
+  "cancelled",
+  "no_show",
+  "expired",
+]);
+
+const allowedStatusTransitions: Record<z.infer<typeof bookingStatusSchema>, readonly z.infer<typeof bookingStatusSchema>[]> = {
+  pending: ["awaiting_deposit", "confirmed", "cancelled", "expired"],
+  awaiting_deposit: ["confirmed", "cancelled", "expired"],
+  confirmed: ["completed", "cancelled", "no_show"],
+  completed: [],
+  cancelled: [],
+  no_show: [],
+  expired: [],
+};
+
 export async function signInAdmin(formData: FormData) {
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) redirect("/admin/login?error=invalid");
@@ -63,4 +83,33 @@ export async function deleteAvailabilityRule(formData: FormData) {
 
   revalidatePath("/admin");
   redirect("/admin?availabilitySaved=1#disponibilidad");
+}
+
+export async function updateBookingStatus(formData: FormData) {
+  const bookingId = z.string().uuid().safeParse(formData.get("bookingId"));
+  const nextStatus = bookingStatusSchema.safeParse(formData.get("status"));
+  if (!bookingId.success || !nextStatus.success) {
+    redirect("/admin?bookingError=invalid#reservas");
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: current, error: readError } = await supabase
+    .from("bookings")
+    .select("status")
+    .eq("id", bookingId.data)
+    .single();
+  const currentStatus = bookingStatusSchema.safeParse(current?.status);
+  if (readError || !currentStatus.success || !allowedStatusTransitions[currentStatus.data].includes(nextStatus.data)) {
+    redirect("/admin?bookingError=transition#reservas");
+  }
+
+  const now = new Date().toISOString();
+  const updates: Record<string, string | null> = { status: nextStatus.data };
+  if (nextStatus.data === "confirmed") updates.confirmed_at = now;
+  if (nextStatus.data === "cancelled") updates.cancelled_at = now;
+  const { error } = await supabase.from("bookings").update(updates).eq("id", bookingId.data);
+  if (error) redirect("/admin?bookingError=save#reservas");
+
+  revalidatePath("/admin");
+  redirect("/admin?bookingSaved=1#reservas");
 }

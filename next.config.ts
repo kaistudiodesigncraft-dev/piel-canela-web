@@ -17,6 +17,11 @@ const nextConfig: NextConfig = {
         hostname: "dlrdlwjighvcyhirwgfu.supabase.co",
         pathname: "/storage/v1/object/public/treatment-media/**",
       },
+      {
+        protocol: "https",
+        hostname: "dlrdlwjighvcyhirwgfu.supabase.co",
+        pathname: "/storage/v1/object/public/site-content-media/**",
+      },
     ],
   },
   turbopack: {

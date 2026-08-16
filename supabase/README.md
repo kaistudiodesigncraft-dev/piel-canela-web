@@ -8,6 +8,8 @@ Las categorías ordenan el catálogo; las especialidades controlan capacidad. Do
 
 La administración define horarios habituales en `availability_rules` y aperturas o bloqueos excepcionales en `availability_exceptions`.
 
+`site_content` contiene exclusivamente los campos institucionales aprobados. La aplicación solo tiene permiso para actualizar valores, texto alternativo y rutas de imagen; no puede crear o eliminar filas. Las imágenes institucionales se almacenan separadas de tratamientos en `site-content-media`.
+
 ## Seguridad
 
 - RLS está activo en todas las tablas expuestas.

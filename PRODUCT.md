@@ -10,6 +10,7 @@ product
 - Clientes nuevos y frecuentes que quieren generar una pre-reserva breve desde el celular, sin crear una cuenta.
 - Personal de Piel Canela que administra agenda, disponibilidad, tratamientos, especiales y estados de reservas.
 - Kai Studio como administrador técnico inicial; las cuentas del cliente se incorporan después con permisos propios.
+- La agencia puede editar el contenido institucional mediante un apartado administrativo con un segundo desbloqueo temporal; no puede crear, eliminar ni reordenar secciones.
 
 ## Product Purpose
 
@@ -49,4 +50,3 @@ Clara, cálida y profesional. La experiencia pública debe transmitir cuidado y 
 - Texto base legible, contraste suficiente y cifras tradicionales/tabulares sin cero barrado.
 - Movimiento breve, funcional y con alternativa para `prefers-reduced-motion`.
 - Lenguaje inclusivo que no asume género, no explota inseguridades corporales y no realiza promesas médicas.
-

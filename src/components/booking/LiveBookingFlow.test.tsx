@@ -1,0 +1,66 @@
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ResolvedBookingSelection } from "@/domain/treatment";
+import { LiveBookingFlow } from "./LiveBookingFlow";
+
+const { getAvailableSlotsMock, createPublicBookingMock } = vi.hoisted(() => ({
+  getAvailableSlotsMock: vi.fn(),
+  createPublicBookingMock: vi.fn(),
+}));
+
+vi.mock("@/app/(public)/reservar/actions", () => ({
+  getAvailableSlots: (...args: unknown[]) => getAvailableSlotsMock(...args),
+  createPublicBooking: (...args: unknown[]) => createPublicBookingMock(...args),
+}));
+
+const selection: ResolvedBookingSelection = {
+  treatmentId: "30000000-0000-4000-8000-000000000001",
+  treatmentName: "Relajación profunda",
+  durationMinutes: 60,
+  basePriceCents: 6500000,
+  appliedPriceCents: 6500000,
+};
+
+const dates = [{
+  value: "2026-08-17",
+  weekday: "Lun",
+  day: "17",
+  month: "Ago",
+  longLabel: "lunes, 17 de agosto",
+}];
+
+describe("LiveBookingFlow", () => {
+  beforeEach(() => {
+    getAvailableSlotsMock.mockResolvedValue({
+      ok: true,
+      slots: [{ startsAt: "2026-08-17T15:30:00.000Z", endsAt: "2026-08-17T16:45:00.000Z" }],
+    });
+    createPublicBookingMock.mockResolvedValue({
+      ok: true,
+      bookingId: "50000000-0000-4000-8000-000000000001",
+      bookingCode: "PC-ABC12345",
+      status: "pending",
+    });
+  });
+
+  it("loads availability and creates a real pre-booking", async () => {
+    const user = userEvent.setup();
+    render(<LiveBookingFlow selection={selection} dates={dates} whatsappNumber="5493515550000" />);
+
+    const slot = await screen.findByRole("button", { name: "12:30" });
+    await user.click(slot);
+    await user.click(screen.getByRole("button", { name: /continuar/i }));
+    await user.type(screen.getByLabelText("Nombre y apellido"), "Laura Gómez");
+    await user.type(screen.getByLabelText("WhatsApp"), "3515550000");
+    await user.click(screen.getByRole("button", { name: /revisar reserva/i }));
+    await user.click(screen.getByRole("button", { name: /crear pre-reserva/i }));
+
+    await waitFor(() => expect(createPublicBookingMock).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText("PC-ABC12345")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /continuar por whatsapp/i })).toHaveAttribute(
+      "href",
+      expect.stringContaining("https://wa.me/5493515550000"),
+    );
+  });
+});
