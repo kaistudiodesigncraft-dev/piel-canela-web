@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { setAdminPassword } from "../actions";
+import { usesSupabaseDataSource } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Crear contraseña administrativa" };
@@ -10,6 +11,8 @@ interface SetPasswordPageProps {
 }
 
 export default async function SetPasswordPage({ searchParams }: SetPasswordPageProps) {
+  if (!usesSupabaseDataSource()) redirect("/admin");
+
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims?.sub) redirect("/admin/login?error=session");
