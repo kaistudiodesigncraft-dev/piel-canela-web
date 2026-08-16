@@ -12,9 +12,33 @@ export default function CompleteAuthPage() {
   useEffect(() => {
     let active = true;
 
-    async function completeInvitation() {
+    async function completeAuthentication() {
       try {
         const supabase = createSupabaseBrowserClient();
+        const query = new URLSearchParams(window.location.search);
+        const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        const callbackError = query.get("error_description") ?? fragment.get("error_description");
+        const accessToken = fragment.get("access_token");
+        const refreshToken = fragment.get("refresh_token");
+        const authorizationCode = query.get("code");
+
+        window.history.replaceState(null, "", "/auth/complete");
+        if (callbackError) {
+          setHasError(true);
+          return;
+        }
+
+        if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (error) throw error;
+        } else if (authorizationCode) {
+          const { error } = await supabase.auth.exchangeCodeForSession(authorizationCode);
+          if (error) throw error;
+        }
+
         const { data, error } = await supabase.auth.getSession();
 
         if (!active) return;
@@ -30,7 +54,7 @@ export default function CompleteAuthPage() {
       }
     }
 
-    void completeInvitation();
+    void completeAuthentication();
     return () => {
       active = false;
     };
