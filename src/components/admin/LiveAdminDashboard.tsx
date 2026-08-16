@@ -1,4 +1,5 @@
-import { Clock3, LogOut, Plus, Trash2 } from "lucide-react";
+import { Clock3, ExternalLink, LogOut, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
 import {
   createAvailabilityRule,
   deleteAvailabilityRule,
@@ -56,16 +57,22 @@ export function LiveAdminDashboard({
     <div className="live-admin site-container">
       <header className="live-admin__header">
         <div>
-          <p className="eyebrow">Panel operativo</p>
+          <p className="eyebrow">Administración Piel Canela</p>
           <h1>Hola, {adminName}</h1>
-          <p>Configuración real conectada a Supabase.</p>
+          <p>Gestioná la operación sin afectar la experiencia pública.</p>
         </div>
-        <form action={signOutAdmin}>
-          <button className="button button--quiet" type="submit">
-            <LogOut aria-hidden="true" strokeWidth={1.75} />
-            Cerrar sesión
-          </button>
-        </form>
+        <div className="live-admin__actions">
+          <Link className="button button--quiet" href="/" target="_blank" rel="noreferrer">
+            <ExternalLink aria-hidden="true" strokeWidth={1.75} />
+            Ver sitio público
+          </Link>
+          <form action={signOutAdmin}>
+            <button className="button button--quiet" type="submit">
+              <LogOut aria-hidden="true" strokeWidth={1.75} />
+              Cerrar sesión
+            </button>
+          </form>
+        </div>
       </header>
 
       <section className="admin-summary-grid" aria-label="Resumen de reservas">

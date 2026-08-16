@@ -19,7 +19,6 @@ export function SiteFooter() {
             <li><Link href="/tratamientos">Tratamientos</Link></li>
             <li><Link href="/#especiales">Especiales del mes</Link></li>
             <li><Link href="/reservar">Reservar</Link></li>
-            <li><Link href="/admin">Panel administrativo demo</Link></li>
           </ul>
         </div>
         <div>

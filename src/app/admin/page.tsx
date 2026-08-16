@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { AdminPageClient } from "@/components/admin/AdminPageClient";
 import { LiveAdminDashboard } from "@/components/admin/LiveAdminDashboard";
 import { usesSupabaseDataSource } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Panel administrativo demo",
-  description: "Demostración operativa de agenda y reservas de Piel Canela.",
+  title: "Panel administrativo",
+  description: "Agenda y configuración operativa de Piel Canela.",
 };
 
 interface AdminPageProps {
@@ -16,40 +14,34 @@ interface AdminPageProps {
 }
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
-  if (usesSupabaseDataSource()) {
-    const supabase = await createSupabaseServerClient();
-    const { data: authData } = await supabase.auth.getClaims();
-    const userId = authData?.claims?.sub;
-    if (!userId) redirect("/admin/login");
+  if (!usesSupabaseDataSource()) redirect("/admin/login?error=configuration");
 
-    const [profileResult, specialtiesResult, rulesResult, bookingsResult] = await Promise.all([
-      supabase.from("profiles").select("full_name").eq("user_id", userId).single(),
-      supabase.from("specialties").select("id,name").eq("is_active", true).order("display_order"),
-      supabase.from("availability_rules").select("id,specialty_id,weekday,start_time,end_time,slot_interval_minutes").eq("is_active", true).order("weekday").order("start_time"),
-      supabase.from("bookings").select("status"),
-    ]);
+  const supabase = await createSupabaseServerClient();
+  const { data: authData } = await supabase.auth.getClaims();
+  const userId = authData?.claims?.sub;
+  if (!userId) redirect("/admin/login");
 
-    if (profileResult.error || !profileResult.data) redirect("/admin/login?error=profile");
-    const bookings = bookingsResult.data ?? [];
-    const query = await searchParams;
+  const [profileResult, specialtiesResult, rulesResult, bookingsResult] = await Promise.all([
+    supabase.from("profiles").select("full_name").eq("user_id", userId).single(),
+    supabase.from("specialties").select("id,name").eq("is_active", true).order("display_order"),
+    supabase.from("availability_rules").select("id,specialty_id,weekday,start_time,end_time,slot_interval_minutes").eq("is_active", true).order("weekday").order("start_time"),
+    supabase.from("bookings").select("status"),
+  ]);
 
-    return (
-      <LiveAdminDashboard
-        adminName={profileResult.data.full_name}
-        specialties={specialtiesResult.data ?? []}
-        rules={rulesResult.data ?? []}
-        bookingCount={bookings.length}
-        pendingCount={bookings.filter((item) => item.status === "pending" || item.status === "awaiting_deposit").length}
-        confirmedCount={bookings.filter((item) => item.status === "confirmed").length}
-        availabilitySaved={query.availabilitySaved === "1"}
-        availabilityError={query.availabilityError}
-      />
-    );
-  }
+  if (profileResult.error || !profileResult.data) redirect("/admin/login?error=profile");
+  const bookings = bookingsResult.data ?? [];
+  const query = await searchParams;
 
   return (
-    <Suspense fallback={<div className="catalog-skeleton" aria-label="Cargando panel" />}>
-      <AdminPageClient />
-    </Suspense>
+    <LiveAdminDashboard
+      adminName={profileResult.data.full_name}
+      specialties={specialtiesResult.data ?? []}
+      rules={rulesResult.data ?? []}
+      bookingCount={bookings.length}
+      pendingCount={bookings.filter((item) => item.status === "pending" || item.status === "awaiting_deposit").length}
+      confirmedCount={bookings.filter((item) => item.status === "confirmed").length}
+      availabilitySaved={query.availabilitySaved === "1"}
+      availabilityError={query.availabilityError}
+    />
   );
 }

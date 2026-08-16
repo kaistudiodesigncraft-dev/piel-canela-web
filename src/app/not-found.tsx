@@ -2,7 +2,7 @@ import { StatePanel } from "@/components/ui/StatePanel";
 
 export default function NotFound() {
   return (
-    <div className="site-container route-state">
+    <main id="main-content" className="site-container route-state">
       <StatePanel
         kind="error"
         title="No encontramos esta página"
@@ -10,7 +10,6 @@ export default function NotFound() {
         actionHref="/"
         actionLabel="Volver al inicio"
       />
-    </div>
+    </main>
   );
 }
-

@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { FixtureNotice } from "@/components/layout/FixtureNotice";
-import { SiteFooter } from "@/components/layout/SiteFooter";
-import { SiteHeader } from "@/components/layout/SiteHeader";
 import "./globals.css";
 
 const monaSans = localFont({
@@ -42,13 +39,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" className={`${monaSans.variable} ${atkinson.variable}`}>
-      <body>
-        <a className="skip-link" href="#main-content">Saltar al contenido</a>
-        <FixtureNotice />
-        <SiteHeader />
-        <main id="main-content">{children}</main>
-        <SiteFooter />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

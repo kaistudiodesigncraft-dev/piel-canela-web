@@ -4,7 +4,6 @@ const navigation = [
   { href: "/", label: "Inicio" },
   { href: "/tratamientos", label: "Tratamientos" },
   { href: "/#piel-canela", label: "Piel Canela" },
-  { href: "/admin", label: "Panel demo" },
 ] as const;
 
 export function SiteHeader() {

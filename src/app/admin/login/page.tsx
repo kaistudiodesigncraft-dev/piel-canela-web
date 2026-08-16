@@ -11,11 +11,13 @@ interface LoginPageProps {
 }
 
 export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
-  if (!usesSupabaseDataSource()) redirect("/admin");
+  const isConfigured = usesSupabaseDataSource();
 
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.auth.getClaims();
-  if (data?.claims?.sub) redirect("/admin");
+  if (isConfigured) {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase.auth.getClaims();
+    if (data?.claims?.sub) redirect("/admin");
+  }
 
   const { error } = await searchParams;
   return (
@@ -23,13 +25,17 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
       <div className="admin-login-panel">
         <p className="eyebrow">Administración Piel Canela</p>
         <h1>Ingresá al panel</h1>
-        <p>Usá la cuenta administrativa habilitada por Kai Studio.</p>
-        {error ? (
+        <p>Acceso exclusivo para el equipo autorizado.</p>
+        {!isConfigured || error === "configuration" ? (
+          <p className="form-message form-message--error" role="alert">
+            El entorno administrativo todavía no está configurado.
+          </p>
+        ) : error ? (
           <p className="form-message form-message--error" role="alert">
             No pudimos iniciar sesión. Revisá los datos e intentá nuevamente.
           </p>
         ) : null}
-        <form action={signInAdmin} className="admin-login-form">
+        {isConfigured ? <form action={signInAdmin} className="admin-login-form">
           <label>
             Correo
             <input name="email" type="email" autoComplete="email" required />
@@ -47,7 +53,7 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
           <button className="button button--primary" type="submit">
             Ingresar
           </button>
-        </form>
+        </form> : null}
       </div>
     </section>
   );

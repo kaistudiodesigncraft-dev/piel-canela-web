@@ -2097,12 +2097,26 @@ svg {
 .status-expired { --status-color: #786a58; }
 
 /* Connected administration */
+.admin-product-shell {
+  min-height: 100dvh;
+  color: var(--color-ink);
+  background: var(--color-cloud);
+}
+
+.admin-product-shell main {
+  min-height: 100dvh;
+}
+
+.admin-product-shell--auth {
+  background: var(--color-cloud);
+}
+
 .admin-login-section {
-  min-height: 70vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: clamp(3rem, 8vw, 7rem) var(--space-page);
-  background: var(--color-surface-soft, #f7f4ed);
+  background: transparent;
 }
 
 .admin-login-panel {
@@ -2110,7 +2124,7 @@ svg {
   padding: clamp(1.5rem, 5vw, 3rem);
   background: var(--color-surface, #fff);
   border: 1px solid var(--color-border, #d9ded5);
-  border-radius: 1.5rem;
+  border-radius: 1rem;
 }
 
 .admin-login-panel h1,
@@ -2183,6 +2197,17 @@ svg {
 
 .live-admin__header > div > p:last-child { color: var(--color-text-muted, #58665f); }
 
+.live-admin__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: .65rem;
+}
+
+.live-admin__actions form {
+  display: contents;
+}
+
 .admin-summary-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2253,6 +2278,7 @@ svg {
 
 @media (max-width: 720px) {
   .live-admin__header { display: grid; }
+  .live-admin__actions { justify-content: flex-start; }
   .admin-summary-grid { grid-template-columns: 1fr; }
   .availability-admin-grid { grid-template-columns: 1fr; }
   .availability-form__times { grid-template-columns: 1fr; }
