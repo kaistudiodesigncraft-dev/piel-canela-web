@@ -8,7 +8,7 @@ import type {
   Treatment,
   TreatmentCategory,
 } from "@/domain/treatment";
-import { createSupabaseServerClient } from "./server";
+import { createSupabasePublicServerClient } from "./public-server";
 import { usesSupabaseDataSource } from "./env";
 
 export interface PublicCatalogSnapshot {
@@ -20,10 +20,14 @@ export interface PublicCatalogSnapshot {
 
 export async function getPublicBookingSettings() {
   if (!usesSupabaseDataSource()) return { whatsappNumber: null };
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc("get_public_booking_settings");
+  const supabase = createSupabasePublicServerClient();
+  const { data, error } = await supabase
+    .from("business_settings")
+    .select("whatsapp_number")
+    .eq("singleton", true)
+    .maybeSingle();
   if (error) return { whatsappNumber: null };
-  const row = (data as { whatsapp_number: string | null }[] | null)?.[0];
+  const row = data as { whatsapp_number: string | null } | null;
   return { whatsappNumber: row?.whatsapp_number ?? null };
 }
 
@@ -80,7 +84,6 @@ interface MonthlySpecialRow {
   terms: string | null;
   is_active: boolean;
   display_order: number;
-  created_by: string;
   created_at: string;
   updated_at: string;
 }
@@ -90,7 +93,7 @@ function focalPoint(x: number | string, y: number | string) {
 }
 
 function publicImageUrl(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  supabase: ReturnType<typeof createSupabasePublicServerClient>,
   bucket: string,
   path: string,
 ) {
@@ -108,7 +111,7 @@ export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot>
     };
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicServerClient();
   const [categoriesResult, treatmentsResult, specialsResult] = await Promise.all([
     supabase
       .from("treatment_categories")
@@ -116,11 +119,11 @@ export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot>
       .order("display_order"),
     supabase
       .from("treatments")
-      .select("*")
+      .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at")
       .order("display_order"),
     supabase
       .from("monthly_specials")
-      .select("*")
+      .select("id,treatment_id,title,short_description,detail,special_price_cents,reference_price_cents,starts_at,ends_at,image_path,image_alt,image_focal_x,image_focal_y,terms,is_active,display_order,created_at,updated_at")
       .order("display_order"),
   ]);
 
@@ -191,7 +194,7 @@ export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot>
       },
       isActive: row.is_active,
       terms: row.terms,
-      createdBy: row.created_by,
+      createdBy: null,
       displayOrder: row.display_order,
       createdAt: row.created_at,
       updatedAt: row.updated_at,

@@ -6,7 +6,7 @@ import {
   type SiteContentSection,
 } from "@/domain/site-content";
 import { usesSupabaseDataSource } from "./env";
-import { createSupabaseServerClient } from "./server";
+import { createSupabasePublicServerClient } from "./public-server";
 
 interface SiteContentRow {
   key: string;
@@ -23,7 +23,7 @@ interface SiteContentRow {
 export async function getSiteContent(): Promise<SiteContentField[]> {
   if (!usesSupabaseDataSource()) return getDefaultSiteContent();
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicServerClient();
   const { data, error } = await supabase
     .from("site_content")
     .select("key,section,label,kind,value,image_path,image_alt,display_order,updated_at")

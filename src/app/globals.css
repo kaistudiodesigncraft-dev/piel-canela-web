@@ -155,6 +155,7 @@ svg {
 }
 
 .numeric {
+  font-family: var(--font-title);
   font-variant-numeric: tabular-nums lining-nums;
   font-feature-settings: "tnum" 1, "lnum" 1, "zero" 0, "ss08" 0;
 }
@@ -959,9 +960,10 @@ svg {
 }
 
 .treatment-editorial-card__content h2 {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
   font-size: clamp(1.55rem, 5.5vw, 2.3rem);
-  hyphens: auto;
+  hyphens: none;
 }
 
 .treatment-editorial-card__description {

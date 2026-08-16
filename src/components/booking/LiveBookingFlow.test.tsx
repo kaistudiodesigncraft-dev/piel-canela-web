@@ -51,12 +51,15 @@ describe("LiveBookingFlow", () => {
     const slot = await screen.findByRole("button", { name: "12:30" });
     await user.click(slot);
     await user.click(screen.getByRole("button", { name: /continuar/i }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Contanos cómo contactarte." })).toHaveFocus());
     await user.type(screen.getByLabelText("Nombre y apellido"), "Laura Gómez");
     await user.type(screen.getByLabelText("WhatsApp"), "3515550000");
     await user.click(screen.getByRole("button", { name: /revisar reserva/i }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Revisá antes de crear la pre-reserva." })).toHaveFocus());
     await user.click(screen.getByRole("button", { name: /crear pre-reserva/i }));
 
     await waitFor(() => expect(createPublicBookingMock).toHaveBeenCalledTimes(1));
+    expect(createPublicBookingMock).toHaveBeenCalledWith(expect.objectContaining({ website: "" }));
     expect(await screen.findByText("PC-ABC12345")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /continuar por whatsapp/i })).toHaveAttribute(
       "href",

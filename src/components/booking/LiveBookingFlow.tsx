@@ -56,11 +56,40 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [booking, setBooking] = useState<{ id: string; code: string } | null>(null);
+  const [website, setWebsite] = useState("");
   const idempotencyKey = useRef<string | null>(null);
+  const initialStepRender = useRef(true);
 
   const selectedDate = dates.find((item) => item.value === date);
   const selectedTime = selectedSlot ? formatBookingTime(selectedSlot) : null;
   const currentStepIndex = stepOrder.indexOf(step);
+
+  useEffect(() => {
+    if (initialStepRender.current) {
+      initialStepRender.current = false;
+      return;
+    }
+
+    const frame = globalThis.requestAnimationFrame(() => {
+      const heading = document.getElementById(
+        step === "success" ? "booking-success-title" : "booking-flow-title",
+      );
+      if (!heading) return;
+
+      heading.focus({ preventScroll: true });
+      if (typeof heading.scrollIntoView === "function") {
+        const reduceMotion = globalThis.matchMedia?.(
+          "(prefers-reduced-motion: reduce)",
+        ).matches;
+        heading.scrollIntoView({
+          behavior: reduceMotion ? "auto" : "smooth",
+          block: "start",
+        });
+      }
+    });
+
+    return () => globalThis.cancelAnimationFrame(frame);
+  }, [step]);
 
   useEffect(() => {
     let active = true;
@@ -115,6 +144,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
       monthlySpecialId: selection.monthlySpecialId ?? null,
       startsAt: selectedSlot,
       idempotencyKey: idempotencyKey.current,
+      website,
       ...customer,
     });
 
@@ -138,6 +168,14 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
       setSubmitError("La propuesta seleccionada ya no está disponible. Volvé al catálogo para elegir otra.");
       return;
     }
+    if (result.reason === "rate_limited") {
+      setSubmitError("Recibimos varios intentos desde esta conexión. Esperá una hora antes de volver a reservar.");
+      return;
+    }
+    if (result.reason === "verification") {
+      setSubmitError("No pudimos validar la solicitud. Actualizá la página e intentá nuevamente.");
+      return;
+    }
     setSubmitError("No pudimos crear la pre-reserva. Tus datos siguen en pantalla para que puedas intentarlo nuevamente.");
   }
 
@@ -146,7 +184,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
       <section className="booking-success" aria-labelledby="booking-success-title">
         <div className="booking-success__mark" aria-hidden="true"><Check strokeWidth={1.75} /></div>
         <p className="eyebrow">Pre-reserva creada</p>
-        <h1 id="booking-success-title">Tu horario quedó reservado de forma provisional.</h1>
+        <h1 id="booking-success-title" tabIndex={-1}>Tu horario quedó reservado de forma provisional.</h1>
         <p className="booking-success__lead">
           Para confirmarlo, enviá el resumen por WhatsApp y seguí las indicaciones para abonar la seña.
         </p>
@@ -182,7 +220,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
       <div className="booking-flow__header">
         <div>
           <p className="eyebrow">Pre-reserva online</p>
-          <h1 id="booking-flow-title">
+          <h1 id="booking-flow-title" tabIndex={-1}>
             {step === "schedule" && "Elegí cuándo querés venir."}
             {step === "details" && "Contanos cómo contactarte."}
             {step === "review" && "Revisá antes de crear la pre-reserva."}
@@ -273,6 +311,19 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
 
           {step === "details" ? (
             <form className="booking-step-panel booking-form" onSubmit={continueFromDetails}>
+              <div className="sr-only" aria-hidden="true">
+                <label>
+                  Sitio web
+                  <input
+                    type="text"
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={website}
+                    onChange={(event) => setWebsite(event.target.value)}
+                  />
+                </label>
+              </div>
               <div className="field-grid">
                 <label className="field field--wide">
                   <span>Nombre y apellido</span>
