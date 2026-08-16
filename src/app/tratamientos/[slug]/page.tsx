@@ -4,23 +4,21 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { TreatmentPageClient } from "@/components/treatments/TreatmentPageClient";
 import { StatePanel } from "@/components/ui/StatePanel";
-import {
-  monthlySpecials,
-  treatmentCategories,
-  treatments,
-} from "@/data/fixtures";
+import { treatments as fixtureTreatments } from "@/data/fixtures";
 import { getTreatmentBySlug } from "@/lib/treatments";
+import { getPublicCatalogSnapshot } from "@/lib/supabase/public-catalog";
 
 interface TreatmentPageProps {
   params: Promise<{ slug: string }>;
 }
 
 export function generateStaticParams() {
-  return treatments.map((treatment) => ({ slug: treatment.slug }));
+  return fixtureTreatments.map((treatment) => ({ slug: treatment.slug }));
 }
 
 export async function generateMetadata({ params }: TreatmentPageProps): Promise<Metadata> {
   const { slug } = await params;
+  const { treatments } = await getPublicCatalogSnapshot();
   const treatment = getTreatmentBySlug(treatments, slug);
   if (!treatment) return { title: "Tratamiento no encontrado" };
   return {
@@ -31,6 +29,11 @@ export async function generateMetadata({ params }: TreatmentPageProps): Promise<
 
 export default async function TreatmentPage({ params }: TreatmentPageProps) {
   const { slug } = await params;
+  const {
+    categories: treatmentCategories,
+    treatments,
+    monthlySpecials,
+  } = await getPublicCatalogSnapshot();
   const treatment = getTreatmentBySlug(treatments, slug);
   if (!treatment) notFound();
 

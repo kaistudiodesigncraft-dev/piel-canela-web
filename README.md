@@ -1,21 +1,24 @@
 # Piel Canela
 
-Demo integral de la web pública, catálogo, reserva simulada y panel administrativo de Piel Canela.
+Web pública, catálogo de tratamientos, pre-reservas y administración operativa para Piel Canela, desarrollada por Kai Studio.
 
-## Recorrido de demostración
+## Estado
 
-1. Abrir `/tratamientos` y elegir una ficha.
-2. Activar `Iniciar reserva`.
-3. Elegir fecha y horario, completar datos de muestra y crear la pre-reserva.
-4. Abrir `Ver esta reserva en el panel` para verla destacada en `/admin`.
-5. Desde el panel se pueden probar filtros y cambios de estado en memoria.
+- La experiencia visual aprobada continúa disponible con fixtures.
+- La fundación remota vive en Supabase, proyecto `dlrdlwjighvcyhirwgfu`.
+- La fuente de datos se cambia mediante `NEXT_PUBLIC_DATA_SOURCE`.
+- El backend permite simultaneidad entre especialidades distintas e impide solapamientos dentro de una misma especialidad.
+- La administración puede definir horarios habituales por especialidad.
 
 ## Desarrollo
 
 ```bash
 pnpm install
+copy .env.example .env.local
 pnpm dev
 ```
+
+Usá `NEXT_PUBLIC_DATA_SOURCE=fixtures` para la demo y `NEXT_PUBLIC_DATA_SOURCE=supabase` para los datos reales.
 
 ## Verificación
 
@@ -26,4 +29,8 @@ pnpm test
 pnpm build
 ```
 
-El contenido actual está separado en fixtures y marcado como muestra. La demo no conecta Supabase, no autentica el panel, no persiste cambios y no calcula disponibilidad real. La reserva creada viaja al panel mediante parámetros de URL y desaparece al recargar sin ellos.
+## Supabase
+
+Las migraciones y decisiones operativas están en [`supabase/README.md`](supabase/README.md).
+
+No se deben guardar contraseñas, access tokens, claves `service_role` ni datos personales en el repositorio.

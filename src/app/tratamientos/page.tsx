@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { CatalogExperience } from "@/components/treatments/CatalogExperience";
-import {
-  monthlySpecials,
-  treatmentCategories,
-  treatments,
-} from "@/data/fixtures";
+import { getPublicCatalogSnapshot } from "@/lib/supabase/public-catalog";
 
 export const metadata: Metadata = {
   title: "Tratamientos",
@@ -13,7 +9,12 @@ export const metadata: Metadata = {
     "Explorá tratamientos de estética, bienestar y recuperación con precio, duración e información clara.",
 };
 
-export default function TreatmentsPage() {
+export default async function TreatmentsPage() {
+  const {
+    categories: treatmentCategories,
+    treatments,
+    monthlySpecials,
+  } = await getPublicCatalogSnapshot();
   return (
     <>
       <section className="page-hero page-hero--catalog">
@@ -39,4 +40,3 @@ export default function TreatmentsPage() {
     </>
   );
 }
-

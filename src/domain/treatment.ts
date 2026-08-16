@@ -21,6 +21,15 @@ export interface TreatmentCategory {
   isActive: boolean;
 }
 
+export interface Specialty {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  displayOrder: number;
+  isActive: boolean;
+}
+
 export interface TreatmentImage {
   src: string;
   alt: string;
@@ -32,6 +41,8 @@ export interface TreatmentImage {
 export interface Treatment {
   id: string;
   categoryId: string;
+  specialtyId: string;
+  professionalId: string | null;
   name: string;
   slug: string;
   shortDescription: string;
@@ -58,10 +69,13 @@ export interface MonthlySpecial {
   shortDescription: string;
   detail: string;
   specialPriceCents: number;
+  referencePriceCents: number | null;
   startsAt: string;
   endsAt: string;
   image: TreatmentImage;
   isActive: boolean;
+  terms: string | null;
+  createdBy: string | null;
   displayOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -87,6 +101,7 @@ export const BOOKING_STATUSES = [
   "completed",
   "cancelled",
   "no_show",
+  "expired",
 ] as const;
 
 export type BookingStatus = (typeof BOOKING_STATUSES)[number];

@@ -16,6 +16,7 @@ export const bookingStatusMeta: Record<
   completed: { label: "Atención realizada", shortLabel: "Realizado" },
   cancelled: { label: "Turno cancelado", shortLabel: "Cancelado" },
   no_show: { label: "No asistió", shortLabel: "Ausente" },
+  expired: { label: "Pre-reserva vencida", shortLabel: "Vencida" },
 };
 
 export function buildAdminDemoHref(booking: DemoBooking): string {

@@ -11,6 +11,13 @@ const nextConfig: NextConfig = {
   trailingSlash: isGitHubPages,
   images: {
     unoptimized: isGitHubPages,
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "dlrdlwjighvcyhirwgfu.supabase.co",
+        pathname: "/storage/v1/object/public/treatment-media/**",
+      },
+    ],
   },
   turbopack: {
     root: process.cwd(),

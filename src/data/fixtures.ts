@@ -51,6 +51,8 @@ export const treatments: readonly Treatment[] = [
   {
     id: "treatment-limpieza-facial",
     categoryId: "category-estetica",
+    specialtyId: "specialty-estetica",
+    professionalId: null,
     name: "Limpieza facial profunda",
     slug: "limpieza-facial-profunda",
     shortDescription:
@@ -79,6 +81,8 @@ export const treatments: readonly Treatment[] = [
   {
     id: "treatment-drenaje",
     categoryId: "category-estetica",
+    specialtyId: "specialty-estetica",
+    professionalId: null,
     name: "Drenaje corporal",
     slug: "drenaje-corporal",
     shortDescription:
@@ -102,6 +106,8 @@ export const treatments: readonly Treatment[] = [
   {
     id: "treatment-relajacion",
     categoryId: "category-bienestar",
+    specialtyId: "specialty-masoterapia",
+    professionalId: null,
     name: "Relajación profunda",
     slug: "relajacion-profunda",
     shortDescription:
@@ -125,6 +131,8 @@ export const treatments: readonly Treatment[] = [
   {
     id: "treatment-descontracturante",
     categoryId: "category-bienestar",
+    specialtyId: "specialty-masoterapia",
+    professionalId: null,
     name: "Masaje descontracturante",
     slug: "masaje-descontracturante",
     shortDescription:
@@ -148,6 +156,8 @@ export const treatments: readonly Treatment[] = [
   {
     id: "treatment-kinesiologia",
     categoryId: "category-recuperacion",
+    specialtyId: "specialty-kinesiologia",
+    professionalId: null,
     name: "Evaluación kinésica",
     slug: "evaluacion-kinesica",
     shortDescription:
@@ -171,6 +181,8 @@ export const treatments: readonly Treatment[] = [
   {
     id: "treatment-recuperacion-muscular",
     categoryId: "category-recuperacion",
+    specialtyId: "specialty-kinesiologia",
+    professionalId: null,
     name: "Recuperación muscular",
     slug: "recuperacion-muscular",
     shortDescription:
@@ -194,6 +206,8 @@ export const treatments: readonly Treatment[] = [
   {
     id: "treatment-unavailable-sample",
     categoryId: "category-bienestar",
+    specialtyId: "specialty-masoterapia",
+    professionalId: null,
     name: "Ritual corporal en revisión",
     slug: "ritual-corporal-en-revision",
     shortDescription: "Tratamiento temporalmente no disponible.",
@@ -223,10 +237,13 @@ export const monthlySpecials: readonly MonthlySpecial[] = [
     detail:
       "Una propuesta puntual para bajar el ritmo y liberar tensión. La promoción se aplica al seleccionar este especial.",
     specialPriceCents: 5500000,
+    referencePriceCents: 6500000,
     startsAt: "2026-07-01T03:00:00.000Z",
     endsAt: "2026-09-01T03:00:00.000Z",
     image: fixtureImage,
     isActive: true,
+    terms: null,
+    createdBy: null,
     displayOrder: 1,
     createdAt: "2026-07-01T12:00:00.000Z",
     updatedAt: "2026-07-01T12:00:00.000Z",
@@ -239,10 +256,13 @@ export const monthlySpecials: readonly MonthlySpecial[] = [
     detail:
       "Pensada para acompañar semanas de mayor actividad, con un abordaje adaptado a cada persona.",
     specialPriceCents: 4900000,
+    referencePriceCents: 5600000,
     startsAt: "2026-07-01T03:00:00.000Z",
     endsAt: "2026-09-01T03:00:00.000Z",
     image: { ...fixtureImage, focalPoint: "58% 50%" },
     isActive: true,
+    terms: null,
+    createdBy: null,
     displayOrder: 2,
     createdAt: "2026-07-01T12:00:00.000Z",
     updatedAt: "2026-07-01T12:00:00.000Z",
@@ -255,10 +275,13 @@ export const monthlySpecials: readonly MonthlySpecial[] = [
     detail:
       "Una oportunidad para iniciar o retomar una rutina de cuidado con evaluación profesional.",
     specialPriceCents: 3600000,
+    referencePriceCents: 4200000,
     startsAt: "2026-07-01T03:00:00.000Z",
     endsAt: "2026-09-01T03:00:00.000Z",
     image: { ...fixtureImage, focalPoint: "43% 50%" },
     isActive: true,
+    terms: null,
+    createdBy: null,
     displayOrder: 3,
     createdAt: "2026-07-01T12:00:00.000Z",
     updatedAt: "2026-07-01T12:00:00.000Z",

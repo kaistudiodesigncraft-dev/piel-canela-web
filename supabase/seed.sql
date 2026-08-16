@@ -1,0 +1,3 @@
+-- Local development seed only. Content is illustrative and must not be treated as client-approved.
+-- Create an Auth user in Supabase Studio, then promote it explicitly:
+-- insert into public.profiles (user_id, full_name) values ('AUTH_USER_UUID', 'Administrador Piel Canela');

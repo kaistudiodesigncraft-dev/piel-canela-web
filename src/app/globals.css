@@ -2094,6 +2094,169 @@ svg {
 .status-completed { --status-color: var(--color-petrol); }
 .status-cancelled { --status-color: #a7605a; }
 .status-no_show { --status-color: #715f6d; }
+.status-expired { --status-color: #786a58; }
+
+/* Connected administration */
+.admin-login-section {
+  min-height: 70vh;
+  display: grid;
+  place-items: center;
+  padding: clamp(3rem, 8vw, 7rem) var(--space-page);
+  background: var(--color-surface-soft, #f7f4ed);
+}
+
+.admin-login-panel {
+  width: min(100%, 31rem);
+  padding: clamp(1.5rem, 5vw, 3rem);
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #d9ded5);
+  border-radius: 1.5rem;
+}
+
+.admin-login-panel h1,
+.live-admin h1,
+.live-admin h2,
+.live-admin h3 { margin: 0; }
+
+.admin-login-panel > p:not(.eyebrow, .form-message) {
+  margin-block: .75rem 1.75rem;
+  color: var(--color-text-muted, #58665f);
+}
+
+.admin-login-form,
+.availability-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-login-form label,
+.availability-form label {
+  display: grid;
+  gap: .45rem;
+  font-weight: 650;
+}
+
+.admin-login-form input,
+.availability-form input,
+.availability-form select {
+  width: 100%;
+  min-height: 3rem;
+  padding: .65rem .8rem;
+  color: var(--color-text, #163833);
+  background: #fff;
+  border: 1px solid var(--color-border, #cbd4cc);
+  border-radius: .65rem;
+  font: inherit;
+}
+
+.admin-login-form input:focus-visible,
+.availability-form input:focus-visible,
+.availability-form select:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-action, #176474) 25%, transparent);
+  outline-offset: 2px;
+  border-color: var(--color-action, #176474);
+}
+
+.form-message {
+  padding: .75rem 1rem;
+  color: #244c42;
+  background: #e5f0e8;
+  border-radius: .6rem;
+}
+
+.form-message--error {
+  color: #743b35;
+  background: #f8e8e4;
+}
+
+.live-admin {
+  padding-block: clamp(2.5rem, 6vw, 5rem);
+}
+
+.live-admin__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.live-admin__header > div > p:last-child { color: var(--color-text-muted, #58665f); }
+
+.admin-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-block: 2rem 4rem;
+}
+
+.admin-summary-grid article {
+  display: grid;
+  gap: .45rem;
+  padding: 1.25rem;
+  background: var(--color-surface-soft, #f3f5ef);
+  border-radius: 1rem;
+}
+
+.admin-summary-grid span { color: var(--color-text-muted, #58665f); }
+.admin-summary-grid strong { font-size: clamp(1.75rem, 4vw, 2.6rem); font-variant-numeric: tabular-nums; }
+
+.live-admin__section { scroll-margin-top: 6rem; }
+
+.availability-admin-grid {
+  display: grid;
+  grid-template-columns: minmax(16rem, .75fr) minmax(22rem, 1.25fr);
+  gap: clamp(1.5rem, 4vw, 3rem);
+  margin-top: 2rem;
+}
+
+.availability-form,
+.availability-list {
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid var(--color-border, #d9ded5);
+  border-radius: 1rem;
+}
+
+.availability-form__times { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.availability-list h3 { margin-bottom: 1rem; }
+.availability-list ul { display: grid; gap: .65rem; margin: 0; padding: 0; list-style: none; }
+
+.availability-list li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: .85rem;
+  padding: .9rem;
+  background: var(--color-surface-soft, #f3f5ef);
+  border-radius: .75rem;
+}
+
+.availability-list li > svg { width: 1.25rem; color: var(--color-action, #176474); }
+.availability-list li div { display: grid; gap: .2rem; }
+.availability-list li span { color: var(--color-text-muted, #58665f); font-size: .925rem; }
+.availability-empty { color: var(--color-text-muted, #58665f); }
+
+.icon-button {
+  display: inline-grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  color: var(--color-text-muted, #58665f);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.icon-button:hover { background: #e3e9e2; color: #743b35; }
+.icon-button:focus-visible { outline: 3px solid var(--color-action, #176474); outline-offset: 2px; }
+
+@media (max-width: 720px) {
+  .live-admin__header { display: grid; }
+  .admin-summary-grid { grid-template-columns: 1fr; }
+  .availability-admin-grid { grid-template-columns: 1fr; }
+  .availability-form__times { grid-template-columns: 1fr; }
+}
 
 .status-badge {
   display: inline-flex;

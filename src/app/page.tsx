@@ -3,16 +3,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { CategoryEntryCard } from "@/components/treatments/CategoryEntryCard";
 import { MonthlySpecialsSection } from "@/components/specials/MonthlySpecialsSection";
-import {
-  monthlySpecials,
-  treatmentCategories,
-  treatments,
-} from "@/data/fixtures";
 import { getPublicMonthlySpecials } from "@/lib/treatments";
+import { getPublicCatalogSnapshot } from "@/lib/supabase/public-catalog";
 
 export const revalidate = 3600;
 
-export default function HomePage() {
+export default async function HomePage() {
+  const {
+    categories: treatmentCategories,
+    treatments,
+    monthlySpecials,
+  } = await getPublicCatalogSnapshot();
   const publicSpecials = getPublicMonthlySpecials(monthlySpecials);
 
   return (
