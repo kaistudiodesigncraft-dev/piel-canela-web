@@ -4341,6 +4341,307 @@ svg {
   }
 }
 
+/* Sprint 3 · Customer context and commercial settings */
+.booking-detail-disclosure {
+  width: 100%;
+  grid-column: 1 / -1;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+}
+
+.booking-detail-disclosure > summary {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.55rem;
+  color: var(--color-action);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 720;
+  list-style: none;
+}
+
+.booking-detail-disclosure > summary::-webkit-details-marker,
+.admin-customer-item > summary::-webkit-details-marker {
+  display: none;
+}
+
+.booking-detail-disclosure > summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.booking-detail-disclosure > summary svg {
+  width: 1rem;
+  transition: transform 180ms var(--ease-enter);
+}
+
+.booking-detail-disclosure[open] > summary > svg:last-child,
+.admin-customer-item[open] > summary > svg:last-child {
+  transform: rotate(180deg);
+}
+
+.booking-detail-disclosure__body {
+  display: grid;
+  gap: 1rem;
+  padding-block: 0.5rem 1rem;
+}
+
+.booking-detail-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 2rem;
+  margin: 0;
+}
+
+.booking-detail-facts div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.booking-detail-facts dt,
+.booking-detail-facts dd {
+  margin: 0;
+}
+
+.booking-detail-facts dt {
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+}
+
+.booking-detail-facts dd {
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+
+.admin-form--booking-action {
+  grid-template-columns: minmax(12rem, 1fr) minmax(14rem, 0.8fr) auto;
+  align-items: end;
+  padding: 1rem;
+  background: var(--color-cloud);
+}
+
+.admin-form--booking-action > div {
+  align-self: center;
+}
+
+.admin-form--booking-action p {
+  margin-top: 0.25rem;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.admin-form--booking-notes {
+  padding: 1rem;
+}
+
+.admin-customers,
+.admin-settings {
+  min-width: 0;
+}
+
+.admin-customer-list {
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.admin-customer-item {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-customer-item > summary {
+  min-height: 5.5rem;
+  display: grid;
+  grid-template-columns: 3rem minmax(12rem, 1fr) minmax(5rem, auto) minmax(7rem, auto) auto;
+  gap: 1rem;
+  align-items: center;
+  padding-block: 0.75rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.admin-customer-item > summary > span:nth-child(2) {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.admin-customer-item > summary small {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-customer-item > summary > svg {
+  width: 1rem;
+  color: var(--color-action);
+  transition: transform 180ms var(--ease-enter);
+}
+
+.admin-customer-item__metric {
+  display: grid;
+  gap: 0.1rem;
+  justify-items: end;
+}
+
+.admin-customer-item__body {
+  display: grid;
+  gap: 1.25rem;
+  padding: 0 0 1.5rem 4rem;
+}
+
+.admin-customer-contact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-customer-contact p {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
+
+.admin-customer-contact p svg {
+  width: 1.1rem;
+  flex: 0 0 auto;
+  color: var(--color-petrol);
+}
+
+.admin-customer-history {
+  border-top: 1px solid var(--color-border);
+  padding-top: 1rem;
+}
+
+.admin-customer-history > p {
+  margin-top: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.admin-customer-history ul {
+  display: grid;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-customer-history li {
+  display: grid;
+  grid-template-columns: minmax(9rem, 0.8fr) minmax(12rem, 1fr) auto minmax(6rem, auto);
+  gap: 1rem;
+  align-items: center;
+  padding-block: 0.75rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent);
+}
+
+.admin-customer-history li > span:not(.status-badge) {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.admin-customer-history li small,
+.admin-customer-history time {
+  color: var(--color-text-muted);
+  font-size: 0.76rem;
+}
+
+.admin-settings-context {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding-block: 0.25rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-settings-context svg {
+  width: 1.25rem;
+  flex: 0 0 auto;
+  color: var(--color-petrol);
+}
+
+.admin-settings-context p {
+  max-width: 68ch;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 68rem) {
+  .admin-customer-item > summary {
+    grid-template-columns: 3rem minmax(0, 1fr) auto auto;
+  }
+
+  .admin-customer-item > summary > svg {
+    grid-column: 4;
+    grid-row: 1;
+  }
+
+  .admin-customer-item__metric:last-of-type {
+    grid-column: 2 / -1;
+    justify-items: start;
+  }
+
+  .admin-form--booking-action {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-form--booking-action .button {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 48rem) {
+  .admin-form--booking-action {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-form--booking-action .button {
+    width: 100%;
+    grid-column: auto;
+  }
+
+  .admin-customer-item > summary {
+    grid-template-columns: 2.75rem minmax(0, 1fr) auto;
+    gap: 0.75rem;
+  }
+
+  .admin-customer-item > summary > svg {
+    grid-column: 3;
+  }
+
+  .admin-customer-item__metric {
+    grid-column: 2;
+    justify-items: start;
+  }
+
+  .admin-customer-item__metric:last-of-type {
+    grid-column: 2;
+  }
+
+  .admin-customer-item__body {
+    padding-left: 0;
+  }
+
+  .admin-customer-contact .button {
+    width: 100%;
+  }
+
+  .admin-customer-history li {
+    grid-template-columns: 1fr auto;
+    gap: 0.45rem 0.75rem;
+  }
+
+  .admin-customer-history li > span:not(.status-badge) {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

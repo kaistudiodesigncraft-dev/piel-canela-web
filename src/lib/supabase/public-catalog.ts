@@ -19,16 +19,31 @@ export interface PublicCatalogSnapshot {
 }
 
 export async function getPublicBookingSettings() {
-  if (!usesSupabaseDataSource()) return { whatsappNumber: null };
+  if (!usesSupabaseDataSource()) return {
+    whatsappNumber: null,
+    address: null,
+    publicEmail: null,
+    instagramUrl: null,
+  };
   const supabase = createSupabasePublicServerClient();
   const { data, error } = await supabase
     .from("business_settings")
-    .select("whatsapp_number")
+    .select("whatsapp_number,address,public_email,instagram_url")
     .eq("singleton", true)
     .maybeSingle();
-  if (error) return { whatsappNumber: null };
-  const row = data as { whatsapp_number: string | null } | null;
-  return { whatsappNumber: row?.whatsapp_number ?? null };
+  if (error) return { whatsappNumber: null, address: null, publicEmail: null, instagramUrl: null };
+  const row = data as {
+    whatsapp_number: string | null;
+    address: string | null;
+    public_email: string | null;
+    instagram_url: string | null;
+  } | null;
+  return {
+    whatsappNumber: row?.whatsapp_number ?? null,
+    address: row?.address ?? null,
+    publicEmail: row?.public_email ?? null,
+    instagramUrl: row?.instagram_url ?? null,
+  };
 }
 
 interface CategoryRow {

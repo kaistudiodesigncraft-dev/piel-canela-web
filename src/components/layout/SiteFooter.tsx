@@ -1,6 +1,15 @@
 import Link from "next/link";
 
-export function SiteFooter() {
+interface SiteFooterProps {
+  settings: {
+    whatsappNumber: string | null;
+    address: string | null;
+    publicEmail: string | null;
+    instagramUrl: string | null;
+  };
+}
+
+export function SiteFooter({ settings }: SiteFooterProps) {
   return (
     <footer className="site-footer" id="contacto">
       <div className="site-container site-footer__grid">
@@ -23,8 +32,10 @@ export function SiteFooter() {
         </div>
         <div>
           <h2 className="site-footer__title">Encontranos</h2>
-          <p>Dentro de Espacio O2</p>
-          <p>Dirección y WhatsApp pendientes de confirmación.</p>
+          <p>{settings.address ?? "Dentro de Espacio O2"}</p>
+          {settings.whatsappNumber ? <p><a href={`https://wa.me/${settings.whatsappNumber.replace(/\D/g, "")}`}>WhatsApp {settings.whatsappNumber}</a></p> : null}
+          {settings.publicEmail ? <p><a href={`mailto:${settings.publicEmail}`}>{settings.publicEmail}</a></p> : null}
+          {settings.instagramUrl ? <p><a href={settings.instagramUrl} target="_blank" rel="noreferrer">Instagram</a></p> : null}
         </div>
       </div>
       <div className="site-container site-footer__legal">

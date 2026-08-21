@@ -1,12 +1,14 @@
-import { CalendarDays, FilePenLine, HandHeart, UsersRound } from "lucide-react";
+import { CalendarDays, ContactRound, FilePenLine, HandHeart, Settings, UsersRound } from "lucide-react";
 import Link from "next/link";
 
-type AdminRoute = "operations" | "catalog" | "professionals" | "content";
+type AdminRoute = "operations" | "catalog" | "professionals" | "customers" | "settings" | "content";
 
 const routes: readonly { id: AdminRoute; href: string; label: string; icon: typeof CalendarDays }[] = [
   { id: "operations", href: "/admin", label: "Operación", icon: CalendarDays },
   { id: "catalog", href: "/admin/catalogo", label: "Catálogo", icon: HandHeart },
   { id: "professionals", href: "/admin/profesionales", label: "Profesionales", icon: UsersRound },
+  { id: "customers", href: "/admin/clientes", label: "Clientes", icon: ContactRound },
+  { id: "settings", href: "/admin/configuracion", label: "Configuración", icon: Settings },
   { id: "content", href: "/admin/contenido", label: "Contenido", icon: FilePenLine },
 ];
 
@@ -29,4 +31,3 @@ export function AdminRouteNav({ current }: { current: AdminRoute }) {
     </nav>
   );
 }
-

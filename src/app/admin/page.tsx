@@ -29,7 +29,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     supabase.from("treatments").select("id,name,specialty_id,duration_minutes,price_cents,is_active").eq("is_active", true).order("name"),
     supabase.from("monthly_specials").select("id,treatment_id,title,short_description,detail,image_path,image_alt,special_price_cents,reference_price_cents,starts_at,ends_at,terms,is_active,display_order").order("display_order"),
     supabase.from("bookings")
-      .select("id,booking_code,status,starts_at,ends_at,duration_snapshot_minutes,applied_price_snapshot_cents,customer_notes,internal_notes,customer:customers(full_name,phone,email),treatment:treatments(name)")
+      .select("id,booking_code,status,starts_at,ends_at,duration_snapshot_minutes,applied_price_snapshot_cents,customer_notes,internal_notes,created_at,rescheduled_at,reschedule_count,customer:customers(full_name,phone,email),treatment:treatments(name)")
       .order("starts_at", { ascending: true }).limit(100),
   ]);
 

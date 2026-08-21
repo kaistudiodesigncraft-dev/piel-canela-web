@@ -16,6 +16,7 @@ import {
   Sparkles,
   Trash2,
   UserPlus,
+  NotebookPen,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -33,7 +34,13 @@ import {
   toggleSpecialty,
   updateBookingStatus,
 } from "@/app/admin/actions";
+import { rescheduleBooking, saveBookingNotes } from "@/app/admin/reservas/actions";
 import type { BookingStatus } from "@/domain/treatment";
+import {
+  buildAdminWhatsAppMessage,
+  canRescheduleBooking,
+  normalizePhone,
+} from "@/lib/admin/customer-operations";
 import {
   bookingSearchText,
   BOOKING_STATUS_LABELS,
@@ -107,6 +114,9 @@ interface AdminBookingRow {
   applied_price_snapshot_cents: number;
   customer_notes: string | null;
   internal_notes: string | null;
+  created_at: string;
+  rescheduled_at: string | null;
+  reschedule_count: number;
   customer: { full_name: string; phone: string; email: string | null } | null;
   treatment: { name: string } | null;
 }
@@ -226,9 +236,11 @@ export function LiveAdminDashboard({
       <section className="live-admin__section admin-bookings" id="reservas" aria-labelledby="bookings-title">
         <div className="admin-section-heading">
           <div><h2 id="bookings-title">Agenda y reservas</h2><p>Buscá una solicitud, filtrá por estado y resolvé la operación desde la misma fila.</p></div>
-          <span className="admin-count numeric">{filteredBookings.length} resultados</span>
+          <span className="admin-count numeric">{filteredBookings.length} {filteredBookings.length === 1 ? "resultado" : "resultados"}</span>
         </div>
         <Feedback show={feedback.bookingSaved === "1"} error={feedback.bookingError} success="Estado de la reserva actualizado." errorText="No se pudo aplicar ese cambio de estado." />
+        <Feedback show={feedback.bookingDetailSaved === "1"} error={feedback.bookingDetailError} success="Notas de la reserva actualizadas." errorText="No se pudieron guardar las notas." />
+        <Feedback show={feedback.rescheduleSaved === "1"} error={feedback.rescheduleError} success="Reserva reprogramada y agenda actualizada." errorText={feedback.rescheduleError === "conflict" ? "Ese horario ya está ocupado para la especialidad." : feedback.rescheduleError === "status" ? "El estado actual no permite reprogramar." : "No se pudo reprogramar la reserva."} />
         <div className="admin-booking-toolbar">
           <label className="admin-search"><Search aria-hidden="true" strokeWidth={1.75} /><span className="sr-only">Buscar reservas</span><input value={bookingQuery} onChange={(event) => setBookingQuery(event.target.value)} placeholder="Buscar persona, código o tratamiento" /></label>
           <label><span className="sr-only">Filtrar por estado</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as BookingStatus | "all")}><option value="all">Todos los estados</option>{Object.entries(BOOKING_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
@@ -240,12 +252,29 @@ export function LiveAdminDashboard({
           <div className="live-booking-list">
             {filteredBookings.map((booking) => {
               const transitions = BOOKING_STATUS_TRANSITIONS[booking.status] ?? [];
+              const customerName = booking.customer?.full_name ?? "Cliente";
+              const treatmentName = booking.treatment?.name ?? "Tratamiento";
+              const phone = booking.customer?.phone ?? "";
+              const whatsappMessage = buildAdminWhatsAppMessage({
+                customerName,
+                bookingCode: booking.booking_code,
+                treatmentName,
+                startsAtLabel: bookingDate(booking.starts_at),
+              });
               return <article key={booking.id} className="live-booking-row">
                 <div className="live-booking-row__time numeric"><Clock3 aria-hidden="true" strokeWidth={1.75} /><time dateTime={booking.starts_at}>{bookingDate(booking.starts_at)}</time></div>
-                <div className="live-booking-row__identity"><strong>{booking.customer?.full_name ?? "Cliente"}</strong><a href={`https://wa.me/${booking.customer?.phone.replace(/\D/g, "") ?? ""}`} target="_blank" rel="noreferrer"><MessageCircle aria-hidden="true" strokeWidth={1.75} />{booking.customer?.phone ?? "Sin teléfono"}</a></div>
-                <div className="live-booking-row__treatment"><strong>{booking.treatment?.name ?? "Tratamiento"}</strong><span className="numeric">{booking.booking_code} · {formatPrice(booking.applied_price_snapshot_cents)}</span></div>
+                <div className="live-booking-row__identity"><strong>{customerName}</strong><a href={`https://wa.me/${normalizePhone(phone)}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer"><MessageCircle aria-hidden="true" strokeWidth={1.75} />{phone || "Sin teléfono"}</a></div>
+                <div className="live-booking-row__treatment"><strong>{treatmentName}</strong><span className="numeric">{booking.booking_code} · {formatPrice(booking.applied_price_snapshot_cents)}</span></div>
                 <span className={`status-badge status-${booking.status}`}>{BOOKING_STATUS_LABELS[booking.status]}</span>
                 {transitions.length > 0 ? <form action={updateBookingStatus} className="booking-status-form"><input type="hidden" name="bookingId" value={booking.id} /><label><span className="sr-only">Nuevo estado para {booking.booking_code}</span><select name="status" defaultValue="" required><option value="" disabled>Cambiar estado</option>{transitions.map((status) => <option key={status} value={status}>{BOOKING_STATUS_LABELS[status]}</option>)}</select></label><button className="button button--quiet" type="submit">Aplicar</button></form> : <span className="booking-status-closed">Estado final</span>}
+                <details className="booking-detail-disclosure" id={`booking-${booking.id}`}>
+                  <summary><span><NotebookPen aria-hidden="true" strokeWidth={1.75} />Detalle operativo</span><ChevronDown aria-hidden="true" strokeWidth={1.75} /></summary>
+                  <div className="booking-detail-disclosure__body">
+                    <dl className="booking-detail-facts"><div><dt>Creada</dt><dd>{bookingDate(booking.created_at)}</dd></div><div><dt>Reprogramaciones</dt><dd className="numeric">{booking.reschedule_count}</dd></div><div><dt>Correo</dt><dd>{booking.customer?.email ?? "No informado"}</dd></div></dl>
+                    {canRescheduleBooking(booking.status) ? <form action={rescheduleBooking} className="admin-form admin-form--booking-action"><input type="hidden" name="bookingId" value={booking.id} /><div><h3>Reprogramar</h3><p>La base vuelve a comprobar la capacidad de la especialidad.</p></div><label>Nueva fecha y hora<input name="startsAt" type="datetime-local" defaultValue={toArgentinaDateTimeInput(booking.starts_at)} required /></label><button className="button button--quiet" type="submit">Mover reserva</button></form> : null}
+                    <form action={saveBookingNotes} className="admin-form admin-form--booking-notes"><input type="hidden" name="bookingId" value={booking.id} /><div className="admin-form-grid"><label>Nota de la persona<textarea name="customerNotes" rows={3} maxLength={240} defaultValue={booking.customer_notes ?? ""} /></label><label>Nota interna<textarea name="internalNotes" rows={3} maxLength={1000} defaultValue={booking.internal_notes ?? ""} /></label></div><div className="admin-form-footer"><p>Las notas internas no se muestran en la web ni se incluyen en WhatsApp.</p><button className="button button--quiet" type="submit">Guardar notas</button></div></form>
+                  </div>
+                </details>
               </article>;
             })}
           </div>
