@@ -11,6 +11,7 @@ import type {
   SiteContentField,
   SiteContentSection,
 } from "@/domain/site-content";
+import { AdminRouteNav } from "@/components/admin/AdminRouteNav";
 import {
   lockContentEditor,
   saveSiteContentSection,
@@ -72,6 +73,8 @@ export function ContentEditor({ fields, savedSection, saveError }: ContentEditor
           </form>
         </div>
       </header>
+
+      <AdminRouteNav current="content" />
 
       <nav className="content-admin__nav" aria-label="Secciones editables">
         {sectionOrder.map((section) => (

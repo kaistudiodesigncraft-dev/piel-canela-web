@@ -14,6 +14,7 @@ interface TreatmentDetailContentProps {
   category: TreatmentCategory;
   monthlySpecial?: MonthlySpecial;
   compact?: boolean;
+  preview?: boolean;
 }
 
 export function TreatmentDetailContent({
@@ -21,6 +22,7 @@ export function TreatmentDetailContent({
   category,
   monthlySpecial,
   compact = false,
+  preview = false,
 }: TreatmentDetailContentProps) {
   const price = monthlySpecial?.specialPriceCents ?? treatment.priceCents;
 
@@ -98,18 +100,24 @@ export function TreatmentDetailContent({
           <strong>{formatPrice(price)}</strong>
           {monthlySpecial ? <del>{formatPrice(treatment.priceCents)}</del> : null}
         </div>
-        <Link
-          className="button button--light"
-          href={buildBookingHref({
-            treatmentId: treatment.id,
-            monthlySpecialId: monthlySpecial?.id,
-          })}
-        >
-          Iniciar reserva
-          <ArrowRight aria-hidden="true" strokeWidth={1.75} />
-        </Link>
+        {preview ? (
+          <Link className="button button--light" href={`/admin/catalogo#treatment-${treatment.id}`}>
+            Volver a edición
+            <ArrowRight aria-hidden="true" strokeWidth={1.75} />
+          </Link>
+        ) : (
+          <Link
+            className="button button--light"
+            href={buildBookingHref({
+              treatmentId: treatment.id,
+              monthlySpecialId: monthlySpecial?.id,
+            })}
+          >
+            Iniciar reserva
+            <ArrowRight aria-hidden="true" strokeWidth={1.75} />
+          </Link>
+        )}
       </footer>
     </article>
   );
 }
-

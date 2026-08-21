@@ -11,6 +11,9 @@ Web pública, catálogo de tratamientos, pre-reservas y administración operativ
 - La administración dispone de agenda filtrable, asignación manual de turnos, horarios habituales, bloqueos y aperturas excepcionales.
 - Las especialidades pueden crearse como activas o futuras y controlan la capacidad simultánea.
 - Los Especiales del mes se crean y editan desde el panel con vigencia, precio e imagen.
+- `/admin/catalogo` permite crear borradores, publicar y editar tratamientos, precios, duración, margen entre turnos, encuadre de imagen y asignación profesional.
+- `/admin/profesionales` mantiene perfiles internos y públicos reutilizables por especialidad.
+- Los cambios que afectan reservas futuras exigen una confirmación explícita y cada tratamiento dispone de vista previa administrativa protegida.
 - `/admin/contenido` permite modificar los textos y la imagen principal sobre una estructura fija. Requiere sesión administrativa y un segundo código temporal.
 
 ## Desarrollo

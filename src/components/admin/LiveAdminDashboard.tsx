@@ -7,7 +7,6 @@ import {
   ChevronDown,
   Clock3,
   ExternalLink,
-  FilePenLine,
   LogOut,
   MessageCircle,
   PauseCircle,
@@ -21,6 +20,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { AdminRouteNav } from "@/components/admin/AdminRouteNav";
 import {
   createAvailabilityException,
   createAvailabilityRule,
@@ -205,11 +205,12 @@ export function LiveAdminDashboard({
           <p>Agenda, disponibilidad y propuestas comerciales desde un único espacio operativo.</p>
         </div>
         <div className="live-admin__actions">
-          <Link className="button button--secondary" href="/admin/contenido"><FilePenLine aria-hidden="true" strokeWidth={1.75} />Editar contenido</Link>
           <Link className="button button--quiet" href="/" target="_blank" rel="noreferrer"><ExternalLink aria-hidden="true" strokeWidth={1.75} />Ver sitio</Link>
           <form action={signOutAdmin}><button className="button button--quiet" type="submit"><LogOut aria-hidden="true" strokeWidth={1.75} />Cerrar sesión</button></form>
         </div>
       </header>
+
+      <AdminRouteNav current="operations" />
 
       <nav className="admin-command-nav" aria-label="Secciones del panel">
         {navItems.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}
@@ -298,7 +299,7 @@ export function LiveAdminDashboard({
 }
 
 function MonthlySpecialForm({ treatments, special }: { treatments: TreatmentRow[]; special?: MonthlySpecialRow }) {
-  return <form action={saveMonthlySpecial} className="admin-form admin-form--special" encType="multipart/form-data">
+  return <form action={saveMonthlySpecial} className="admin-form admin-form--special">
     {special ? <input type="hidden" name="specialId" value={special.id} /> : null}
     <div className="admin-form-grid admin-form-grid--3"><label>Tratamiento<select name="treatmentId" defaultValue={special?.treatment_id ?? ""} required><option value="">Seleccionar</option>{treatments.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>Título<input name="title" defaultValue={special?.title ?? ""} minLength={2} maxLength={120} required /></label><label>Orden<select name="displayOrder" defaultValue={special?.display_order ?? 1}>{[1,2,3,4].map((value) => <option key={value} value={value}>{value}</option>)}</select></label></div>
     <label>Descripción breve<textarea name="shortDescription" defaultValue={special?.short_description ?? ""} rows={2} minLength={10} maxLength={240} required /></label><label>Detalle completo<textarea name="detail" defaultValue={special?.detail ?? ""} rows={4} minLength={20} maxLength={1400} required /></label>

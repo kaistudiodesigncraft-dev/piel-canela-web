@@ -3299,12 +3299,12 @@ svg {
 
 .live-admin h1 {
   max-width: 18ch;
-  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-size: 3rem;
   letter-spacing: -0.035em;
 }
 
 .live-admin h2 {
-  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  font-size: 2rem;
   letter-spacing: -0.025em;
 }
 
@@ -3889,6 +3889,455 @@ svg {
 
   .monthly-special-admin-item__image {
     max-width: 8rem;
+  }
+}
+
+/* Sprint 2 · Catalog and professionals */
+.admin-route-nav {
+  position: sticky;
+  z-index: 25;
+  top: 0;
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  margin-inline: calc(var(--space-page) * -1);
+  padding: 0.65rem var(--space-page);
+  border-block: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-cloud) 94%, transparent);
+  scrollbar-width: thin;
+  backdrop-filter: blur(12px);
+}
+
+.live-admin,
+.live-admin__header,
+.live-admin__section,
+.admin-section-heading,
+.admin-booking-toolbar,
+.admin-treatment-manager-list,
+.admin-category-editor-grid,
+.admin-professional-list {
+  min-width: 0;
+}
+
+.admin-route-nav a {
+  min-height: 2.75rem;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding-inline: 0.85rem;
+  border-radius: 0.55rem;
+  color: var(--color-text-muted);
+  font-size: 0.86rem;
+  font-weight: 720;
+  white-space: nowrap;
+}
+
+.admin-route-nav a svg {
+  width: 1.05rem;
+}
+
+.admin-route-nav a:hover {
+  color: var(--color-deep-petrol);
+  background: var(--color-white);
+}
+
+.admin-route-nav a[aria-current="page"] {
+  color: var(--color-white);
+  background: var(--color-deep-petrol);
+}
+
+.admin-command-nav {
+  position: static;
+  margin-top: 0.75rem;
+  border-top: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.admin-form fieldset {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  margin: 0;
+  padding: 1.15rem;
+  border: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
+  border-radius: 0.65rem;
+  background: color-mix(in srgb, var(--color-cloud) 54%, var(--color-white));
+}
+
+.admin-form legend {
+  padding-inline: 0.35rem;
+  color: var(--color-deep-petrol);
+  font-family: var(--font-title);
+  font-size: 0.92rem;
+  font-weight: 760;
+}
+
+.admin-form label small {
+  color: var(--color-text-muted);
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+.admin-form input[type="range"] {
+  min-height: 2.75rem;
+  padding-inline: 0;
+  border: 0;
+  accent-color: var(--color-action);
+}
+
+.admin-impact-check {
+  display: flex !important;
+  min-height: 3.5rem;
+  grid-template-columns: none;
+  align-items: flex-start !important;
+  gap: 0.75rem !important;
+  padding: 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--color-warning) 35%, var(--color-border));
+  border-radius: 0.55rem;
+  color: #654711 !important;
+  background: #fff7e4;
+}
+
+.admin-impact-check input {
+  width: 1.15rem;
+  min-height: 1.15rem;
+  flex: 0 0 auto;
+  margin-top: 0.1rem;
+  accent-color: var(--color-warning);
+}
+
+.admin-create-disclosure {
+  margin-bottom: 1.5rem;
+}
+
+.admin-treatment-manager-list,
+.admin-professional-list {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.admin-treatment-manager-item,
+.admin-professional-item {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-treatment-manager-item > summary,
+.admin-professional-item > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.admin-treatment-manager-item > summary::-webkit-details-marker,
+.admin-professional-item > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-treatment-manager-item__summary {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(14rem, 1fr) minmax(9rem, auto) auto;
+  gap: 1rem;
+  align-items: center;
+  min-height: 7.5rem;
+  padding-block: 0.85rem;
+}
+
+.admin-treatment-manager-item__image {
+  position: relative;
+  width: 5.5rem;
+  aspect-ratio: 4 / 5;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 0.55rem;
+  color: var(--color-text-muted);
+  background: var(--color-surface-soft);
+}
+
+.admin-treatment-manager-item__image img {
+  object-fit: cover;
+}
+
+.admin-treatment-manager-item__image > svg {
+  width: 1.5rem;
+}
+
+.admin-treatment-manager-item__summary > div:nth-child(2) {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.admin-treatment-manager-item__summary h3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-treatment-manager-item__summary p,
+.admin-treatment-manager-item__facts span,
+.admin-treatment-manager-item__facts small {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.admin-treatment-manager-item__facts {
+  display: grid;
+  gap: 0.15rem;
+  justify-items: end;
+}
+
+.admin-treatment-manager-item__edit {
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--color-action);
+  font-size: 0.84rem;
+  font-weight: 750;
+}
+
+.admin-treatment-manager-item__edit svg {
+  width: 1rem;
+  transition: transform 180ms var(--ease-enter);
+}
+
+.admin-treatment-manager-item[open] .admin-treatment-manager-item__edit svg {
+  transform: rotate(180deg);
+}
+
+.admin-treatment-manager-item__editor {
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
+  padding: 0 0 1.5rem 6.5rem;
+}
+
+.admin-form--treatment {
+  width: 100%;
+  background: var(--color-white);
+}
+
+.admin-category-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.admin-category-editor-grid .admin-form {
+  align-content: start;
+}
+
+.admin-category-editor-grid__identity {
+  display: grid;
+  gap: 0.2rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-category-editor-grid__identity svg {
+  width: 2.75rem;
+  height: 2.75rem;
+  color: var(--color-deep-petrol);
+}
+
+.admin-category-editor-grid__identity small {
+  overflow-wrap: anywhere;
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+}
+
+.admin-professional-item > summary {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) auto auto;
+  gap: 0.9rem;
+  align-items: center;
+  min-height: 5.5rem;
+  padding-block: 0.75rem;
+}
+
+.admin-professional-item > summary > span:nth-child(2) {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.admin-professional-item > summary small {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.admin-professional-item > summary > svg {
+  width: 1rem;
+  color: var(--color-action);
+  transition: transform 180ms var(--ease-enter);
+}
+
+.admin-professional-item[open] > summary > svg {
+  transform: rotate(180deg);
+}
+
+.admin-professional-avatar {
+  width: 3rem;
+  height: 3rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--color-deep-green);
+  background: var(--color-green-mist);
+  font-family: var(--font-title);
+  font-weight: 750;
+}
+
+.admin-form--professional {
+  margin: 0 0 1.25rem 3.9rem;
+}
+
+.admin-preview-page {
+  min-height: 100dvh;
+  background: var(--color-bone);
+}
+
+.admin-route-loading {
+  display: grid;
+  gap: 1rem;
+  padding-block: 4rem;
+}
+
+.admin-route-loading span {
+  height: 5rem;
+  border-radius: 0.65rem;
+  background: linear-gradient(90deg, var(--color-cloud) 20%, var(--color-white) 50%, var(--color-cloud) 80%);
+  background-size: 220% 100%;
+  animation: skeleton 1.3s linear infinite;
+}
+
+.admin-route-loading span:first-child {
+  width: min(100%, 38rem);
+  height: 8rem;
+}
+
+.admin-route-error {
+  min-height: 70dvh;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 1rem;
+  padding-block: 4rem;
+}
+
+.admin-route-error > svg {
+  width: 2rem;
+  color: var(--color-error);
+}
+
+.admin-route-error h1 {
+  max-width: 18ch;
+  font-size: 2.5rem;
+}
+
+.admin-route-error p {
+  max-width: 60ch;
+  color: var(--color-text-muted);
+}
+
+.admin-preview-banner {
+  position: sticky;
+  z-index: 45;
+  top: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem var(--space-page);
+  color: var(--color-white);
+  background: var(--color-deep-petrol);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 68rem) {
+  .admin-category-editor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-treatment-manager-item__summary {
+    grid-template-columns: 5rem minmax(0, 1fr) auto;
+  }
+
+  .admin-treatment-manager-item__facts {
+    grid-column: 2;
+    justify-items: start;
+  }
+
+  .admin-treatment-manager-item__edit {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+}
+
+@media (max-width: 48rem) {
+  .live-admin h1 {
+    font-size: 2.2rem;
+    overflow-wrap: anywhere;
+    text-wrap: pretty;
+  }
+
+  .live-admin h2 {
+    font-size: 1.7rem;
+  }
+
+  .admin-route-nav {
+    margin-inline: -0.625rem;
+    padding-inline: 0.625rem;
+  }
+
+  .admin-treatment-manager-item__summary {
+    width: 100%;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+
+  .admin-catalog-section .admin-booking-toolbar > label,
+  .admin-catalog-section .admin-search,
+  .admin-catalog-section .admin-booking-toolbar select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-treatment-manager-item__image {
+    width: 4.5rem;
+  }
+
+  .admin-treatment-manager-item__facts,
+  .admin-treatment-manager-item__edit {
+    grid-column: 2;
+    grid-row: auto;
+    justify-items: start;
+  }
+
+  .admin-treatment-manager-item__editor {
+    padding-left: 0;
+  }
+
+  .admin-form fieldset {
+    padding: 0.85rem;
+  }
+
+  .admin-professional-item > summary {
+    grid-template-columns: 2.75rem minmax(0, 1fr) auto;
+  }
+
+  .admin-professional-item > summary .status-badge {
+    grid-column: 2;
+  }
+
+  .admin-professional-item > summary > svg {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+
+  .admin-form--professional {
+    margin-left: 0;
   }
 }
 

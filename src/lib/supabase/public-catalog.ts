@@ -65,6 +65,7 @@ interface TreatmentRow {
   display_order: number;
   created_at: string;
   updated_at: string;
+  professional: { public_name: string | null; is_active: boolean }[] | null;
 }
 
 interface MonthlySpecialRow {
@@ -119,7 +120,7 @@ export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot>
       .order("display_order"),
     supabase
       .from("treatments")
-      .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at")
+      .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,professional:professionals(public_name,is_active)")
       .order("display_order"),
     supabase
       .from("monthly_specials")
@@ -143,6 +144,7 @@ export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot>
   }));
 
   const treatments = (treatmentsResult.data as TreatmentRow[]).map((row) => {
+    const professional = Array.isArray(row.professional) ? row.professional[0] : null;
     return {
       id: row.id,
       categoryId: row.category_id,
@@ -159,7 +161,9 @@ export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot>
       priceCents: row.price_cents,
       preparation: row.preparation,
       contraindications: row.contraindications,
-      professional: null,
+      professional: professional?.is_active
+        ? professional.public_name
+        : null,
       image: {
         src: publicImageUrl(supabase, "treatment-media", row.image_path),
         alt: row.image_alt,
