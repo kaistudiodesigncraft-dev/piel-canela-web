@@ -6,7 +6,6 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
   argentinaLocalDateTimeToIso,
-  BOOKING_STATUS_TRANSITIONS,
   pesosToCents,
   slugifySpecialty,
 } from "@/lib/admin/operations";
@@ -214,20 +213,24 @@ export async function updateBookingStatus(formData: FormData) {
   const { supabase } = await requireAdmin();
   const bookingId = z.string().uuid().safeParse(formData.get("bookingId"));
   const nextStatus = bookingStatusSchema.safeParse(formData.get("status"));
-  if (!bookingId.success || !nextStatus.success) redirect("/admin?bookingError=invalid#reservas");
-  const { data: current, error: readError } = await supabase.from("bookings")
-    .select("status").eq("id", bookingId.data).single();
-  const currentStatus = bookingStatusSchema.safeParse(current?.status);
-  if (readError || !currentStatus.success || !BOOKING_STATUS_TRANSITIONS[currentStatus.data].includes(nextStatus.data)) {
-    redirect("/admin?bookingError=transition#reservas");
+  const reason = z.string().trim().max(500).optional().safeParse(formData.get("reason") || undefined);
+  if (!bookingId.success || !nextStatus.success || !reason.success) redirect("/admin?bookingError=invalid#reservas");
+  const { error } = await supabase.rpc("transition_admin_booking", {
+    requested_booking_id: bookingId.data,
+    requested_status: nextStatus.data,
+    requested_reason: reason.data ?? null,
+  });
+  if (error) {
+    const errorCode = error.message.includes("status_reason_required")
+      ? "reason"
+      : error.message.includes("invalid_status_transition")
+        ? "transition"
+        : "save";
+    redirect(`/admin?bookingError=${errorCode}#reservas`);
   }
-  const now = new Date().toISOString();
-  const updates: Record<string, string | null> = { status: nextStatus.data };
-  if (nextStatus.data === "confirmed") updates.confirmed_at = now;
-  if (nextStatus.data === "cancelled") updates.cancelled_at = now;
-  const { error } = await supabase.from("bookings").update(updates).eq("id", bookingId.data);
-  if (error) redirect("/admin?bookingError=save#reservas");
   revalidatePath("/admin");
+  revalidatePath("/admin/clientes");
+  revalidatePath("/admin/seguridad");
   redirect("/admin?bookingSaved=1#reservas");
 }
 

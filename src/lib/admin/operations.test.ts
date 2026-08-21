@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   argentinaLocalDateTimeToIso,
   bookingSearchText,
+  bookingStatusRequiresReason,
   pesosToCents,
   slugifySpecialty,
   toArgentinaDateTimeInput,
@@ -26,5 +27,11 @@ describe("admin operations", () => {
       phone: "351 555 0000",
       treatmentName: "Relajación profunda",
     })).toContain("maria perez");
+  });
+
+  it("requires an operational reason for cancellation and absence", () => {
+    expect(bookingStatusRequiresReason("cancelled")).toBe(true);
+    expect(bookingStatusRequiresReason("no_show")).toBe(true);
+    expect(bookingStatusRequiresReason("confirmed")).toBe(false);
   });
 });

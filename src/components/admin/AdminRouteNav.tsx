@@ -1,7 +1,7 @@
-import { CalendarDays, ContactRound, FilePenLine, HandHeart, Settings, UsersRound } from "lucide-react";
+import { CalendarDays, ContactRound, FilePenLine, HandHeart, Settings, ShieldCheck, UsersRound } from "lucide-react";
 import Link from "next/link";
 
-type AdminRoute = "operations" | "catalog" | "professionals" | "customers" | "settings" | "content";
+type AdminRoute = "operations" | "catalog" | "professionals" | "customers" | "settings" | "content" | "governance";
 
 const routes: readonly { id: AdminRoute; href: string; label: string; icon: typeof CalendarDays }[] = [
   { id: "operations", href: "/admin", label: "Operación", icon: CalendarDays },
@@ -10,6 +10,7 @@ const routes: readonly { id: AdminRoute; href: string; label: string; icon: type
   { id: "customers", href: "/admin/clientes", label: "Clientes", icon: ContactRound },
   { id: "settings", href: "/admin/configuracion", label: "Configuración", icon: Settings },
   { id: "content", href: "/admin/contenido", label: "Contenido", icon: FilePenLine },
+  { id: "governance", href: "/admin/seguridad", label: "Accesos y actividad", icon: ShieldCheck },
 ];
 
 export function AdminRouteNav({ current }: { current: AdminRoute }) {

@@ -22,6 +22,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AdminRouteNav } from "@/components/admin/AdminRouteNav";
+import { BookingStatusTransitionForm } from "@/components/admin/BookingStatusTransitionForm";
 import {
   createAvailabilityException,
   createAvailabilityRule,
@@ -32,7 +33,6 @@ import {
   saveMonthlySpecial,
   signOutAdmin,
   toggleSpecialty,
-  updateBookingStatus,
 } from "@/app/admin/actions";
 import { rescheduleBooking, saveBookingNotes } from "@/app/admin/reservas/actions";
 import type { BookingStatus } from "@/domain/treatment";
@@ -117,6 +117,19 @@ interface AdminBookingRow {
   created_at: string;
   rescheduled_at: string | null;
   reschedule_count: number;
+  status_reason: string | null;
+  status_changed_at: string | null;
+  deposit_confirmed_at: string | null;
+  completed_at: string | null;
+  no_show_at: string | null;
+  history: Array<{
+    id: number;
+    previous_status: BookingStatus | null;
+    next_status: BookingStatus;
+    reason: string | null;
+    created_at: string;
+    actor: { full_name: string } | null;
+  }>;
   customer: { full_name: string; phone: string; email: string | null } | null;
   treatment: { name: string } | null;
 }
@@ -238,7 +251,7 @@ export function LiveAdminDashboard({
           <div><h2 id="bookings-title">Agenda y reservas</h2><p>Buscá una solicitud, filtrá por estado y resolvé la operación desde la misma fila.</p></div>
           <span className="admin-count numeric">{filteredBookings.length} {filteredBookings.length === 1 ? "resultado" : "resultados"}</span>
         </div>
-        <Feedback show={feedback.bookingSaved === "1"} error={feedback.bookingError} success="Estado de la reserva actualizado." errorText="No se pudo aplicar ese cambio de estado." />
+        <Feedback show={feedback.bookingSaved === "1"} error={feedback.bookingError} success="Estado de la reserva actualizado y registrado." errorText={feedback.bookingError === "reason" ? "Indicá un motivo para cancelar o marcar una ausencia." : feedback.bookingError === "transition" ? "El estado cambió o esa transición ya no está permitida." : "No se pudo aplicar ese cambio de estado."} />
         <Feedback show={feedback.bookingDetailSaved === "1"} error={feedback.bookingDetailError} success="Notas de la reserva actualizadas." errorText="No se pudieron guardar las notas." />
         <Feedback show={feedback.rescheduleSaved === "1"} error={feedback.rescheduleError} success="Reserva reprogramada y agenda actualizada." errorText={feedback.rescheduleError === "conflict" ? "Ese horario ya está ocupado para la especialidad." : feedback.rescheduleError === "status" ? "El estado actual no permite reprogramar." : "No se pudo reprogramar la reserva."} />
         <div className="admin-booking-toolbar">
@@ -266,13 +279,17 @@ export function LiveAdminDashboard({
                 <div className="live-booking-row__identity"><strong>{customerName}</strong><a href={`https://wa.me/${normalizePhone(phone)}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer"><MessageCircle aria-hidden="true" strokeWidth={1.75} />{phone || "Sin teléfono"}</a></div>
                 <div className="live-booking-row__treatment"><strong>{treatmentName}</strong><span className="numeric">{booking.booking_code} · {formatPrice(booking.applied_price_snapshot_cents)}</span></div>
                 <span className={`status-badge status-${booking.status}`}>{BOOKING_STATUS_LABELS[booking.status]}</span>
-                {transitions.length > 0 ? <form action={updateBookingStatus} className="booking-status-form"><input type="hidden" name="bookingId" value={booking.id} /><label><span className="sr-only">Nuevo estado para {booking.booking_code}</span><select name="status" defaultValue="" required><option value="" disabled>Cambiar estado</option>{transitions.map((status) => <option key={status} value={status}>{BOOKING_STATUS_LABELS[status]}</option>)}</select></label><button className="button button--quiet" type="submit">Aplicar</button></form> : <span className="booking-status-closed">Estado final</span>}
+                {transitions.length > 0 ? <BookingStatusTransitionForm bookingId={booking.id} bookingCode={booking.booking_code} transitions={transitions} /> : <span className="booking-status-closed">Estado final</span>}
                 <details className="booking-detail-disclosure" id={`booking-${booking.id}`}>
                   <summary><span><NotebookPen aria-hidden="true" strokeWidth={1.75} />Detalle operativo</span><ChevronDown aria-hidden="true" strokeWidth={1.75} /></summary>
                   <div className="booking-detail-disclosure__body">
                     <dl className="booking-detail-facts"><div><dt>Creada</dt><dd>{bookingDate(booking.created_at)}</dd></div><div><dt>Reprogramaciones</dt><dd className="numeric">{booking.reschedule_count}</dd></div><div><dt>Correo</dt><dd>{booking.customer?.email ?? "No informado"}</dd></div></dl>
                     {canRescheduleBooking(booking.status) ? <form action={rescheduleBooking} className="admin-form admin-form--booking-action"><input type="hidden" name="bookingId" value={booking.id} /><div><h3>Reprogramar</h3><p>La base vuelve a comprobar la capacidad de la especialidad.</p></div><label>Nueva fecha y hora<input name="startsAt" type="datetime-local" defaultValue={toArgentinaDateTimeInput(booking.starts_at)} required /></label><button className="button button--quiet" type="submit">Mover reserva</button></form> : null}
                     <form action={saveBookingNotes} className="admin-form admin-form--booking-notes"><input type="hidden" name="bookingId" value={booking.id} /><div className="admin-form-grid"><label>Nota de la persona<textarea name="customerNotes" rows={3} maxLength={240} defaultValue={booking.customer_notes ?? ""} /></label><label>Nota interna<textarea name="internalNotes" rows={3} maxLength={1000} defaultValue={booking.internal_notes ?? ""} /></label></div><div className="admin-form-footer"><p>Las notas internas no se muestran en la web ni se incluyen en WhatsApp.</p><button className="button button--quiet" type="submit">Guardar notas</button></div></form>
+                    <div className="booking-status-history" aria-label={`Historial de estado de ${booking.booking_code}`}>
+                      <h3>Historial de estados</h3>
+                      {booking.history.length === 0 ? <p>Todavía no hay cambios de estado registrados.</p> : <ol>{booking.history.map((event) => <li key={event.id}><span className={`status-badge status-${event.next_status}`}>{BOOKING_STATUS_LABELS[event.next_status]}</span><div><strong>{event.previous_status ? `${BOOKING_STATUS_LABELS[event.previous_status]} → ${BOOKING_STATUS_LABELS[event.next_status]}` : BOOKING_STATUS_LABELS[event.next_status]}</strong><small>{bookingDate(event.created_at)} · {event.actor?.full_name ?? "Sistema"}</small>{event.reason ? <p>{event.reason}</p> : null}</div></li>)}</ol>}
+                    </div>
                   </div>
                 </details>
               </article>;

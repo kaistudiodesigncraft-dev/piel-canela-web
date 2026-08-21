@@ -20,6 +20,20 @@ export const BOOKING_STATUS_TRANSITIONS: Record<BookingStatus, readonly BookingS
   expired: [],
 };
 
+export const BOOKING_STATUS_ACTION_LABELS: Record<BookingStatus, string> = {
+  pending: "Volver a pendiente",
+  awaiting_deposit: "Esperar seña",
+  confirmed: "Confirmar seña",
+  completed: "Marcar realizada",
+  cancelled: "Cancelar reserva",
+  no_show: "Marcar ausencia",
+  expired: "Marcar vencida",
+};
+
+export function bookingStatusRequiresReason(status: BookingStatus) {
+  return status === "cancelled" || status === "no_show";
+}
+
 export function slugifySpecialty(value: string) {
   return value
     .normalize("NFD")

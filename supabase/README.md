@@ -14,11 +14,14 @@ La migración `20260821000600_sprint_two_catalog_integrity.sql` completa el cont
 
 `site_content` contiene exclusivamente los campos institucionales aprobados. La aplicación solo tiene permiso para actualizar valores, texto alternativo y rutas de imagen; no puede crear o eliminar filas. Las imágenes institucionales se almacenan separadas de tratamientos en `site-content-media`.
 
+La migración `20260821000800_sprint_four_governance_and_history.sql` incorpora gobierno operativo: historial explícito de estados de reserva, transición transaccional validada en servidor, motivo obligatorio para cancelación y ausencia, marcas temporales de confirmación/realización y control sobre altas o bajas de accesos existentes. La cuenta en uso y el último administrador activo no pueden revocarse.
+
 ## Seguridad
 
 - RLS está activo en todas las tablas expuestas.
 - El público solo puede leer catálogo publicable y ejecutar las operaciones controladas de disponibilidad y pre-reserva.
 - Reservas, clientes, configuración y auditoría requieren un perfil administrativo activo.
+- La interfaz de auditoría muestra qué entidad y campos cambiaron, pero no expone valores de teléfonos, correos, notas ni políticas internas.
 - El rol administrador no se asigna automáticamente: primero se crea el usuario en Supabase Auth y luego se agrega su UUID a `profiles`.
 - Nunca debe utilizarse una `service_role` en el navegador.
 
