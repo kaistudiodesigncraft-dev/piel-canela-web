@@ -50,7 +50,7 @@ describe("LiveBookingFlow", () => {
 
     const slot = await screen.findByRole("button", { name: "12:30" });
     await user.click(slot);
-    await user.click(screen.getByRole("button", { name: /continuar/i }));
+    await user.click(screen.getAllByRole("button", { name: /continuar/i })[0]!);
     await waitFor(() => expect(screen.getByRole("heading", { name: "Contanos cómo contactarte." })).toHaveFocus());
     await user.type(screen.getByLabelText("Nombre y apellido"), "Laura Gómez");
     await user.type(screen.getByLabelText("WhatsApp"), "3515550000");
@@ -65,5 +65,22 @@ describe("LiveBookingFlow", () => {
       "href",
       expect.stringContaining("https://wa.me/5493515550000"),
     );
+  });
+
+  it("keeps long availability lists compact until the person asks for more", async () => {
+    const user = userEvent.setup();
+    getAvailableSlotsMock.mockResolvedValue({
+      ok: true,
+      slots: Array.from({ length: 16 }, (_, index) => ({
+        startsAt: new Date(Date.UTC(2026, 7, 17, 12, index * 15)).toISOString(),
+        endsAt: new Date(Date.UTC(2026, 7, 17, 13, index * 15)).toISOString(),
+      })),
+    });
+
+    render(<LiveBookingFlow selection={selection} dates={dates} whatsappNumber="5493515550000" />);
+
+    const reveal = await screen.findByRole("button", { name: "Ver 4 horarios más" });
+    await user.click(reveal);
+    expect(screen.getByRole("button", { name: "Ver menos horarios" })).toHaveAttribute("aria-expanded", "true");
   });
 });

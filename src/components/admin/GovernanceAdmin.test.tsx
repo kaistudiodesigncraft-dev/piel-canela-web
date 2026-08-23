@@ -6,7 +6,7 @@ vi.mock("@/app/admin/seguridad/actions", () => ({ updateAdminProfile: vi.fn() })
 
 const profiles: AdminProfileRow[] = [
   { user_id: "11111111-1111-4111-8111-111111111111", full_name: "Kai Studio", role: "admin", is_active: true, created_at: "2026-08-20T10:00:00Z", updated_at: "2026-08-20T10:00:00Z" },
-  { user_id: "22222222-2222-4222-8222-222222222222", full_name: "Piel Canela", role: "admin", is_active: false, created_at: "2026-08-20T10:00:00Z", updated_at: "2026-08-20T10:00:00Z" },
+  { user_id: "22222222-2222-4222-8222-222222222222", full_name: "Piel Canela", role: "manager", is_active: false, created_at: "2026-08-20T10:00:00Z", updated_at: "2026-08-20T10:00:00Z" },
 ];
 
 const currentUserId = "11111111-1111-4111-8111-111111111111";
@@ -27,6 +27,7 @@ describe("GovernanceAdmin", () => {
     render(<GovernanceAdmin currentUserId={currentUserId} profiles={profiles} events={events} feedback={{}} />);
     expect(screen.getByText("Sesión actual")).toBeInTheDocument();
     expect(screen.getAllByRole("combobox")[0]).toBeDisabled();
+    expect(screen.getByDisplayValue("Gestión del cliente")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Edición en Reservas"));
     expect(screen.getAllByText("Estado").length).toBeGreaterThan(0);
     expect(screen.getByText("Contenido protegido actualizado")).toBeInTheDocument();

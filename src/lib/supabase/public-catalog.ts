@@ -24,25 +24,31 @@ export async function getPublicBookingSettings() {
     address: null,
     publicEmail: null,
     instagramUrl: null,
+    depositText: null,
+    cancellationPolicy: null,
   };
   const supabase = createSupabasePublicServerClient();
   const { data, error } = await supabase
     .from("business_settings")
-    .select("whatsapp_number,address,public_email,instagram_url")
+    .select("whatsapp_number,address,public_email,instagram_url,deposit_text,cancellation_policy")
     .eq("singleton", true)
     .maybeSingle();
-  if (error) return { whatsappNumber: null, address: null, publicEmail: null, instagramUrl: null };
+  if (error) return { whatsappNumber: null, address: null, publicEmail: null, instagramUrl: null, depositText: null, cancellationPolicy: null };
   const row = data as {
     whatsapp_number: string | null;
     address: string | null;
     public_email: string | null;
     instagram_url: string | null;
+    deposit_text: string | null;
+    cancellation_policy: string | null;
   } | null;
   return {
     whatsappNumber: row?.whatsapp_number ?? null,
     address: row?.address ?? null,
     publicEmail: row?.public_email ?? null,
     instagramUrl: row?.instagram_url ?? null,
+    depositText: row?.deposit_text ?? null,
+    cancellationPolicy: row?.cancellation_policy ?? null,
   };
 }
 

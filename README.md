@@ -11,12 +11,16 @@ Web pública, catálogo de tratamientos, pre-reservas y administración operativ
 - La administración dispone de agenda filtrable, asignación manual de turnos, horarios habituales, bloqueos y aperturas excepcionales.
 - Las especialidades pueden crearse como activas o futuras y controlan la capacidad simultánea.
 - Los Especiales del mes se crean y editan desde el panel con vigencia, precio e imagen.
-- `/admin/catalogo` permite crear borradores, publicar y editar tratamientos, precios, duración, margen entre turnos, encuadre de imagen y asignación profesional.
+- `/admin/catalogo` permite crear borradores, publicar y editar tratamientos, precios, duración, margen entre turnos, asignación profesional e imagen propia por tratamiento con vista previa y control de encuadre.
 - `/admin/profesionales` mantiene perfiles internos y públicos reutilizables por especialidad.
 - Los cambios que afectan reservas futuras exigen una confirmación explícita y cada tratamiento dispone de vista previa administrativa protegida.
-- `/admin/contenido` permite modificar los textos y la imagen principal sobre una estructura fija. Requiere sesión administrativa y un segundo código temporal.
-- `/admin/seguridad` permite habilitar o revocar cuentas verificadas y consultar la actividad administrativa sin revelar el contenido de campos privados.
+- `/admin/contenido` permite a Kai Studio modificar los textos y la imagen principal sobre una estructura fija. Requiere rol propietario y un segundo código temporal; las cuentas `manager` del cliente no tienen acceso.
+- `/admin/seguridad` es exclusivo del propietario técnico: permite asignar gestión operativa al cliente, habilitar o revocar cuentas verificadas y consultar actividad sin revelar campos privados.
 - Los cambios de estado de una reserva son atómicos, respetan una máquina de estados y conservan actor, fecha y motivo. Cancelaciones y ausencias requieren una explicación operativa.
+- Las pre-reservas vencidas se liberan automáticamente cada cinco minutos y las condiciones públicas se exponen en páginas legales enlazadas desde el sitio.
+- Vercel Analytics y Speed Insights observan uso y rendimiento sin incorporar un panel de métricas decorativas.
+- Las fotografías actuales son ejemplares y deben reemplazarse por material aprobado del cliente antes del lanzamiento definitivo.
+- Producción se mantiene en estado `beta`: muestra un aviso visible, usa Supabase y bloquea la indexación hasta que el contenido real sea aprobado.
 
 ## Desarrollo
 

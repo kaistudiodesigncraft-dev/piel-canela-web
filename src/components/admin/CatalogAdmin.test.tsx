@@ -4,9 +4,15 @@ import { describe, expect, it, vi } from "vitest";
 import { CatalogAdmin, type AdminTreatmentRow } from "./CatalogAdmin";
 
 vi.mock("@/app/admin/catalogo/actions", () => ({
+  initialSaveTreatmentState: { status: "idle" },
   saveTreatment: vi.fn(),
   updateTreatmentCategory: vi.fn(),
 }));
+
+const createObjectURL = vi.fn(() => "blob:tratamiento");
+const revokeObjectURL = vi.fn();
+Object.defineProperty(URL, "createObjectURL", { configurable: true, value: createObjectURL });
+Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: revokeObjectURL });
 
 const categoryId = "10000000-0000-4000-8000-000000000001";
 const specialtyId = "20000000-0000-4000-8000-000000000001";
@@ -68,8 +74,52 @@ describe("CatalogAdmin", () => {
 
     expect(screen.getByText("Relajación profunda")).toBeInTheDocument();
     expect(screen.getByText("Tratamiento nuevo")).toBeInTheDocument();
+    expect(screen.getAllByLabelText(/subir imagen/i)).toHaveLength(3);
     await user.selectOptions(screen.getByLabelText("Filtrar publicación"), "draft");
     expect(screen.queryByText("Relajación profunda")).not.toBeInTheDocument();
     expect(screen.getByText("Tratamiento nuevo")).toBeInTheDocument();
+  });
+
+  it("requires publication-only fields when the draft is activated", async () => {
+    const user = userEvent.setup();
+    render(<CatalogAdmin
+      categories={categories}
+      specialties={specialties}
+      professionals={professionals}
+      treatments={[]}
+      feedback={{}}
+    />);
+
+    const image = screen.getByLabelText(/subir imagen/i);
+    const alt = screen.getByLabelText(/Descripción accesible/i);
+    const price = screen.getByLabelText("Precio en pesos");
+    expect(image).not.toBeRequired();
+    expect(alt).not.toBeRequired();
+    expect(price).toHaveAttribute("min", "0");
+
+    await user.click(screen.getByLabelText("Publicar y habilitar reservas"));
+    expect(image).toBeRequired();
+    expect(alt).toBeRequired();
+    expect(price).toHaveAttribute("min", "1");
+  });
+
+  it("shows image dimensions after validating a local preview", async () => {
+    const user = userEvent.setup();
+    const bytes = new Uint8Array(24);
+    bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0);
+    const view = new DataView(bytes.buffer);
+    view.setUint32(16, 1080);
+    view.setUint32(20, 1350);
+    render(<CatalogAdmin
+      categories={categories}
+      specialties={specialties}
+      professionals={professionals}
+      treatments={[]}
+      feedback={{}}
+    />);
+
+    await user.upload(screen.getByLabelText(/subir imagen/i), new File([bytes], "tratamiento.png", { type: "image/png" }));
+    expect(await screen.findByText("Imagen lista: 1080 × 1350 px")).toBeInTheDocument();
+    expect(screen.getByAltText("Vista previa de la imagen seleccionada")).toHaveStyle({ objectPosition: "50% 50%" });
   });
 });

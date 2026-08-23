@@ -136,6 +136,7 @@ interface AdminBookingRow {
 
 interface LiveAdminDashboardProps {
   adminName: string;
+  canManageAccess: boolean;
   referenceTime: string;
   specialties: SpecialtyRow[];
   rules: AvailabilityRuleRow[];
@@ -179,6 +180,7 @@ function Feedback({ show, error, success, errorText }: { show: boolean; error?: 
 
 export function LiveAdminDashboard({
   adminName,
+  canManageAccess,
   referenceTime,
   specialties,
   rules,
@@ -233,7 +235,7 @@ export function LiveAdminDashboard({
         </div>
       </header>
 
-      <AdminRouteNav current="operations" />
+      <AdminRouteNav current="operations" canManageAccess={canManageAccess} />
 
       <nav className="admin-command-nav" aria-label="Secciones del panel">
         {navItems.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}

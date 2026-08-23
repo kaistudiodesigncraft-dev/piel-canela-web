@@ -49,6 +49,8 @@ export async function saveBusinessSettings(formData: FormData) {
   if (error) redirect("/admin/configuracion?settingsError=save#ajustes");
   revalidatePath("/");
   revalidatePath("/reservar");
+  revalidatePath("/privacidad");
+  revalidatePath("/condiciones-de-reserva");
   revalidatePath("/admin/configuracion");
   redirect("/admin/configuracion?settingsSaved=1#ajustes");
 }

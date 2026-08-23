@@ -45,11 +45,12 @@ const sectionOrder = Object.keys(sectionDetails) as SiteContentSection[];
 
 interface ContentEditorProps {
   fields: readonly SiteContentField[];
+  canManageAccess: boolean;
   savedSection?: string;
   saveError?: string;
 }
 
-export function ContentEditor({ fields, savedSection, saveError }: ContentEditorProps) {
+export function ContentEditor({ fields, canManageAccess, savedSection, saveError }: ContentEditorProps) {
   return (
     <div className="content-admin site-container">
       <header className="content-admin__header">
@@ -74,7 +75,7 @@ export function ContentEditor({ fields, savedSection, saveError }: ContentEditor
         </div>
       </header>
 
-      <AdminRouteNav current="content" />
+      <AdminRouteNav current="content" canManageAccess={canManageAccess} />
 
       <nav className="content-admin__nav" aria-label="Secciones editables">
         {sectionOrder.map((section) => (

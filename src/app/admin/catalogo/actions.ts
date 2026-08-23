@@ -10,9 +10,9 @@ import {
   percentageToFocalPoint,
   splitAdminLines,
 } from "@/lib/admin/catalog";
+import { inspectAdminImage } from "@/lib/admin/image-upload";
 import { requireAdmin } from "@/lib/admin/require-admin";
 
-const acceptedImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 const imageExtension: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -45,11 +45,35 @@ const categorySchema = z.object({
   shortDescription: z.string().trim().min(10).max(240),
 });
 
+export interface SaveTreatmentState {
+  status: "idle" | "error";
+  error?: string;
+  fieldErrors?: Record<string, string>;
+}
+
+export const initialSaveTreatmentState: SaveTreatmentState = { status: "idle" };
+
+function treatmentFailure(error: string, fieldErrors?: Record<string, string>): SaveTreatmentState {
+  return { status: "error", error, fieldErrors };
+}
+
+function schemaFieldErrors(error: z.ZodError) {
+  const fields: Record<string, string> = {};
+  for (const issue of error.issues) {
+    const field = String(issue.path[0] ?? "");
+    if (field && !fields[field]) fields[field] = "Revisá este dato antes de guardar.";
+  }
+  return fields;
+}
+
 function catalogRedirect(params: string, anchor = "tratamientos"): never {
   redirect(`/admin/catalogo?${params}#${anchor}`);
 }
 
-export async function saveTreatment(formData: FormData) {
+export async function saveTreatment(
+  _previousState: SaveTreatmentState,
+  formData: FormData,
+): Promise<SaveTreatmentState> {
   const { supabase } = await requireAdmin();
   const parsed = treatmentSchema.safeParse({
     treatmentId: formData.get("treatmentId") || undefined,
@@ -69,12 +93,15 @@ export async function saveTreatment(formData: FormData) {
     focalY: formData.get("focalY"),
     displayOrder: formData.get("displayOrder"),
   });
-  if (!parsed.success) catalogRedirect("treatmentError=invalid");
+  if (!parsed.success) return treatmentFailure("invalid", schemaFieldErrors(parsed.error));
 
   const expectations = splitAdminLines(String(formData.get("expectations") ?? ""), 8);
   const characteristics = splitAdminLines(String(formData.get("characteristics") ?? ""), 3);
   if (expectations.some((item) => item.length > 180) || characteristics.some((item) => item.length > 80)) {
-    catalogRedirect("treatmentError=lists");
+    return treatmentFailure("lists", {
+      ...(expectations.some((item) => item.length > 180) ? { expectations: "Cada expectativa puede tener hasta 180 caracteres." } : {}),
+      ...(characteristics.some((item) => item.length > 80) ? { characteristics: "Cada característica puede tener hasta 80 caracteres." } : {}),
+    });
   }
 
   const isActive = formData.get("isActive") === "on";
@@ -83,13 +110,18 @@ export async function saveTreatment(formData: FormData) {
     supabase.from("treatment_categories").select("id,is_active").eq("id", parsed.data.categoryId).single(),
     supabase.from("specialties").select("id,is_active").eq("id", parsed.data.specialtyId).single(),
   ]);
-  if (!category?.is_active || !specialty?.is_active) catalogRedirect("treatmentError=taxonomy");
+  if (!category?.is_active || !specialty?.is_active) {
+    return treatmentFailure("taxonomy", {
+      ...(!category?.is_active ? { categoryId: "Elegí una categoría activa." } : {}),
+      ...(!specialty?.is_active ? { specialtyId: "Elegí una especialidad activa." } : {}),
+    });
+  }
 
   if (parsed.data.professionalId) {
     const { data: professional } = await supabase.from("professionals")
       .select("id,specialty_id,is_active").eq("id", parsed.data.professionalId).single();
     if (!professional || professional.specialty_id !== parsed.data.specialtyId || (isActive && !professional.is_active)) {
-      catalogRedirect("treatmentError=professional");
+      return treatmentFailure("professional", { professionalId: "Elegí un profesional activo de esta especialidad." });
     }
   }
 
@@ -113,27 +145,51 @@ export async function saveTreatment(formData: FormData) {
     ]);
     existing = data;
     futureBookings = count ?? 0;
-    if (!existing) catalogRedirect("treatmentError=missing");
+    if (!existing) return treatmentFailure("missing");
     const affectsAgenda = existing.duration_minutes !== parsed.data.durationMinutes
       || existing.buffer_minutes !== parsed.data.bufferMinutes
       || (existing.is_active && !isActive);
     if (affectsAgenda && futureBookings > 0 && formData.get("confirmImpact") !== "on") {
-      catalogRedirect(`treatmentError=impact&treatment=${id}`);
+      return treatmentFailure("impact", { confirmImpact: "Confirmá el impacto sobre las reservas futuras para continuar." });
     }
   }
 
   let imagePath = existing?.image_path ?? null;
+  let uploadedImagePath: string | null = null;
   const imageFile = formData.get("imageFile");
-  if (imageFile instanceof File && imageFile.size > 0) {
-    if (imageFile.size > 8 * 1024 * 1024 || !acceptedImageTypes.has(imageFile.type)) {
-      catalogRedirect("treatmentError=image");
+  const hasNewImage = imageFile instanceof File && imageFile.size > 0;
+  if (isActive) {
+    const publicationErrors: Record<string, string> = {};
+    if (!imagePath && !hasNewImage) publicationErrors.imageFile = "Cargá una imagen antes de publicar.";
+    if (!parsed.data.imageAlt || parsed.data.imageAlt.length < 3) publicationErrors.imageAlt = "Describí la imagen con al menos 3 caracteres.";
+    if (parsed.data.pricePesos <= 0) publicationErrors.pricePesos = "Ingresá un precio mayor que cero para publicar.";
+    if (Object.keys(publicationErrors).length > 0) return treatmentFailure("publishable", publicationErrors);
+  }
+  if (hasNewImage) {
+    const inspection = await inspectAdminImage(imageFile);
+    if (!inspection.valid) {
+      const reason = inspection.error === "too-small" || inspection.error === "too-large" || inspection.error === "dimensions"
+        ? "image-dimensions"
+        : "image";
+      return treatmentFailure(reason, {
+        imageFile: inspection.error === "too-small"
+          ? "La imagen debe tener al menos 640 × 640 píxeles."
+          : inspection.error === "too-large"
+            ? "La imagen supera los 40 megapíxeles permitidos."
+            : inspection.error === "dimensions"
+              ? "No pudimos leer las dimensiones de la imagen."
+              : "Usá una imagen JPG, PNG, WebP o AVIF válida de hasta 8 MB.",
+      });
     }
     imagePath = `treatments/${id}/${randomUUID()}.${imageExtension[imageFile.type]}`;
+    uploadedImagePath = imagePath;
     const { error: uploadError } = await supabase.storage.from("treatment-media")
       .upload(imagePath, imageFile, { contentType: imageFile.type, upsert: false });
-    if (uploadError) catalogRedirect("treatmentError=upload");
+    if (uploadError) {
+      await supabase.storage.from("treatment-media").remove([imagePath]);
+      return treatmentFailure("upload", { imageFile: "La imagen no pudo cargarse. Intentá nuevamente." });
+    }
   }
-  if (isActive && (!imagePath || !parsed.data.imageAlt)) catalogRedirect("treatmentError=publishable");
 
   const payload = {
     category_id: parsed.data.categoryId,
@@ -157,14 +213,23 @@ export async function saveTreatment(formData: FormData) {
     is_active: isActive,
     display_order: parsed.data.displayOrder,
   };
-  if (!payload.slug) catalogRedirect("treatmentError=invalid");
+  if (!payload.slug) {
+    if (uploadedImagePath) await supabase.storage.from("treatment-media").remove([uploadedImagePath]);
+    return treatmentFailure("invalid", { name: "El nombre debe contener letras o números para crear la URL." });
+  }
 
   const result = parsed.data.treatmentId
     ? await supabase.from("treatments").update(payload).eq("id", id)
     : await supabase.from("treatments").insert({ id, ...payload });
   if (result.error) {
+    if (uploadedImagePath) await supabase.storage.from("treatment-media").remove([uploadedImagePath]);
     const reason = result.error.code === "23505" ? "duplicate" : "save";
-    catalogRedirect(`treatmentError=${reason}`);
+    return treatmentFailure(reason, reason === "duplicate" ? { name: "Ya existe un tratamiento con esta URL." } : undefined);
+  }
+
+  if (uploadedImagePath && existing?.image_path && existing.image_path !== uploadedImagePath
+    && !existing.image_path.startsWith("/") && !existing.image_path.startsWith("https://")) {
+    await supabase.storage.from("treatment-media").remove([existing.image_path]);
   }
 
   revalidatePath("/");
@@ -190,4 +255,3 @@ export async function updateTreatmentCategory(formData: FormData) {
   revalidatePath("/admin/catalogo");
   catalogRedirect("categorySaved=1", "categorias");
 }
-

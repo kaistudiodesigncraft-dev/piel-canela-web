@@ -9,7 +9,7 @@ product
 - Personas que llegan desde Instagram, WhatsApp, Google o Espacio O2 y necesitan comprender tratamientos, precios, duración y disponibilidad antes de consultar.
 - Clientes nuevos y frecuentes que quieren generar una pre-reserva breve desde el celular, sin crear una cuenta.
 - Personal de Piel Canela que administra agenda, disponibilidad, tratamientos, especiales y estados de reservas.
-- Kai Studio como administrador técnico inicial; las cuentas del cliente se incorporan después con permisos propios.
+- Kai Studio conserva el rol de propietario técnico. Las cuentas verificadas del cliente usan un rol de gestión operativa sin acceso al gobierno de cuentas ni al registro de auditoría.
 - La agencia puede editar el contenido institucional mediante un apartado administrativo con un segundo desbloqueo temporal; no puede crear, eliminar ni reordenar secciones.
 
 ## Product Purpose

@@ -24,6 +24,18 @@ export async function generateMetadata({ params }: TreatmentPageProps): Promise<
   return {
     title: treatment.name,
     description: treatment.shortDescription,
+    alternates: { canonical: `/tratamientos/${treatment.slug}` },
+    openGraph: {
+      title: treatment.name,
+      description: treatment.shortDescription,
+      url: `/tratamientos/${treatment.slug}`,
+      images: [{
+        url: treatment.image.src,
+        width: treatment.image.width,
+        height: treatment.image.height,
+        alt: treatment.image.alt,
+      }],
+    },
   };
 }
 

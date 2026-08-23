@@ -51,7 +51,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
           <form action={signOutAdmin}><button className="button button--quiet" type="submit"><LogOut aria-hidden="true" strokeWidth={1.75} />Cerrar sesión</button></form>
         </div>
       </header>
-      <AdminRouteNav current="customers" />
+      <AdminRouteNav current="customers" canManageAccess={profile.role === "admin"} />
       <CustomersAdmin customers={customers} referenceTime={referenceTime} feedback={await searchParams} />
     </div>
   );

@@ -24,7 +24,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <div><p className="eyebrow">Reglas del negocio</p><h1>Datos públicos y condiciones operativas.</h1><p>{profile.full_name}, estos ajustes gobiernan el calendario, el cierre por WhatsApp y la información de contacto.</p></div>
         <div className="live-admin__actions"><Link className="button button--quiet" href="/" target="_blank" rel="noreferrer"><ExternalLink aria-hidden="true" strokeWidth={1.75} />Ver sitio</Link><form action={signOutAdmin}><button className="button button--quiet" type="submit"><LogOut aria-hidden="true" strokeWidth={1.75} />Cerrar sesión</button></form></div>
       </header>
-      <AdminRouteNav current="settings" />
+      <AdminRouteNav current="settings" canManageAccess={profile.role === "admin"} />
       <BusinessSettingsAdmin settings={data as BusinessSettingsRow} feedback={await searchParams} />
     </div>
   );

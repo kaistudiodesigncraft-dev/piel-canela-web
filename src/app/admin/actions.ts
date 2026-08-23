@@ -9,6 +9,7 @@ import {
   pesosToCents,
   slugifySpecialty,
 } from "@/lib/admin/operations";
+import { ADMIN_IMAGE_TYPES, hasExpectedImageSignature } from "@/lib/admin/image-upload";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -61,7 +62,6 @@ const monthlySpecialSchema = z.object({
   terms: z.string().trim().max(500).optional(),
   displayOrder: z.coerce.number().int().min(1).max(4),
 });
-const acceptedImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 const imageExtension: Record<string, string> = {
   "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif",
 };
@@ -256,17 +256,21 @@ export async function saveMonthlySpecial(formData: FormData) {
     redirect("/admin?specialError=price#especiales-mes");
   }
   let imagePath: string | null = null;
+  let previousImagePath: string | null = null;
+  let uploadedImagePath: string | null = null;
   if (parsed.data.specialId) {
     const { data: current } = await supabase.from("monthly_specials")
       .select("image_path").eq("id", parsed.data.specialId).single();
     imagePath = current?.image_path ?? null;
+    previousImagePath = imagePath;
   }
   const file = formData.get("imageFile");
   if (file instanceof File && file.size > 0) {
-    if (file.size > 8 * 1024 * 1024 || !acceptedImageTypes.has(file.type)) {
+    if (file.size > 8 * 1024 * 1024 || !ADMIN_IMAGE_TYPES.has(file.type) || !(await hasExpectedImageSignature(file))) {
       redirect("/admin?specialError=image#especiales-mes");
     }
     imagePath = `specials/${randomUUID()}.${imageExtension[file.type]}`;
+    uploadedImagePath = imagePath;
     const { error: uploadError } = await supabase.storage.from("treatment-media")
       .upload(imagePath, file, { contentType: file.type, upsert: false });
     if (uploadError) redirect("/admin?specialError=upload#especiales-mes");
@@ -291,7 +295,12 @@ export async function saveMonthlySpecial(formData: FormData) {
     ? await supabase.from("monthly_specials").update(payload).eq("id", parsed.data.specialId)
     : await supabase.from("monthly_specials").insert({ ...payload, created_by: userId });
   if (result.error) {
+    if (uploadedImagePath) await supabase.storage.from("treatment-media").remove([uploadedImagePath]);
     redirect(`/admin?specialError=${result.error.code === "23P01" ? "overlap" : "save"}#especiales-mes`);
+  }
+  if (uploadedImagePath && previousImagePath && previousImagePath !== uploadedImagePath
+    && !previousImagePath.startsWith("/") && !previousImagePath.startsWith("https://")) {
+    await supabase.storage.from("treatment-media").remove([previousImagePath]);
   }
   revalidatePath("/");
   revalidatePath("/tratamientos");

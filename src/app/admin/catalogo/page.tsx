@@ -34,7 +34,7 @@ export default async function AdminCatalogPage({ searchParams }: { searchParams:
   return (
     <div className="live-admin site-container">
       <header className="live-admin__header"><div><p className="eyebrow">Catálogo administrativo</p><h1>Tratamientos listos para informar y reservar.</h1><p>{profile.full_name}, acá controlás el contenido comercial sin perder las reglas operativas de agenda.</p></div><div className="live-admin__actions"><Link className="button button--quiet" href="/tratamientos" target="_blank" rel="noreferrer"><ExternalLink aria-hidden="true" strokeWidth={1.75} />Ver catálogo</Link><form action={signOutAdmin}><button className="button button--quiet" type="submit"><LogOut aria-hidden="true" strokeWidth={1.75} />Cerrar sesión</button></form></div></header>
-      <AdminRouteNav current="catalog" />
+      <AdminRouteNav current="catalog" canManageAccess={profile.role === "admin"} />
       <CatalogAdmin categories={categoriesResult.data ?? []} specialties={specialtiesResult.data ?? []} professionals={professionalsResult.data ?? []} treatments={treatments} feedback={await searchParams} />
     </div>
   );

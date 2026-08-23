@@ -1,4 +1,7 @@
 import type { NextConfig } from "next";
+import { resolveReleaseEnvironment } from "./scripts/release-environment.mjs";
+
+resolveReleaseEnvironment();
 
 const isGitHubPages = process.env.GITHUB_PAGES === "true";
 const basePath = isGitHubPages ? (process.env.NEXT_PUBLIC_BASE_PATH ?? "") : "";
@@ -35,6 +38,11 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "9mb",
+    },
+  },
   output: isGitHubPages ? "export" : undefined,
   basePath,
   assetPrefix: basePath || undefined,

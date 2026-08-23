@@ -6,6 +6,8 @@ interface SiteFooterProps {
     address: string | null;
     publicEmail: string | null;
     instagramUrl: string | null;
+    depositText: string | null;
+    cancellationPolicy: string | null;
   };
 }
 
@@ -40,6 +42,7 @@ export function SiteFooter({ settings }: SiteFooterProps) {
       </div>
       <div className="site-container site-footer__legal">
         <span>© 2026 Piel Canela</span>
+        <span className="site-footer__legal-links"><Link href="/privacidad">Privacidad</Link><Link href="/condiciones-de-reserva">Condiciones de reserva</Link></span>
         <span>Diseño y producto por Kai Studio</span>
       </div>
     </footer>

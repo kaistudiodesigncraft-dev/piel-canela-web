@@ -8,7 +8,7 @@ import {
   type AdminProfileRow,
 } from "@/components/admin/GovernanceAdmin";
 import type { AuditRecord } from "@/lib/admin/audit";
-import { requireAdmin } from "@/lib/admin/require-admin";
+import { requireOwner } from "@/lib/admin/require-admin";
 
 export const metadata: Metadata = {
   title: "Accesos y actividad",
@@ -20,7 +20,7 @@ export default async function GovernancePage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  const { supabase, profile, userId } = await requireAdmin();
+  const { supabase, profile, userId } = await requireOwner();
   const [profilesResult, auditResult] = await Promise.all([
     supabase.from("profiles")
       .select("user_id,full_name,role,is_active,created_at,updated_at")
@@ -47,7 +47,7 @@ export default async function GovernancePage({
           <form action={signOutAdmin}><button className="button button--quiet" type="submit"><LogOut aria-hidden="true" strokeWidth={1.75} />Cerrar sesión</button></form>
         </div>
       </header>
-      <AdminRouteNav current="governance" />
+      <AdminRouteNav current="governance" canManageAccess />
       <GovernanceAdmin
         currentUserId={userId}
         profiles={(profilesResult.data ?? []) as AdminProfileRow[]}

@@ -26,7 +26,7 @@ export default async function ProfessionalsPage({ searchParams }: { searchParams
   return (
     <div className="live-admin site-container">
       <header className="live-admin__header"><div><p className="eyebrow">Equipo de atención</p><h1>Personas, especialidades y presentación pública.</h1><p>{profile.full_name}, cada perfil puede reutilizarse en varios tratamientos de su especialidad.</p></div><div className="live-admin__actions"><Link className="button button--quiet" href="/tratamientos" target="_blank" rel="noreferrer"><ExternalLink aria-hidden="true" strokeWidth={1.75} />Ver catálogo</Link><form action={signOutAdmin}><button className="button button--quiet" type="submit"><LogOut aria-hidden="true" strokeWidth={1.75} />Cerrar sesión</button></form></div></header>
-      <AdminRouteNav current="professionals" />
+      <AdminRouteNav current="professionals" canManageAccess={profile.role === "admin"} />
       <ProfessionalsAdmin specialties={specialtiesResult.data ?? []} professionals={professionals} feedback={await searchParams} />
     </div>
   );

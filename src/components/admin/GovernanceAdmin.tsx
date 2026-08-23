@@ -15,7 +15,7 @@ import {
 export interface AdminProfileRow {
   user_id: string;
   full_name: string;
-  role: "admin";
+  role: "admin" | "manager";
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -87,7 +87,7 @@ export function GovernanceAdmin({
                   <span>Nombre visible</span>
                   <input name="fullName" minLength={2} maxLength={100} defaultValue={profile.full_name} required />
                 </label>
-                <span className="admin-access-row__role"><small>Permiso</small><strong>Administración</strong></span>
+                <label className="admin-access-row__role"><span>Permiso</span><select name="role" defaultValue={profile.role} disabled={isCurrent}><option value="admin">Propietario técnico</option><option value="manager">Gestión del cliente</option></select>{isCurrent ? <input type="hidden" name="role" value="admin" /> : null}</label>
                 <label>
                   <span>Estado</span>
                   <select name="isActive" defaultValue={profile.is_active ? "true" : "false"} disabled={isCurrent}>
@@ -104,7 +104,7 @@ export function GovernanceAdmin({
             );
           })}
         </div>
-        <p className="admin-access-note"><ShieldCheck aria-hidden="true" strokeWidth={1.75} />Los cambios de nombre y estado quedan registrados. Una cuenta revocada pierde acceso al volver a validar su sesión.</p>
+        <p className="admin-access-note"><ShieldCheck aria-hidden="true" strokeWidth={1.75} />Gestión del cliente opera agenda, catálogo, profesionales, clientes, configuración y contenido. Solo un propietario técnico puede administrar accesos y consultar la actividad completa.</p>
       </section>
 
       <section className="live-admin__section admin-governance" id="actividad" aria-labelledby="activity-title">

@@ -4,7 +4,7 @@ import {
   hasAgencyUnlockSession,
   isAgencyUnlockConfigured,
 } from "@/lib/admin/agency-unlock";
-import { requireAdmin } from "@/lib/admin/require-admin";
+import { requireOwner } from "@/lib/admin/require-admin";
 import { getSiteContent } from "@/lib/supabase/site-content";
 
 export const metadata: Metadata = {
@@ -23,7 +23,7 @@ interface ContentPageProps {
 }
 
 export default async function ContentPage({ searchParams }: ContentPageProps) {
-  const { userId } = await requireAdmin();
+  const { userId, profile } = await requireOwner();
   const query = await searchParams;
   const unlocked = await hasAgencyUnlockSession(userId);
 
@@ -40,6 +40,7 @@ export default async function ContentPage({ searchParams }: ContentPageProps) {
   return (
     <ContentEditor
       fields={fields}
+      canManageAccess={profile.role === "admin"}
       savedSection={query.saved}
       saveError={query.saveError}
     />

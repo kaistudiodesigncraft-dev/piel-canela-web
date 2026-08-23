@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Tratamientos",
   description:
     "Explorá tratamientos de estética, bienestar y recuperación con precio, duración e información clara.",
+  alternates: { canonical: "/tratamientos" },
 };
 
 export default async function TreatmentsPage() {

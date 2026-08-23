@@ -43,6 +43,7 @@ interface LiveBookingFlowProps {
 
 const initialCustomer: CustomerForm = { fullName: "", phone: "", email: "", notes: "" };
 const stepOrder: BookingStep[] = ["schedule", "details", "review", "success"];
+const INITIAL_VISIBLE_SLOTS = 12;
 
 export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookingFlowProps) {
   const [step, setStep] = useState<BookingStep>("schedule");
@@ -53,6 +54,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
   const [isLoadingSlots, setIsLoadingSlots] = useState(true);
   const [slotsError, setSlotsError] = useState(false);
   const [slotRefresh, setSlotRefresh] = useState(0);
+  const [showAllSlots, setShowAllSlots] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [booking, setBooking] = useState<{ id: string; code: string } | null>(null);
@@ -63,6 +65,8 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
   const selectedDate = dates.find((item) => item.value === date);
   const selectedTime = selectedSlot ? formatBookingTime(selectedSlot) : null;
   const currentStepIndex = stepOrder.indexOf(step);
+  const visibleSlots = showAllSlots ? slots : slots.slice(0, INITIAL_VISIBLE_SLOTS);
+  const hiddenSlotCount = Math.max(0, slots.length - visibleSlots.length);
 
   useEffect(() => {
     if (initialStepRender.current) {
@@ -216,7 +220,12 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
   }
 
   return (
-    <section className="booking-flow" aria-labelledby="booking-flow-title">
+    <section
+      className={`booking-flow${
+        step === "schedule" && selectedTime ? " booking-flow--mobile-action" : ""
+      }`}
+      aria-labelledby="booking-flow-title"
+    >
       <div className="booking-flow__header">
         <div>
           <p className="eyebrow">Pre-reserva online</p>
@@ -264,6 +273,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
                         setIsLoadingSlots(true);
                         setSlotsError(false);
                         setSelectedSlot(null);
+                        setShowAllSlots(false);
                       }}
                     >
                       <span>{item.weekday}</span><strong>{item.day}</strong><small>{item.month}</small>
@@ -285,23 +295,37 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
                 ) : slots.length === 0 ? (
                   <p className="booking-inline-state">No quedan horarios para este día. Probá con otra fecha.</p>
                 ) : (
-                  <div className="time-choice-grid numeric">
-                    {slots.map((slot) => (
+                  <>
+                    <div className="time-choice-grid numeric">
+                      {visibleSlots.map((slot) => (
+                        <button
+                          key={slot.startsAt}
+                          className={`time-choice${selectedSlot === slot.startsAt ? " is-selected" : ""}`}
+                          type="button"
+                          aria-pressed={selectedSlot === slot.startsAt}
+                          onClick={() => setSelectedSlot(slot.startsAt)}
+                        >
+                          {formatBookingTime(slot.startsAt)}
+                        </button>
+                      ))}
+                    </div>
+                    {slots.length > INITIAL_VISIBLE_SLOTS ? (
                       <button
-                        key={slot.startsAt}
-                        className={`time-choice${selectedSlot === slot.startsAt ? " is-selected" : ""}`}
+                        className="button button--quiet booking-slots-toggle"
                         type="button"
-                        aria-pressed={selectedSlot === slot.startsAt}
-                        onClick={() => setSelectedSlot(slot.startsAt)}
+                        aria-expanded={showAllSlots}
+                        onClick={() => setShowAllSlots((current) => !current)}
                       >
-                        {formatBookingTime(slot.startsAt)}
+                        {showAllSlots
+                          ? "Ver menos horarios"
+                          : `Ver ${hiddenSlotCount} horarios más`}
                       </button>
-                    ))}
-                  </div>
+                    ) : null}
+                  </>
                 )}
               </fieldset>
 
-              <div className="booking-step-actions booking-step-actions--end">
+              <div className="booking-step-actions booking-step-actions--end booking-step-actions--desktop">
                 <button className="button button--primary" type="button" disabled={!selectedSlot} onClick={() => setStep("details")}>
                   Continuar <ArrowRight aria-hidden="true" strokeWidth={1.75} />
                 </button>
@@ -345,7 +369,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
               </div>
               <p className="form-assurance">
                 <ShieldCheck aria-hidden="true" strokeWidth={1.75} />
-                Usamos estos datos únicamente para identificar y coordinar tu solicitud.
+                <span>Usamos estos datos únicamente para identificar y coordinar tu solicitud. Consultá nuestra <Link href="/privacidad">política de privacidad</Link>.</span>
               </p>
               <div className="booking-step-actions">
                 <button className="button button--quiet" type="button" onClick={() => setStep("schedule")}><ArrowLeft aria-hidden="true" strokeWidth={1.75} />Volver</button>
@@ -391,6 +415,15 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
           )}
         </aside>
       </div>
+
+      {step === "schedule" && selectedTime ? (
+        <div className="booking-mobile-action" role="region" aria-label="Horario seleccionado">
+          <span><small>Horario seleccionado</small><strong className="numeric">{selectedTime}</strong></span>
+          <button className="button button--primary" type="button" onClick={() => setStep("details")}>
+            Continuar <ArrowRight aria-hidden="true" strokeWidth={1.75} />
+          </button>
+        </div>
+      ) : null}
     </section>
   );
 }

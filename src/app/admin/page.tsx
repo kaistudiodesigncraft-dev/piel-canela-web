@@ -22,7 +22,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
   const now = new Date().toISOString();
   const [profileResult, specialtiesResult, rulesResult, exceptionsResult, treatmentsResult, specialsResult, bookingsResult, bookingHistoryResult] = await Promise.all([
-    supabase.from("profiles").select("full_name").eq("user_id", userId).single(),
+    supabase.from("profiles").select("full_name,role").eq("user_id", userId).single(),
     supabase.from("specialties").select("id,name,slug,description,display_order,is_active").order("display_order"),
     supabase.from("availability_rules").select("id,specialty_id,weekday,start_time,end_time,slot_interval_minutes").eq("is_active", true).order("weekday").order("start_time"),
     supabase.from("availability_exceptions").select("id,specialty_id,kind,starts_at,ends_at,public_reason,internal_reason").gte("ends_at", now).order("starts_at").limit(40),
@@ -66,6 +66,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   return (
     <LiveAdminDashboard
       adminName={profileResult.data.full_name}
+      canManageAccess={profileResult.data.role === "admin"}
       referenceTime={now}
       specialties={specialtiesResult.data ?? []}
       rules={rulesResult.data ?? []}

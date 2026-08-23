@@ -13,10 +13,10 @@ const routes: readonly { id: AdminRoute; href: string; label: string; icon: type
   { id: "governance", href: "/admin/seguridad", label: "Accesos y actividad", icon: ShieldCheck },
 ];
 
-export function AdminRouteNav({ current }: { current: AdminRoute }) {
+export function AdminRouteNav({ current, canManageAccess = false }: { current: AdminRoute; canManageAccess?: boolean }) {
   return (
     <nav className="admin-route-nav" aria-label="Navegación administrativa">
-      {routes.map((route) => {
+      {routes.filter((route) => !["content", "governance"].includes(route.id) || canManageAccess).map((route) => {
         const Icon = route.icon;
         return (
           <Link
