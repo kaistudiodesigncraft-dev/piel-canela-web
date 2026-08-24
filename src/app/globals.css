@@ -4962,91 +4962,6 @@ svg {
   color: var(--color-petrol);
 }
 
-.admin-activation-layout {
-  display: grid;
-  grid-template-columns: minmax(17rem, 0.8fr) minmax(20rem, 1.2fr);
-  gap: 1.5rem;
-  align-items: stretch;
-  margin-top: 1.25rem;
-}
-
-.admin-activation-form {
-  align-content: start;
-  margin: 0;
-  padding: 0;
-  background: transparent;
-}
-
-.admin-activation-form .button {
-  width: fit-content;
-}
-
-.admin-activation-result {
-  min-height: 23rem;
-  display: grid;
-  place-items: center;
-  padding: 1.25rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-cloud);
-}
-
-.admin-activation-result.is-ready {
-  grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr);
-  place-items: center start;
-  gap: 1.25rem;
-  background: var(--color-white);
-}
-
-.admin-activation-qr {
-  width: 100%;
-  max-width: 15rem;
-  aspect-ratio: 1;
-  padding: 0.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-white);
-}
-
-.admin-activation-qr img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.admin-activation-result.is-ready > div:nth-child(2) {
-  display: grid;
-  gap: 0.5rem;
-  min-width: 0;
-}
-
-.admin-activation-result.is-ready p,
-.admin-activation-placeholder p {
-  max-width: 52ch;
-  color: var(--color-text-muted);
-  font-size: 0.82rem;
-  overflow-wrap: anywhere;
-}
-
-.admin-activation-result.is-ready .button {
-  grid-column: 2;
-  width: fit-content;
-}
-
-.admin-activation-placeholder {
-  display: grid;
-  justify-items: center;
-  gap: 0.6rem;
-  max-width: 27rem;
-  text-align: center;
-}
-
-.admin-activation-placeholder > svg {
-  width: 2.5rem;
-  height: 2.5rem;
-  color: var(--color-petrol);
-}
-
 .admin-activity-item { border-bottom: 1px solid var(--color-border); }
 
 .admin-activity-item > summary {
@@ -5123,10 +5038,6 @@ svg {
 .admin-activity-item__body > small { color: var(--color-text-muted); font-size: 0.7rem; }
 
 @media (max-width: 68rem) {
-  .admin-activation-layout {
-    grid-template-columns: 1fr;
-  }
-
   .admin-access-row {
     grid-template-columns: 3rem minmax(12rem, 1fr) minmax(8rem, 0.6fr) minmax(8rem, 0.6fr);
   }
@@ -5158,20 +5069,6 @@ svg {
 }
 
 @media (max-width: 48rem) {
-  .admin-activation-result.is-ready {
-    grid-template-columns: 1fr;
-    justify-items: start;
-  }
-
-  .admin-activation-result.is-ready .button {
-    grid-column: auto;
-    width: 100%;
-  }
-
-  .admin-activation-form .button {
-    width: 100%;
-  }
-
   .booking-status-form,
   .admin-access-row {
     grid-template-columns: 1fr;

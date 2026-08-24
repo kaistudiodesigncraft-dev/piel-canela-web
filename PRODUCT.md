@@ -10,7 +10,6 @@ product
 - Clientes nuevos y frecuentes que quieren generar una pre-reserva breve desde el celular, sin crear una cuenta.
 - Personal de Piel Canela que administra agenda, disponibilidad, tratamientos, especiales y estados de reservas.
 - Kai Studio conserva el rol de propietario técnico. Las cuentas verificadas del cliente usan un rol de gestión operativa sin acceso al gobierno de cuentas ni al registro de auditoría.
-- El primer acceso del cliente se entrega presencialmente mediante un QR de un solo uso generado por Kai Studio. No se envía una invitación automática por correo y la persona define su propia contraseña.
 - La agencia puede editar el contenido institucional mediante un apartado administrativo con un segundo desbloqueo temporal; no puede crear, eliminar ni reordenar secciones.
 
 ## Product Purpose

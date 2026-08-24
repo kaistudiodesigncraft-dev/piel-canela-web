@@ -22,13 +22,10 @@ La migración `20260823000920_owner_content_boundary.sql` extiende esa frontera 
 
 ## Alta segura de una cuenta cliente
 
-1. El propietario técnico genera el acceso desde `/admin/seguridad` con el correo confirmado por el cliente.
-2. El servidor utiliza `auth.admin.generateLink`; esta operación genera el enlace pero no envía email.
-3. El UUID resultante se vincula a `public.profiles` con rol `manager` e `is_active = true` y el alta queda registrada en la auditoría privada.
-4. El QR se muestra únicamente en la sesión propietaria. La persona lo escanea, establece su propia contraseña y el enlace queda inutilizable después del primer uso o su vencimiento.
-5. Verificar acceso operativo y rechazo de `/admin/contenido` y `/admin/seguridad`.
-
-El cliente administrativo usa una clave `sb_secret_` independiente en `SUPABASE_SECRET_KEY`. Solo existe en el servidor de Vercel, no usa prefijo `NEXT_PUBLIC_` y nunca debe persistirse en base de datos, logs, respuestas de error o Git. `/auth/complete` debe estar incluido entre los redirect URLs permitidos de Supabase Auth.
+1. Enviar la invitación desde Supabase Auth al correo confirmado por el cliente.
+2. Obtener el UUID generado y crear su fila en `public.profiles` con rol `manager` e `is_active = true`.
+3. La persona invitada define su propia contraseña desde el enlace recibido; nunca se comparte una contraseña manual.
+4. Verificar acceso operativo y rechazo de `/admin/contenido` y `/admin/seguridad`.
 
 ## Seguridad
 
