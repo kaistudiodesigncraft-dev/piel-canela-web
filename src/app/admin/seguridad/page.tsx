@@ -15,6 +15,9 @@ export const metadata: Metadata = {
   description: "Gobierno de accesos y trazabilidad administrativa de Piel Canela.",
 };
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function GovernancePage({
   searchParams,
 }: {

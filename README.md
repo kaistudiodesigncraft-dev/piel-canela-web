@@ -16,6 +16,7 @@ Web pública, catálogo de tratamientos, pre-reservas y administración operativ
 - Los cambios que afectan reservas futuras exigen una confirmación explícita y cada tratamiento dispone de vista previa administrativa protegida.
 - `/admin/contenido` permite a Kai Studio modificar los textos y la imagen principal sobre una estructura fija. Requiere rol propietario y un segundo código temporal; las cuentas `manager` del cliente no tienen acceso.
 - `/admin/seguridad` es exclusivo del propietario técnico: permite asignar gestión operativa al cliente, habilitar o revocar cuentas verificadas y consultar actividad sin revelar campos privados.
+- El alta del cliente se realiza desde `/admin/seguridad` mediante un QR de activación de un solo uso. Supabase genera el enlace sin enviar email y la persona define su propia contraseña desde su dispositivo.
 - Los cambios de estado de una reserva son atómicos, respetan una máquina de estados y conservan actor, fecha y motivo. Cancelaciones y ausencias requieren una explicación operativa.
 - Las pre-reservas vencidas se liberan automáticamente cada cinco minutos y las condiciones públicas se exponen en páginas legales enlazadas desde el sitio.
 - Vercel Analytics y Speed Insights observan uso y rendimiento sin incorporar un panel de métricas decorativas.
@@ -37,9 +38,11 @@ El editor de contenido requiere dos secretos exclusivos del servidor:
 ```text
 AGENCY_CONTENT_UNLOCK_CODE_HASH=<sha256 del código acordado>
 AGENCY_CONTENT_SESSION_SECRET=<secreto aleatorio de firma>
+SUPABASE_SECRET_KEY=<clave sb_secret exclusiva del servidor>
 ```
 
 El código en texto plano no se guarda en la aplicación ni en Supabase.
+`SUPABASE_SECRET_KEY` habilita operaciones administrativas de Auth y nunca debe usar el prefijo `NEXT_PUBLIC_`, aparecer en logs o llegar al navegador.
 
 ## Verificación
 

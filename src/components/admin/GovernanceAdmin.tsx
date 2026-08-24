@@ -3,6 +3,7 @@
 import { ChevronDown, History, Search, ShieldCheck, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { updateAdminProfile } from "@/app/admin/seguridad/actions";
+import { ManagerActivationPanel } from "./ManagerActivationPanel";
 import {
   AUDIT_ACTION_LABELS,
   AUDIT_TABLE_LABELS,
@@ -104,8 +105,10 @@ export function GovernanceAdmin({
             );
           })}
         </div>
-        <p className="admin-access-note"><ShieldCheck aria-hidden="true" strokeWidth={1.75} />Gestión del cliente opera agenda, catálogo, profesionales, clientes, configuración y contenido. Solo un propietario técnico puede administrar accesos y consultar la actividad completa.</p>
+        <p className="admin-access-note"><ShieldCheck aria-hidden="true" strokeWidth={1.75} />Gestión del cliente opera agenda, catálogo, profesionales, clientes y configuración. Solo un propietario técnico puede editar contenido institucional, administrar accesos y consultar la actividad completa.</p>
       </section>
+
+      <ManagerActivationPanel />
 
       <section className="live-admin__section admin-governance" id="actividad" aria-labelledby="activity-title">
         <div className="admin-section-heading">
