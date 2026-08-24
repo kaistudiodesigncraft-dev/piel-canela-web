@@ -83,4 +83,20 @@ describe("LiveBookingFlow", () => {
     await user.click(reveal);
     expect(screen.getByRole("button", { name: "Ver menos horarios" })).toHaveAttribute("aria-expanded", "true");
   });
+
+  it("reveals the administrator-defined booking window progressively", async () => {
+    const user = userEvent.setup();
+    const longWindow = Array.from({ length: 18 }, (_, index) => ({
+      value: `2026-09-${String(index + 1).padStart(2, "0")}`,
+      weekday: "Lun",
+      day: String(index + 1),
+      month: "Sep",
+      longLabel: `lunes, ${index + 1} de septiembre`,
+    }));
+
+    render(<LiveBookingFlow selection={selection} dates={longWindow} whatsappNumber="5493515550000" />);
+    expect(screen.queryByRole("button", { name: /18 Sep/i })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Ver 4 fechas más" }));
+    expect(screen.getByRole("button", { name: /18 Sep/i })).toBeInTheDocument();
+  });
 });

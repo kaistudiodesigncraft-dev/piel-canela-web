@@ -8,11 +8,13 @@ Web pública, catálogo de tratamientos, pre-reservas y administración operativ
 - La fundación remota vive en Supabase, proyecto `dlrdlwjighvcyhirwgfu`.
 - La fuente de datos se cambia mediante `NEXT_PUBLIC_DATA_SOURCE`.
 - El backend permite simultaneidad entre especialidades distintas e impide solapamientos dentro de una misma especialidad.
-- La administración dispone de agenda filtrable, asignación manual de turnos, horarios habituales, bloqueos y aperturas excepcionales.
+- La administración dispone de agenda diaria, semanal e histórica con filtros y paginación real, asignación manual de turnos, horarios habituales, bloqueos y aperturas excepcionales.
 - Las especialidades pueden crearse como activas o futuras y controlan la capacidad simultánea.
 - Los Especiales del mes se crean y editan desde el panel con vigencia, precio e imagen.
 - `/admin/catalogo` permite crear borradores, publicar y editar tratamientos, precios, duración, margen entre turnos, asignación profesional e imagen propia por tratamiento con vista previa y control de encuadre.
 - `/admin/profesionales` mantiene perfiles internos y públicos reutilizables por especialidad.
+- `/admin/clientes` busca y pagina el directorio desde la base, y carga el historial únicamente para los perfiles visibles.
+- La ventana de días del calendario público responde a `maximum_advance_days`, configurado por la administración y validado nuevamente por PostgreSQL.
 - Los cambios que afectan reservas futuras exigen una confirmación explícita y cada tratamiento dispone de vista previa administrativa protegida.
 - `/admin/contenido` permite a Kai Studio modificar los textos y la imagen principal sobre una estructura fija. Requiere rol propietario y un segundo código temporal; las cuentas `manager` del cliente no tienen acceso.
 - `/admin/seguridad` es exclusivo del propietario técnico: permite asignar gestión operativa al cliente, habilitar o revocar cuentas verificadas y consultar actividad sin revelar campos privados.

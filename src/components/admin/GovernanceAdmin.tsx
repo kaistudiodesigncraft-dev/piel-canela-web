@@ -104,7 +104,7 @@ export function GovernanceAdmin({
             );
           })}
         </div>
-        <p className="admin-access-note"><ShieldCheck aria-hidden="true" strokeWidth={1.75} />Gestión del cliente opera agenda, catálogo, profesionales, clientes, configuración y contenido. Solo un propietario técnico puede administrar accesos y consultar la actividad completa.</p>
+        <p className="admin-access-note"><ShieldCheck aria-hidden="true" strokeWidth={1.75} />Gestión del cliente opera agenda, catálogo, profesionales, clientes y configuración. El contenido institucional, los accesos y la actividad completa quedan reservados al propietario técnico.</p>
       </section>
 
       <section className="live-admin__section admin-governance" id="actividad" aria-labelledby="activity-title">

@@ -26,14 +26,15 @@ export async function getPublicBookingSettings() {
     instagramUrl: null,
     depositText: null,
     cancellationPolicy: null,
+    maximumAdvanceDays: 13,
   };
   const supabase = createSupabasePublicServerClient();
   const { data, error } = await supabase
     .from("business_settings")
-    .select("whatsapp_number,address,public_email,instagram_url,deposit_text,cancellation_policy")
+    .select("whatsapp_number,address,public_email,instagram_url,deposit_text,cancellation_policy,maximum_advance_days")
     .eq("singleton", true)
     .maybeSingle();
-  if (error) return { whatsappNumber: null, address: null, publicEmail: null, instagramUrl: null, depositText: null, cancellationPolicy: null };
+  if (error) return { whatsappNumber: null, address: null, publicEmail: null, instagramUrl: null, depositText: null, cancellationPolicy: null, maximumAdvanceDays: 13 };
   const row = data as {
     whatsapp_number: string | null;
     address: string | null;
@@ -41,6 +42,7 @@ export async function getPublicBookingSettings() {
     instagram_url: string | null;
     deposit_text: string | null;
     cancellation_policy: string | null;
+    maximum_advance_days: number;
   } | null;
   return {
     whatsappNumber: row?.whatsapp_number ?? null,
@@ -49,6 +51,7 @@ export async function getPublicBookingSettings() {
     instagramUrl: row?.instagram_url ?? null,
     depositText: row?.deposit_text ?? null,
     cancellationPolicy: row?.cancellation_policy ?? null,
+    maximumAdvanceDays: row?.maximum_advance_days ?? 13,
   };
 }
 

@@ -44,6 +44,7 @@ interface LiveBookingFlowProps {
 const initialCustomer: CustomerForm = { fullName: "", phone: "", email: "", notes: "" };
 const stepOrder: BookingStep[] = ["schedule", "details", "review", "success"];
 const INITIAL_VISIBLE_SLOTS = 12;
+const INITIAL_VISIBLE_DATES = 14;
 
 export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookingFlowProps) {
   const [step, setStep] = useState<BookingStep>("schedule");
@@ -54,6 +55,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
   const [isLoadingSlots, setIsLoadingSlots] = useState(true);
   const [slotsError, setSlotsError] = useState(false);
   const [slotRefresh, setSlotRefresh] = useState(0);
+  const [visibleDateCount, setVisibleDateCount] = useState(INITIAL_VISIBLE_DATES);
   const [showAllSlots, setShowAllSlots] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -67,6 +69,8 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
   const currentStepIndex = stepOrder.indexOf(step);
   const visibleSlots = showAllSlots ? slots : slots.slice(0, INITIAL_VISIBLE_SLOTS);
   const hiddenSlotCount = Math.max(0, slots.length - visibleSlots.length);
+  const visibleDates = dates.slice(0, visibleDateCount);
+  const hiddenDateCount = Math.max(0, dates.length - visibleDates.length);
 
   useEffect(() => {
     if (initialStepRender.current) {
@@ -262,7 +266,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
               <fieldset>
                 <legend>Elegí un día</legend>
                 <div className="date-choice-grid">
-                  {dates.map((item) => (
+                  {visibleDates.map((item) => (
                     <button
                       key={item.value}
                       className={`date-choice${date === item.value ? " is-selected" : ""}`}
@@ -280,6 +284,15 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
                     </button>
                   ))}
                 </div>
+                {hiddenDateCount > 0 ? (
+                  <button
+                    className="button button--quiet booking-dates-toggle"
+                    type="button"
+                    onClick={() => setVisibleDateCount((current) => Math.min(current + INITIAL_VISIBLE_DATES, dates.length))}
+                  >
+                    Ver {Math.min(INITIAL_VISIBLE_DATES, hiddenDateCount)} fechas más
+                  </button>
+                ) : null}
               </fieldset>
 
               <fieldset>

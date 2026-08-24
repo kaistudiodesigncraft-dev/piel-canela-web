@@ -20,6 +20,8 @@ Las migraciones `20260823000900_sprint_five_launch_readiness.sql` y `20260823000
 
 La migración `20260823000920_owner_content_boundary.sql` extiende esa frontera al editor institucional y a sus imágenes: solo Kai Studio (`admin`) puede modificar `site_content` o `site-content-media`. La migración `20260823000930_treatment_publication_integrity.sql` vuelve autoritativas en PostgreSQL las reglas mínimas de publicación: precio positivo, imagen con texto alternativo y taxonomía activa. Los borradores siguen admitidos y las reservas históricas no dependen de que el tratamiento continúe publicado.
 
+La migración `20260823000940_public_booking_window.sql` permite al público leer únicamente `maximum_advance_days`. El calendario puede así representar la ventana elegida por la administración mientras `get_available_slots` conserva la validación autoritativa.
+
 ## Alta segura de una cuenta cliente
 
 1. Enviar la invitación desde Supabase Auth al correo confirmado por el cliente.

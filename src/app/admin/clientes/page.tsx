@@ -4,6 +4,11 @@ import Link from "next/link";
 import { signOutAdmin } from "@/app/admin/actions";
 import { AdminRouteNav } from "@/components/admin/AdminRouteNav";
 import { CustomersAdmin, type CustomerAdminBooking, type CustomerAdminRow } from "@/components/admin/CustomersAdmin";
+import {
+  CUSTOMER_DIRECTORY_PAGE_SIZE,
+  customerDirectoryPageRange,
+  parseCustomerDirectoryQuery,
+} from "@/lib/admin/customer-directory";
 import { requireAdmin } from "@/lib/admin/require-admin";
 
 export const metadata: Metadata = {
@@ -13,19 +18,29 @@ export const metadata: Metadata = {
 
 export default async function CustomersPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const { supabase, profile } = await requireAdmin();
+  const routeQuery = await searchParams;
+  const directoryQuery = parseCustomerDirectoryQuery(routeQuery);
+  const { from, to } = customerDirectoryPageRange(directoryQuery.page);
   const referenceTime = new Date().toISOString();
-  const [customersResult, bookingsResult] = await Promise.all([
-    supabase.from("customers")
-      .select("id,full_name,phone,email,internal_notes,created_at,updated_at")
-      .order("updated_at", { ascending: false })
-      .limit(250),
-    supabase.from("bookings")
+  let customersRequest = supabase.from("customers")
+    .select("id,full_name,phone,email,internal_notes,created_at,updated_at", { count: "exact" });
+  if (directoryQuery.query) {
+    const pattern = `%${directoryQuery.query}%`;
+    customersRequest = customersRequest.or(`full_name.ilike.${pattern},phone.ilike.${pattern},email.ilike.${pattern}`);
+  }
+  const customersResult = await customersRequest
+    .order("updated_at", { ascending: false })
+    .range(from, to);
+  if (customersResult.error) throw new Error(`No se pudo cargar el directorio: ${customersResult.error.message}`);
+
+  const customerIds = (customersResult.data ?? []).map((customer) => customer.id);
+  const bookingsResult = customerIds.length > 0
+    ? await supabase.from("bookings")
       .select("id,customer_id,booking_code,status,starts_at,applied_price_snapshot_cents,treatment_name_snapshot")
+      .in("customer_id", customerIds)
       .order("starts_at", { ascending: false })
-      .limit(1000),
-  ]);
-  const firstError = customersResult.error ?? bookingsResult.error;
-  if (firstError) throw new Error(`No se pudo cargar el directorio: ${firstError.message}`);
+    : { data: [], error: null };
+  if (bookingsResult.error) throw new Error(`No se pudo cargar el historial de clientes: ${bookingsResult.error.message}`);
 
   const bookingsByCustomer = new Map<string, CustomerAdminBooking[]>();
   for (const booking of bookingsResult.data ?? []) {
@@ -52,7 +67,16 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
         </div>
       </header>
       <AdminRouteNav current="customers" canManageAccess={profile.role === "admin"} />
-      <CustomersAdmin customers={customers} referenceTime={referenceTime} feedback={await searchParams} />
+      <CustomersAdmin
+        customers={customers}
+        referenceTime={referenceTime}
+        feedback={routeQuery}
+        directory={{
+          ...directoryQuery,
+          total: customersResult.count ?? 0,
+          pageSize: CUSTOMER_DIRECTORY_PAGE_SIZE,
+        }}
+      />
     </div>
   );
 }

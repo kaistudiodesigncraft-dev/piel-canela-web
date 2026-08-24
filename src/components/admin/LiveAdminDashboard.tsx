@@ -4,6 +4,8 @@ import {
   CalendarClock,
   CalendarDays,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   ChevronDown,
   Clock3,
   ExternalLink,
@@ -47,6 +49,11 @@ import {
   BOOKING_STATUS_TRANSITIONS,
   toArgentinaDateTimeInput,
 } from "@/lib/admin/operations";
+import {
+  adminAgendaHref,
+  type AdminAgendaQuery,
+  type AdminAgendaRange,
+} from "@/lib/admin/agenda";
 import { formatPrice } from "@/lib/format";
 
 interface SpecialtyRow {
@@ -144,6 +151,13 @@ interface LiveAdminDashboardProps {
   treatments: TreatmentRow[];
   monthlySpecials: MonthlySpecialRow[];
   bookings: AdminBookingRow[];
+  agenda: {
+    query: AdminAgendaQuery;
+    range: AdminAgendaRange;
+    total: number;
+    pageSize: number;
+    summary: { today: number; attention: number; confirmed: number };
+  };
   feedback: Record<string, string | undefined>;
 }
 
@@ -165,13 +179,6 @@ function bookingDate(value: string) {
   }).format(new Date(value));
 }
 
-function dayKey(value: string | Date) {
-  const date = typeof value === "string" ? new Date(value) : value;
-  return new Intl.DateTimeFormat("en-CA", {
-    year: "numeric", month: "2-digit", day: "2-digit", timeZone: "America/Argentina/Cordoba",
-  }).format(date);
-}
-
 function Feedback({ show, error, success, errorText }: { show: boolean; error?: string; success: string; errorText: string }) {
   if (show) return <p className="form-message" role="status">{success}</p>;
   if (error) return <p className="form-message form-message--error" role="alert">{errorText}</p>;
@@ -188,22 +195,15 @@ export function LiveAdminDashboard({
   treatments,
   monthlySpecials,
   bookings,
+  agenda,
   feedback,
 }: LiveAdminDashboardProps) {
   const [bookingQuery, setBookingQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all");
-  const [agendaRange, setAgendaRange] = useState<"today" | "upcoming" | "all">("today");
   const [manualTreatmentId, setManualTreatmentId] = useState(treatments[0]?.id ?? "");
   const specialtyName = useMemo(() => new Map(specialties.map((item) => [item.id, item.name])), [specialties]);
   const treatmentName = useMemo(() => new Map(treatments.map((item) => [item.id, item.name])), [treatments]);
   const referenceTimestamp = new Date(referenceTime).getTime();
-  const today = dayKey(referenceTime);
-  const upcomingLimit = referenceTimestamp + 7 * 24 * 60 * 60 * 1000;
   const filteredBookings = useMemo(() => bookings.filter((booking) => {
-    if (statusFilter !== "all" && booking.status !== statusFilter) return false;
-    const startsAt = new Date(booking.starts_at);
-    if (agendaRange === "today" && dayKey(startsAt) !== today) return false;
-    if (agendaRange === "upcoming" && (startsAt.getTime() < referenceTimestamp || startsAt.getTime() > upcomingLimit)) return false;
     const query = bookingQuery.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     if (!query) return true;
     return bookingSearchText({
@@ -212,14 +212,12 @@ export function LiveAdminDashboard({
       phone: booking.customer?.phone ?? "",
       treatmentName: booking.treatment?.name ?? "",
     }).includes(query);
-  }), [agendaRange, bookingQuery, bookings, referenceTimestamp, statusFilter, today, upcomingLimit]);
-  const todayBookings = bookings.filter((booking) => dayKey(booking.starts_at) === today);
-  const pendingCount = bookings.filter((booking) => booking.status === "pending" || booking.status === "awaiting_deposit").length;
-  const confirmedCount = bookings.filter((booking) => booking.status === "confirmed").length;
+  }), [bookingQuery, bookings]);
   const activeSpecials = monthlySpecials.filter((special) => special.is_active);
   const manualSpecials = activeSpecials.filter((special) => special.treatment_id === manualTreatmentId);
   const defaultStart = toArgentinaDateTimeInput(new Date(referenceTimestamp + 60 * 60 * 1000).toISOString());
   const defaultEnd = toArgentinaDateTimeInput(new Date(referenceTimestamp + 2 * 60 * 60 * 1000).toISOString());
+  const totalPages = Math.max(1, Math.ceil(agenda.total / agenda.pageSize));
 
   return (
     <div className="live-admin site-container">
@@ -242,27 +240,33 @@ export function LiveAdminDashboard({
       </nav>
 
       <section className="admin-summary-grid" aria-label="Resumen operativo">
-        <article><span>Turnos de hoy</span><strong className="numeric">{todayBookings.length}</strong><small>Agenda del día</small></article>
-        <article><span>Requieren atención</span><strong className="numeric">{pendingCount}</strong><small>Pendientes o esperando seña</small></article>
-        <article><span>Confirmadas</span><strong className="numeric">{confirmedCount}</strong><small>Próximas reservas confirmadas</small></article>
+        <article><span>Turnos de hoy</span><strong className="numeric">{agenda.summary.today}</strong><small>Agenda completa del día</small></article>
+        <article><span>Requieren atención</span><strong className="numeric">{agenda.summary.attention}</strong><small>Pendientes o esperando seña</small></article>
+        <article><span>Confirmadas</span><strong className="numeric">{agenda.summary.confirmed}</strong><small>Próximas reservas confirmadas</small></article>
         <article><span>Especiales activos</span><strong className="numeric">{activeSpecials.length}</strong><small>Visibles según vigencia</small></article>
       </section>
 
       <section className="live-admin__section admin-bookings" id="reservas" aria-labelledby="bookings-title">
         <div className="admin-section-heading">
-          <div><h2 id="bookings-title">Agenda y reservas</h2><p>Buscá una solicitud, filtrá por estado y resolvé la operación desde la misma fila.</p></div>
-          <span className="admin-count numeric">{filteredBookings.length} {filteredBookings.length === 1 ? "resultado" : "resultados"}</span>
+          <div><h2 id="bookings-title">Agenda y reservas</h2><p>{agenda.range.label}. Los filtros consultan la base completa y cada página carga solo lo necesario.</p></div>
+          <span className="admin-count numeric">{agenda.total} {agenda.total === 1 ? "reserva" : "reservas"}</span>
         </div>
         <Feedback show={feedback.bookingSaved === "1"} error={feedback.bookingError} success="Estado de la reserva actualizado y registrado." errorText={feedback.bookingError === "reason" ? "Indicá un motivo para cancelar o marcar una ausencia." : feedback.bookingError === "transition" ? "El estado cambió o esa transición ya no está permitida." : "No se pudo aplicar ese cambio de estado."} />
         <Feedback show={feedback.bookingDetailSaved === "1"} error={feedback.bookingDetailError} success="Notas de la reserva actualizadas." errorText="No se pudieron guardar las notas." />
         <Feedback show={feedback.rescheduleSaved === "1"} error={feedback.rescheduleError} success="Reserva reprogramada y agenda actualizada." errorText={feedback.rescheduleError === "conflict" ? "Ese horario ya está ocupado para la especialidad." : feedback.rescheduleError === "status" ? "El estado actual no permite reprogramar." : "No se pudo reprogramar la reserva."} />
+        <form className="admin-agenda-filters" action="/admin#reservas" method="get">
+          <label>Vista<select name="agendaView" defaultValue={agenda.query.view}><option value="day">Día</option><option value="week">Semana</option><option value="all">Historial completo</option></select></label>
+          <label>Fecha de referencia<input name="agendaDate" type="date" defaultValue={agenda.query.date} /></label>
+          <label>Estado<select name="agendaStatus" defaultValue={agenda.query.status}><option value="all">Todos los estados</option>{Object.entries(BOOKING_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          <input type="hidden" name="agendaPage" value="1" />
+          <button className="button button--quiet" type="submit">Aplicar filtros</button>
+        </form>
         <div className="admin-booking-toolbar">
-          <label className="admin-search"><Search aria-hidden="true" strokeWidth={1.75} /><span className="sr-only">Buscar reservas</span><input value={bookingQuery} onChange={(event) => setBookingQuery(event.target.value)} placeholder="Buscar persona, código o tratamiento" /></label>
-          <label><span className="sr-only">Filtrar por estado</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as BookingStatus | "all")}><option value="all">Todos los estados</option>{Object.entries(BOOKING_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-          <div className="admin-segmented" aria-label="Rango de agenda">{([['today','Hoy'],['upcoming','Próximos 7 días'],['all','Todo']] as const).map(([value,label]) => <button key={value} type="button" className={agendaRange === value ? "is-active" : ""} onClick={() => setAgendaRange(value)}>{label}</button>)}</div>
+          <label className="admin-search"><Search aria-hidden="true" strokeWidth={1.75} /><span className="sr-only">Buscar en esta página</span><input value={bookingQuery} onChange={(event) => setBookingQuery(event.target.value)} placeholder="Buscar en esta página" /></label>
+          {agenda.query.view !== "all" ? <nav className="admin-agenda-stepper" aria-label="Cambiar período"><Link className="button button--quiet" href={adminAgendaHref(agenda.query, { date: agenda.range.previousDate, page: 1 })}><ChevronLeft aria-hidden="true" strokeWidth={1.75} />Anterior</Link><Link className="button button--quiet" href={adminAgendaHref(agenda.query, { date: agenda.range.nextDate, page: 1 })}>Siguiente<ChevronRight aria-hidden="true" strokeWidth={1.75} /></Link></nav> : null}
         </div>
         {filteredBookings.length === 0 ? (
-          <div className="admin-empty"><CalendarDays aria-hidden="true" strokeWidth={1.75} /><h3>No hay reservas para esta vista.</h3><p>Probá otro rango, estado o término de búsqueda.</p></div>
+          <div className="admin-empty"><CalendarDays aria-hidden="true" strokeWidth={1.75} /><h3>{agenda.total === 0 ? "No hay reservas para esta vista." : "No hay coincidencias en esta página."}</h3><p>{agenda.total === 0 ? "Probá otra fecha, vista o estado." : "Borrá la búsqueda o avanzá a otra página."}</p></div>
         ) : (
           <div className="live-booking-list">
             {filteredBookings.map((booking) => {
@@ -298,6 +302,7 @@ export function LiveAdminDashboard({
             })}
           </div>
         )}
+        {agenda.total > agenda.pageSize ? <nav className="admin-pagination" aria-label="Páginas de reservas"><span className="numeric">Página {agenda.query.page} de {totalPages}</span><div>{agenda.query.page > 1 ? <Link className="button button--quiet" href={adminAgendaHref(agenda.query, { page: agenda.query.page - 1 })}><ChevronLeft aria-hidden="true" strokeWidth={1.75} />Anterior</Link> : null}{agenda.query.page < totalPages ? <Link className="button button--quiet" href={adminAgendaHref(agenda.query, { page: agenda.query.page + 1 })}>Siguiente<ChevronRight aria-hidden="true" strokeWidth={1.75} /></Link> : null}</div></nav> : null}
       </section>
 
       <section className="live-admin__section" id="asignar" aria-labelledby="manual-title">

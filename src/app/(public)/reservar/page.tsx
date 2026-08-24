@@ -56,7 +56,7 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
     <div className="site-container booking-demo-page">
       <LiveBookingFlow
         selection={resolveBookingSelection(treatment, monthlySpecial)}
-        dates={buildBookingDates()}
+        dates={buildBookingDates(new Date(), settings.maximumAdvanceDays + 1)}
         whatsappNumber={settings.whatsappNumber}
       />
     </div>

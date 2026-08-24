@@ -1553,7 +1553,8 @@ svg {
   gap: 0.65rem;
 }
 
-.booking-slots-toggle {
+.booking-slots-toggle,
+.booking-dates-toggle {
   margin-top: 0.85rem;
 }
 
@@ -3611,6 +3612,67 @@ svg {
   margin-top: 1.5rem;
 }
 
+.admin-agenda-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(9rem, 1fr)) auto;
+  gap: 0.75rem;
+  align-items: end;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.8rem;
+  background: var(--color-surface-soft);
+}
+
+.admin-agenda-filters label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  font-weight: 720;
+}
+
+.admin-agenda-filters select,
+.admin-agenda-filters input {
+  width: 100%;
+  min-height: 2.75rem;
+  padding-inline: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.6rem;
+  color: var(--color-ink);
+  background: var(--color-white);
+  font: inherit;
+}
+
+.admin-agenda-filters select:focus-visible,
+.admin-agenda-filters input:focus-visible {
+  border-color: var(--color-action);
+  outline: 3px solid color-mix(in srgb, var(--color-action) 24%, transparent);
+  outline-offset: 1px;
+}
+
+.admin-agenda-stepper,
+.admin-pagination,
+.admin-pagination > div {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-agenda-stepper {
+  flex: 0 0 auto;
+}
+
+.admin-pagination {
+  justify-content: space-between;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
 .admin-booking-toolbar select,
 .admin-search {
   min-height: 2.9rem;
@@ -3978,6 +4040,10 @@ svg {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .admin-agenda-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .monthly-special-admin-item {
     grid-template-columns: 7rem minmax(0, 1fr);
   }
@@ -4030,6 +4096,10 @@ svg {
     grid-template-columns: 1fr;
   }
 
+  .admin-agenda-filters {
+    grid-template-columns: 1fr;
+  }
+
   .admin-treatment-image-control {
     grid-template-columns: 1fr;
   }
@@ -4056,6 +4126,29 @@ svg {
 
   .admin-segmented button {
     flex: 1 1 0;
+  }
+
+  .admin-agenda-stepper,
+  .admin-agenda-stepper .button,
+  .admin-pagination,
+  .admin-pagination > div,
+  .admin-pagination .button {
+    width: 100%;
+  }
+
+  .admin-agenda-stepper .button,
+  .admin-pagination .button {
+    justify-content: center;
+  }
+
+  .admin-pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-pagination > div {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .live-booking-row {

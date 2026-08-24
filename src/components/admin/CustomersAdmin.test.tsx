@@ -37,14 +37,14 @@ const customers: CustomerAdminRow[] = [
 ];
 
 describe("CustomersAdmin", () => {
-  it("searches contacts and exposes booking history progressively", async () => {
+  it("submits server-side search and exposes booking history progressively", async () => {
     const user = userEvent.setup();
-    render(<CustomersAdmin customers={customers} referenceTime="2026-08-21T12:00:00.000Z" feedback={{}} />);
-    await user.type(screen.getByRole("textbox", { name: "Buscar clientes" }), "maria@example.com");
+    render(<CustomersAdmin customers={customers} referenceTime="2026-08-21T12:00:00.000Z" feedback={{}} directory={{ query: "", page: 1, total: 2, pageSize: 30 }} />);
+    expect(screen.getByRole("button", { name: "Buscar" })).toBeInTheDocument();
     expect(screen.getByText("María Pérez")).toBeInTheDocument();
-    expect(screen.queryByText("Laura Gómez")).not.toBeInTheDocument();
+    expect(screen.getByText("Laura Gómez")).toBeInTheDocument();
     await user.click(screen.getByText("María Pérez"));
     expect(screen.getByText("PC-MARIA")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Abrir WhatsApp" })).toHaveAttribute("href", "https://wa.me/5493515550000");
+    expect(screen.getAllByRole("link", { name: "Abrir WhatsApp" })[0]).toHaveAttribute("href", "https://wa.me/5493515550000");
   });
 });

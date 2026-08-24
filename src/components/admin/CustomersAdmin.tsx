@@ -1,11 +1,12 @@
 "use client";
 
-import { CalendarClock, ChevronDown, Mail, MessageCircle, Search, UserRound } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CalendarClock, ChevronDown, ChevronLeft, ChevronRight, Mail, MessageCircle, Search, UserRound } from "lucide-react";
+import Link from "next/link";
 import { saveCustomer } from "@/app/admin/clientes/actions";
 import type { BookingStatus } from "@/domain/treatment";
 import { BOOKING_STATUS_LABELS } from "@/lib/admin/operations";
-import { customerSearchText, normalizePhone } from "@/lib/admin/customer-operations";
+import { normalizePhone } from "@/lib/admin/customer-operations";
+import { customerDirectoryHref, type CustomerDirectoryQuery } from "@/lib/admin/customer-directory";
 import { formatPrice } from "@/lib/format";
 
 export interface CustomerAdminBooking {
@@ -40,44 +41,34 @@ function dateLabel(value: string) {
   }).format(new Date(value));
 }
 
-export function CustomersAdmin({ customers, referenceTime, feedback }: { customers: CustomerAdminRow[]; referenceTime: string; feedback: Record<string, string | undefined> }) {
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<"all" | "upcoming" | "history">("all");
+export function CustomersAdmin({ customers, referenceTime, feedback, directory }: {
+  customers: CustomerAdminRow[];
+  referenceTime: string;
+  feedback: Record<string, string | undefined>;
+  directory: CustomerDirectoryQuery & { total: number; pageSize: number };
+}) {
   const now = new Date(referenceTime).getTime();
-  const filtered = useMemo(() => customers.filter((customer) => {
-    const matchesQuery = !query.trim() || customerSearchText({
-      fullName: customer.full_name,
-      phone: customer.phone,
-      email: customer.email,
-    }).includes(
-      query.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(),
-    );
-    if (!matchesQuery) return false;
-    const hasUpcoming = customer.bookings.some((booking) =>
-      new Date(booking.starts_at).getTime() >= now && ["pending", "awaiting_deposit", "confirmed"].includes(booking.status),
-    );
-    if (filter === "upcoming") return hasUpcoming;
-    if (filter === "history") return customer.bookings.length > 0 && !hasUpcoming;
-    return true;
-  }), [customers, filter, now, query]);
+  const totalPages = Math.max(1, Math.ceil(directory.total / directory.pageSize));
 
   return (
     <section className="live-admin__section admin-customers" id="directorio" aria-labelledby="customers-title">
       <div className="admin-section-heading">
         <div><h2 id="customers-title">Directorio de clientes</h2><p>Buscá por nombre, teléfono o correo y abrí cada perfil para ver su recorrido completo.</p></div>
-        <span className="admin-count numeric">{filtered.length} {filtered.length === 1 ? "resultado" : "resultados"}</span>
+        <span className="admin-count numeric">{directory.total} {directory.total === 1 ? "perfil" : "perfiles"}</span>
       </div>
       {feedback.customerSaved === "1" ? <p className="form-message" role="status">Perfil actualizado.</p> : null}
       {feedback.customerError ? <p className="form-message form-message--error" role="alert">No se pudo actualizar el perfil.</p> : null}
-      <div className="admin-booking-toolbar">
-        <label className="admin-search"><Search aria-hidden="true" strokeWidth={1.75} /><span className="sr-only">Buscar clientes</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar nombre, teléfono o correo" /></label>
-        <label><span className="sr-only">Filtrar clientes</span><select value={filter} onChange={(event) => setFilter(event.target.value as typeof filter)}><option value="all">Todos los perfiles</option><option value="upcoming">Con próxima reserva</option><option value="history">Solo historial</option></select></label>
-      </div>
-      {filtered.length === 0 ? (
-        <div className="admin-empty"><UserRound aria-hidden="true" strokeWidth={1.75} /><h3>No encontramos clientes.</h3><p>Probá otra búsqueda o cambiá el filtro.</p></div>
+      <form className="admin-booking-toolbar" action="/admin/clientes#directorio" method="get">
+        <label className="admin-search"><Search aria-hidden="true" strokeWidth={1.75} /><span className="sr-only">Buscar clientes</span><input name="customerQuery" defaultValue={directory.query} maxLength={80} placeholder="Buscar nombre, teléfono o correo" /></label>
+        <input type="hidden" name="customerPage" value="1" />
+        <button className="button button--quiet" type="submit">Buscar</button>
+        {directory.query ? <Link className="button button--quiet" href="/admin/clientes#directorio">Limpiar</Link> : null}
+      </form>
+      {customers.length === 0 ? (
+        <div className="admin-empty"><UserRound aria-hidden="true" strokeWidth={1.75} /><h3>No encontramos clientes.</h3><p>Probá otro nombre, teléfono o correo.</p></div>
       ) : (
         <div className="admin-customer-list">
-          {filtered.map((customer) => {
+          {customers.map((customer) => {
             const upcoming = customer.bookings.find((booking) => new Date(booking.starts_at).getTime() >= now && ["pending", "awaiting_deposit", "confirmed"].includes(booking.status));
             const completedValue = customer.bookings.filter((booking) => booking.status === "completed").reduce((sum, booking) => sum + booking.applied_price_snapshot_cents, 0);
             return (
@@ -111,6 +102,7 @@ export function CustomersAdmin({ customers, referenceTime, feedback }: { custome
           })}
         </div>
       )}
+      {directory.total > directory.pageSize ? <nav className="admin-pagination" aria-label="Páginas de clientes"><span className="numeric">Página {directory.page} de {totalPages}</span><div>{directory.page > 1 ? <Link className="button button--quiet" href={customerDirectoryHref(directory, { page: directory.page - 1 })}><ChevronLeft aria-hidden="true" strokeWidth={1.75} />Anterior</Link> : null}{directory.page < totalPages ? <Link className="button button--quiet" href={customerDirectoryHref(directory, { page: directory.page + 1 })}>Siguiente<ChevronRight aria-hidden="true" strokeWidth={1.75} /></Link> : null}</div></nav> : null}
     </section>
   );
 }
