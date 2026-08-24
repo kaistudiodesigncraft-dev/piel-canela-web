@@ -12,6 +12,10 @@ import {
 } from "@/lib/admin/catalog";
 import { inspectAdminImage } from "@/lib/admin/image-upload";
 import { requireAdmin } from "@/lib/admin/require-admin";
+import {
+  isTreatmentDeleteCodeConfigured,
+  verifyTreatmentDeleteCode,
+} from "@/lib/admin/treatment-delete-code";
 
 const imageExtension: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -43,6 +47,12 @@ const categorySchema = z.object({
   categoryId: z.string().uuid(),
   name: z.string().trim().min(2).max(80),
   shortDescription: z.string().trim().min(10).max(240),
+});
+
+const deleteTreatmentSchema = z.object({
+  treatmentId: z.string().uuid(),
+  confirmationCode: z.string().trim().min(4).max(128),
+  confirmDeletion: z.literal("on"),
 });
 
 export interface SaveTreatmentState {
@@ -254,4 +264,47 @@ export async function updateTreatmentCategory(formData: FormData) {
   revalidatePath("/tratamientos");
   revalidatePath("/admin/catalogo");
   catalogRedirect("categorySaved=1", "categorias");
+}
+
+export async function deleteTreatment(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const parsed = deleteTreatmentSchema.safeParse({
+    treatmentId: formData.get("treatmentId"),
+    confirmationCode: formData.get("confirmationCode"),
+    confirmDeletion: formData.get("confirmDeletion"),
+  });
+  if (!parsed.success) catalogRedirect("treatmentError=deleteConfirmation");
+  if (!isTreatmentDeleteCodeConfigured()) catalogRedirect("treatmentError=deleteNotConfigured");
+  if (!verifyTreatmentDeleteCode(parsed.data.confirmationCode)) catalogRedirect("treatmentError=deleteCode");
+
+  const [treatmentResult, bookingResult, specialResult] = await Promise.all([
+    supabase.from("treatments").select("id,slug,image_path").eq("id", parsed.data.treatmentId).single(),
+    supabase.from("bookings").select("id", { count: "exact", head: true }).eq("treatment_id", parsed.data.treatmentId),
+    supabase.from("monthly_specials").select("id", { count: "exact", head: true }).eq("treatment_id", parsed.data.treatmentId),
+  ]);
+  const treatment = treatmentResult.data;
+  if (!treatment) catalogRedirect("treatmentError=deleteMissing");
+  if (bookingResult.error || specialResult.error) catalogRedirect("treatmentError=deleteFailed");
+  if ((bookingResult.count ?? 0) > 0 || (specialResult.count ?? 0) > 0) {
+    catalogRedirect("treatmentError=deleteLinked");
+  }
+
+  const { error } = await supabase.from("treatments").delete().eq("id", parsed.data.treatmentId);
+  if (error) {
+    catalogRedirect(`treatmentError=${error.code === "23503" ? "deleteLinked" : "deleteFailed"}`);
+  }
+
+  let mediaCleanupFailed = false;
+  if (treatment.image_path && !treatment.image_path.startsWith("/") && !treatment.image_path.startsWith("https://")) {
+    const { error: mediaError } = await supabase.storage.from("treatment-media").remove([treatment.image_path]);
+    mediaCleanupFailed = Boolean(mediaError);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/tratamientos");
+  revalidatePath(`/tratamientos/${treatment.slug}`);
+  revalidatePath("/reservar");
+  revalidatePath("/admin");
+  revalidatePath("/admin/catalogo");
+  catalogRedirect(`treatmentDeleted=1${mediaCleanupFailed ? "&mediaCleanup=failed" : ""}`);
 }

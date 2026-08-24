@@ -5,6 +5,7 @@ import { CatalogAdmin, type AdminTreatmentRow } from "./CatalogAdmin";
 
 vi.mock("@/app/admin/catalogo/actions", () => ({
   initialSaveTreatmentState: { status: "idle" },
+  deleteTreatment: vi.fn(),
   saveTreatment: vi.fn(),
   updateTreatmentCategory: vi.fn(),
 }));
@@ -121,5 +122,23 @@ describe("CatalogAdmin", () => {
     await user.upload(screen.getByLabelText(/subir imagen/i), new File([bytes], "tratamiento.png", { type: "image/png" }));
     expect(await screen.findByText("Imagen lista: 1080 × 1350 px")).toBeInTheDocument();
     expect(screen.getByAltText("Vista previa de la imagen seleccionada")).toHaveStyle({ objectPosition: "50% 50%" });
+  });
+
+  it("keeps permanent deletion behind a separate confirmation area", async () => {
+    const user = userEvent.setup();
+    render(<CatalogAdmin
+      categories={categories}
+      specialties={specialties}
+      professionals={professionals}
+      treatments={[treatment({ future_booking_count: 0 })]}
+      feedback={{}}
+    />);
+
+    await user.click(screen.getByText("Relajación profunda"));
+    await user.click(screen.getByText("Eliminar tratamiento"));
+    expect(screen.getByLabelText("Código de eliminación")).toHaveAttribute("inputmode", "numeric");
+    expect(screen.getByLabelText("Código de eliminación")).toBeRequired();
+    expect(screen.getByLabelText(/Confirmo que quiero eliminar/)).toBeRequired();
+    expect(screen.getByRole("button", { name: "Eliminar definitivamente" })).toBeEnabled();
   });
 });

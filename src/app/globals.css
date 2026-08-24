@@ -4483,6 +4483,106 @@ svg {
   padding: 0 0 1.5rem 6.5rem;
 }
 
+.admin-delete-treatment {
+  width: 100%;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.9rem;
+}
+
+.admin-delete-treatment > summary {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  list-style: none;
+  color: var(--color-error);
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 750;
+}
+
+.admin-delete-treatment > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-delete-treatment > summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.admin-delete-treatment > summary svg {
+  width: 1rem;
+  flex: 0 0 auto;
+}
+
+.admin-delete-treatment > summary > svg {
+  transition: transform 180ms var(--ease-enter);
+}
+
+.admin-delete-treatment[open] > summary > svg {
+  transform: rotate(180deg);
+}
+
+.admin-delete-treatment__form {
+  max-width: 42rem;
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.65rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--color-error) 35%, var(--color-border));
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, var(--color-error) 4%, var(--color-white));
+}
+
+.admin-delete-treatment__form > div {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.admin-delete-treatment__form p {
+  max-width: 65ch;
+  color: var(--color-text-muted);
+  font-size: 0.84rem;
+}
+
+.admin-delete-treatment__form label:not(.admin-check) {
+  max-width: 18rem;
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.admin-delete-treatment__form input[type="password"] {
+  min-height: 2.9rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.55rem;
+  color: var(--color-ink);
+  background: var(--color-white);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.button--danger {
+  width: fit-content;
+  min-height: 2.75rem;
+  border-color: var(--color-error);
+  color: var(--color-white);
+  background: var(--color-error);
+}
+
+.button--danger:is(:hover, :focus-visible) {
+  background: color-mix(in srgb, var(--color-error) 88%, var(--color-ink));
+}
+
+.form-message--warning {
+  color: #684b13;
+  background: #fff7df;
+}
+
 .admin-form--treatment {
   width: 100%;
   background: var(--color-white);

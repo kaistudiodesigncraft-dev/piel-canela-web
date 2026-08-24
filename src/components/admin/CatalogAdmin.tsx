@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Eye, ImageIcon, Plus, Search } from "lucide-react";
+import { ChevronDown, Eye, ImageIcon, Plus, Search, Trash2 } from "lucide-react";
 import { FlowerLotus, PersonArmsSpread, UserFocus } from "@phosphor-icons/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,6 +8,7 @@ import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   initialSaveTreatmentState,
+  deleteTreatment,
   saveTreatment,
   type SaveTreatmentState,
   updateTreatmentCategory,
@@ -89,8 +90,8 @@ function CategoryIcon({ name }: { name: string }) {
   return <Icon aria-hidden="true" weight="regular" />;
 }
 
-function Feedback({ success, error }: { success?: boolean; error?: string }) {
-  if (success) return <p className="form-message" role="status">Los cambios quedaron guardados.</p>;
+function Feedback({ success, error, successMessage = "Los cambios quedaron guardados." }: { success?: boolean; error?: string; successMessage?: string }) {
+  if (success) return <p className="form-message" role="status">{successMessage}</p>;
   if (!error) return null;
   const messages: Record<string, string> = {
     impact: "Hay reservas futuras afectadas. Revisá el impacto y confirmá antes de guardar.",
@@ -102,6 +103,12 @@ function Feedback({ success, error }: { success?: boolean; error?: string }) {
     "image-dimensions": "La imagen no tiene dimensiones aptas para el catálogo.",
     upload: "La imagen no pudo cargarse.",
     taxonomy: "La categoría o especialidad seleccionada no está disponible.",
+    deleteConfirmation: "Confirmá la eliminación y completá el código de seguridad.",
+    deleteNotConfigured: "El borrado protegido todavía no está configurado. Comunicate con Kai Studio.",
+    deleteCode: "El código de eliminación no es correcto.",
+    deleteLinked: "Este tratamiento tiene reservas o especiales relacionados. Desactivalo para conservar el historial.",
+    deleteMissing: "El tratamiento ya fue eliminado o dejó de estar disponible.",
+    deleteFailed: "No pudimos eliminar el tratamiento. No se modificó el catálogo.",
   };
   return <p className="form-message form-message--error" role="alert">{messages[error] ?? "No se pudieron guardar los cambios. Revisá los campos e intentá nuevamente."}</p>;
 }
@@ -154,6 +161,42 @@ function TreatmentSubmitButton({ editing }: { editing: boolean }) {
   );
 }
 
+function DeleteTreatmentButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button className="button button--danger" type="submit" disabled={pending} aria-disabled={pending}>
+      <Trash2 aria-hidden="true" strokeWidth={1.75} />
+      {pending ? "Eliminando…" : "Eliminar definitivamente"}
+    </button>
+  );
+}
+
+function DeleteTreatmentForm({ treatment }: { treatment: AdminTreatmentRow }) {
+  return (
+    <details className="admin-delete-treatment">
+      <summary>
+        <span><Trash2 aria-hidden="true" strokeWidth={1.75} />Eliminar tratamiento</span>
+        <ChevronDown aria-hidden="true" strokeWidth={1.75} />
+      </summary>
+      <form action={deleteTreatment} className="admin-delete-treatment__form">
+        <input type="hidden" name="treatmentId" value={treatment.id} />
+        <div>
+          <strong>Esta acción no se puede deshacer.</strong>
+          <p>Solo se eliminará si no tiene reservas ni especiales asociados. Si ya tiene historial, desactivalo desde “Operación y precio”.</p>
+        </div>
+        <label htmlFor={`delete-code-${treatment.id}`}>Código de eliminación
+          <input id={`delete-code-${treatment.id}`} name="confirmationCode" type="password" inputMode="numeric" pattern="[0-9]{4}" minLength={4} maxLength={128} autoComplete="off" required />
+        </label>
+        <label className="admin-check" htmlFor={`delete-confirm-${treatment.id}`}>
+          <input id={`delete-confirm-${treatment.id}`} name="confirmDeletion" type="checkbox" required />
+          <span>Confirmo que quiero eliminar “{treatment.name}”.</span>
+        </label>
+        <DeleteTreatmentButton />
+      </form>
+    </details>
+  );
+}
+
 export function CatalogAdmin({ categories, specialties, professionals, treatments, feedback }: CatalogAdminProps) {
   const [query, setQuery] = useState("");
   const [stateFilter, setStateFilter] = useState<"all" | "published" | "ready" | "draft">("all");
@@ -173,7 +216,12 @@ export function CatalogAdmin({ categories, specialties, professionals, treatment
           <div><h2 id="catalog-title">Tratamientos</h2><p>Administrá la información comercial y operativa que alimenta el catálogo y el turnero.</p></div>
           <span className="admin-count numeric">{filtered.length} resultados</span>
         </div>
-        <Feedback success={feedback.treatmentSaved === "1"} error={feedback.treatmentError} />
+        <Feedback
+          success={feedback.treatmentSaved === "1" || feedback.treatmentDeleted === "1"}
+          successMessage={feedback.treatmentDeleted === "1" ? "El tratamiento fue eliminado definitivamente." : undefined}
+          error={feedback.treatmentError}
+        />
+        {feedback.mediaCleanup === "failed" ? <p className="form-message form-message--warning" role="status">El tratamiento fue eliminado, pero la limpieza de su imagen requiere revisión de Kai Studio.</p> : null}
         <details className="admin-disclosure admin-create-disclosure">
           <summary><span><Plus aria-hidden="true" strokeWidth={1.75} />Crear tratamiento</span><ChevronDown aria-hidden="true" strokeWidth={1.75} /></summary>
           <TreatmentForm categories={categories} specialties={specialties} professionals={professionals} />
@@ -199,6 +247,7 @@ export function CatalogAdmin({ categories, specialties, professionals, treatment
                   <div className="admin-treatment-manager-item__editor">
                     {treatment.image_url ? <Link className="button button--quiet" href={`/admin/catalogo/${treatment.id}/preview`}><Eye aria-hidden="true" strokeWidth={1.75} />Abrir vista previa</Link> : null}
                     <TreatmentForm categories={categories} specialties={specialties} professionals={professionals} treatment={treatment} />
+                    <DeleteTreatmentForm treatment={treatment} />
                   </div>
                 </details>
               );
