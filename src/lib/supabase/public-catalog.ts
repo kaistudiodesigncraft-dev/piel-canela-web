@@ -78,6 +78,7 @@ interface TreatmentRow {
   characteristics: string[];
   duration_minutes: number;
   buffer_minutes: number;
+  start_interval_minutes: 15 | 30 | 60;
   price_cents: number;
   preparation: string | null;
   contraindications: string | null;
@@ -144,7 +145,7 @@ export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot>
       .order("display_order"),
     supabase
       .from("treatments")
-      .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,professional:professionals(public_name,is_active)")
+      .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,professional:professionals(public_name,is_active)")
       .order("display_order"),
     supabase
       .from("monthly_specials")
@@ -182,6 +183,7 @@ export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot>
       characteristics: row.characteristics,
       durationMinutes: row.duration_minutes,
       bufferMinutes: row.buffer_minutes,
+      startIntervalMinutes: row.start_interval_minutes,
       priceCents: row.price_cents,
       preparation: row.preparation,
       contraindications: row.contraindications,

@@ -13,7 +13,7 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
   const { id } = await params;
   const { supabase } = await requireAdmin();
   const { data: row } = await supabase.from("treatments")
-    .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,category:treatment_categories(id,name,slug,short_description,icon_name,display_order,is_active),professional:professionals(public_name,full_name,is_active)")
+    .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,category:treatment_categories(id,name,slug,short_description,icon_name,display_order,is_active),professional:professionals(public_name,full_name,is_active)")
     .eq("id", id).single();
   if (!row || !row.image_path || !row.image_alt) notFound();
   const categoryRaw = Array.isArray(row.category) ? row.category[0] : row.category;
@@ -44,6 +44,7 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
     characteristics: row.characteristics,
     durationMinutes: row.duration_minutes,
     bufferMinutes: row.buffer_minutes,
+    startIntervalMinutes: row.start_interval_minutes,
     priceCents: row.price_cents,
     preparation: row.preparation,
     contraindications: row.contraindications,

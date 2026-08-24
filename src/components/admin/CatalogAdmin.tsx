@@ -58,6 +58,7 @@ export interface AdminTreatmentRow {
   characteristics: string[];
   duration_minutes: number;
   buffer_minutes: number;
+  start_interval_minutes: 15 | 30 | 60;
   price_cents: number;
   preparation: string | null;
   contraindications: string | null;
@@ -241,7 +242,7 @@ export function CatalogAdmin({ categories, specialties, professionals, treatment
                       {treatment.image_url ? <Image src={treatment.image_url} alt={treatment.image_alt ?? ""} fill sizes="96px" style={{ objectPosition: `${focalPointToPercentage(treatment.image_focal_x)}% ${focalPointToPercentage(treatment.image_focal_y)}%` }} /> : <ImageIcon aria-hidden="true" strokeWidth={1.75} />}
                     </div>
                     <div><span className={`status-badge status-${state === "published" ? "confirmed" : state === "ready" ? "awaiting_deposit" : "expired"}`}>{publicationLabels[state]}</span><h3>{treatment.name}</h3><p>{categoryName.get(treatment.category_id)} · {specialtyName.get(treatment.specialty_id)}</p></div>
-                    <div className="admin-treatment-manager-item__facts numeric"><span>{formatDuration(treatment.duration_minutes)} + {treatment.buffer_minutes} min</span><strong>{formatPrice(treatment.price_cents)}</strong>{treatment.future_booking_count > 0 ? <small>{treatment.future_booking_count} reservas futuras</small> : null}</div>
+                    <div className="admin-treatment-manager-item__facts numeric"><span>{formatDuration(treatment.duration_minutes)} + {treatment.buffer_minutes} min</span><small>Inicios cada {treatment.start_interval_minutes} min</small><strong>{formatPrice(treatment.price_cents)}</strong>{treatment.future_booking_count > 0 ? <small>{treatment.future_booking_count} reservas futuras</small> : null}</div>
                     <span className="admin-treatment-manager-item__edit">Editar <ChevronDown aria-hidden="true" strokeWidth={1.75} /></span>
                   </summary>
                   <div className="admin-treatment-manager-item__editor">
@@ -276,6 +277,9 @@ function TreatmentForm({ categories, specialties, professionals, treatment }: { 
   const [focalX, setFocalX] = useState(focalPointToPercentage(treatment?.image_focal_x ?? 0.5));
   const [focalY, setFocalY] = useState(focalPointToPercentage(treatment?.image_focal_y ?? 0.5));
   const [isActive, setIsActive] = useState(treatment?.is_active ?? false);
+  const [durationMinutes, setDurationMinutes] = useState(treatment?.duration_minutes ?? 60);
+  const [bufferMinutes, setBufferMinutes] = useState(treatment?.buffer_minutes ?? 15);
+  const [startIntervalMinutes, setStartIntervalMinutes] = useState<15 | 30 | 60>(treatment?.start_interval_minutes ?? 30);
   const [imagePreview, setImagePreview] = useState(treatment?.image_url ?? null);
   const [imageIssue, setImageIssue] = useState<string | null>(null);
   const [imageMetadata, setImageMetadata] = useState<string | null>(null);
@@ -393,12 +397,29 @@ function TreatmentForm({ categories, specialties, professionals, treatment }: { 
         </div>
         <div className="admin-form-grid admin-form-grid--3">
           <label htmlFor={`${formId}-durationMinutes`}>Duración
-            <input id={`${formId}-durationMinutes`} name="durationMinutes" type="number" min="5" max="480" step="5" defaultValue={treatment?.duration_minutes ?? 60} required aria-invalid={Boolean(fieldError("durationMinutes")) || undefined} aria-describedby={fieldError("durationMinutes") ? `${formId}-durationMinutes-error` : undefined} />
+            <input id={`${formId}-durationMinutes`} name="durationMinutes" type="number" min="5" max="480" step="5" value={durationMinutes} onChange={(event) => setDurationMinutes(Number(event.target.value))} required aria-invalid={Boolean(fieldError("durationMinutes")) || undefined} aria-describedby={fieldError("durationMinutes") ? `${formId}-durationMinutes-error` : undefined} />
             <FieldError id={`${formId}-durationMinutes-error`} message={fieldError("durationMinutes")} />
           </label>
           <label htmlFor={`${formId}-bufferMinutes`}>Preparación entre turnos
-            <input id={`${formId}-bufferMinutes`} name="bufferMinutes" type="number" min="0" max="180" step="5" defaultValue={treatment?.buffer_minutes ?? 15} required aria-invalid={Boolean(fieldError("bufferMinutes")) || undefined} />
+            <input id={`${formId}-bufferMinutes`} name="bufferMinutes" type="number" min="0" max="180" step="5" value={bufferMinutes} onChange={(event) => setBufferMinutes(Number(event.target.value))} required aria-invalid={Boolean(fieldError("bufferMinutes")) || undefined} />
           </label>
+          <label htmlFor={`${formId}-startIntervalMinutes`}>Frecuencia de inicio
+            <select id={`${formId}-startIntervalMinutes`} name="startIntervalMinutes" value={startIntervalMinutes} onChange={(event) => setStartIntervalMinutes(Number(event.target.value) as 15 | 30 | 60)} required aria-invalid={Boolean(fieldError("startIntervalMinutes")) || undefined} aria-describedby={`${formId}-startIntervalMinutes-help${fieldError("startIntervalMinutes") ? ` ${formId}-startIntervalMinutes-error` : ""}`}>
+              <option value="15">15 minutos</option>
+              <option value="30">30 minutos</option>
+              <option value="60">60 minutos</option>
+            </select>
+            <small id={`${formId}-startIntervalMinutes-help`}>Define cada cuánto puede comenzar este tratamiento. No modifica su duración.</small>
+            <FieldError id={`${formId}-startIntervalMinutes-error`} message={fieldError("startIntervalMinutes")} />
+          </label>
+        </div>
+        <div className="admin-scheduling-explainer" aria-live="polite">
+          <div><span>Duración</span><strong>{durationMinutes} min</strong></div>
+          <div><span>Preparación</span><strong>{bufferMinutes} min</strong></div>
+          <div><span>Puede comenzar cada</span><strong>{startIntervalMinutes} min</strong></div>
+          <p>Posibles inicios: {startIntervalMinutes === 15 ? "09:00, 09:15, 09:30…" : startIntervalMinutes === 30 ? "09:00, 09:30, 10:00…" : "09:00, 10:00, 11:00…"} Cada reserva ocupa <strong>{durationMinutes + bufferMinutes} minutos</strong>.</p>
+        </div>
+        <div className="admin-form-grid">
           <label className="admin-check" htmlFor={`${formId}-isActive`}>
             <input id={`${formId}-isActive`} type="checkbox" name="isActive" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />
             <span>Publicar y habilitar reservas</span>

@@ -8,6 +8,8 @@ Las categorías ordenan el catálogo; las especialidades controlan capacidad. Do
 
 La administración define horarios habituales en `availability_rules` y aperturas o bloqueos excepcionales en `availability_exceptions`.
 
+Desde `20260824001000_weekly_availability_editor.sql`, las reglas habituales representan únicamente las franjas semanales de una especialidad. La frecuencia de inicio se configura en `treatments.start_interval_minutes` (15, 30 o 60 minutos), mientras que la duración y el margen determinan cuánto tiempo ocupa una reserva. `replace_specialty_weekly_availability` reemplaza la semana completa en una sola transacción y conserva intactas las reservas existentes.
+
 La asignación manual se ejecuta mediante `create_admin_booking`: una operación atómica exclusiva de administradores que vuelve a validar el tratamiento, el especial vigente y los solapamientos antes de guardar cliente y reserva. La migración `20260816000500_sprint_one_admin_operations.sql` incorpora este contrato y los índices operativos de Sprint 1.
 
 La migración `20260821000600_sprint_two_catalog_integrity.sql` completa el contrato del catálogo: evita profesionales duplicados dentro de una especialidad, acelera la consulta de reservas futuras por tratamiento y valida en base de datos que un profesional asignado pertenezca a la misma especialidad. Un tratamiento publicado no puede depender de un profesional inactivo.

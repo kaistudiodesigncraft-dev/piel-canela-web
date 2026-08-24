@@ -44,6 +44,7 @@ function treatment(overrides: Partial<AdminTreatmentRow>): AdminTreatmentRow {
     characteristics: ["Presión adaptable"],
     duration_minutes: 60,
     buffer_minutes: 15,
+    start_interval_minutes: 30,
     price_cents: 6500000,
     preparation: null,
     contraindications: null,
@@ -74,6 +75,7 @@ describe("CatalogAdmin", () => {
     />);
 
     expect(screen.getByText("Relajación profunda")).toBeInTheDocument();
+    expect(screen.getByText("Inicios cada 30 min")).toBeInTheDocument();
     expect(screen.getByText("Tratamiento nuevo")).toBeInTheDocument();
     expect(screen.getAllByLabelText(/subir imagen/i)).toHaveLength(3);
     await user.selectOptions(screen.getByLabelText("Filtrar publicación"), "draft");

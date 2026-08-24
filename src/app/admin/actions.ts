@@ -14,12 +14,14 @@ import { requireAdmin } from "@/lib/admin/require-admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const loginSchema = z.object({ email: z.string().email(), password: z.string().min(8) });
-const availabilityRuleSchema = z.object({
+const weeklyAvailabilityRuleSchema = z.object({
+  weekday: z.number().int().min(0).max(6),
+  start_time: z.string().regex(/^\d{2}:\d{2}$/),
+  end_time: z.string().regex(/^\d{2}:\d{2}$/),
+}).refine((rule) => rule.start_time < rule.end_time);
+const weeklyAvailabilitySchema = z.object({
   specialtyId: z.string().uuid(),
-  weekday: z.coerce.number().int().min(0).max(6),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/),
-  endTime: z.string().regex(/^\d{2}:\d{2}$/),
-  slotIntervalMinutes: z.coerce.number().int().min(5).max(120),
+  rules: z.array(weeklyAvailabilityRuleSchema).max(56),
 });
 const specialtySchema = z.object({
   name: z.string().trim().min(2).max(80),
@@ -113,32 +115,41 @@ export async function toggleSpecialty(formData: FormData) {
   redirect("/admin?specialtySaved=1#especialidades");
 }
 
-export async function createAvailabilityRule(formData: FormData) {
-  const { supabase } = await requireAdmin();
-  const parsed = availabilityRuleSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success || parsed.data.startTime >= parsed.data.endTime) {
-    redirect("/admin?availabilityError=invalid#disponibilidad");
-  }
-  const { error } = await supabase.from("availability_rules").insert({
-    specialty_id: parsed.data.specialtyId,
-    weekday: parsed.data.weekday,
-    start_time: parsed.data.startTime,
-    end_time: parsed.data.endTime,
-    slot_interval_minutes: parsed.data.slotIntervalMinutes,
-  });
-  if (error) redirect(`/admin?availabilityError=${error.code === "23505" ? "duplicate" : "save"}#disponibilidad`);
-  revalidatePath("/admin");
-  redirect("/admin?availabilitySaved=1#disponibilidad");
+export interface WeeklyAvailabilityActionState {
+  status: "idle" | "error";
+  error?: "invalid" | "overlap" | "specialty" | "save";
 }
 
-export async function deleteAvailabilityRule(formData: FormData) {
+export async function saveWeeklyAvailability(
+  _previousState: WeeklyAvailabilityActionState,
+  formData: FormData,
+): Promise<WeeklyAvailabilityActionState> {
   const { supabase } = await requireAdmin();
-  const id = z.string().uuid().safeParse(formData.get("id"));
-  if (!id.success) redirect("/admin?availabilityError=invalid#disponibilidad");
-  const { error } = await supabase.from("availability_rules").update({ is_active: false }).eq("id", id.data);
-  if (error) redirect("/admin?availabilityError=delete#disponibilidad");
+  let rules: unknown;
+  try {
+    rules = JSON.parse(String(formData.get("rules") ?? "[]"));
+  } catch {
+    return { status: "error", error: "invalid" };
+  }
+  const parsed = weeklyAvailabilitySchema.safeParse({
+    specialtyId: formData.get("specialtyId"),
+    rules,
+  });
+  if (!parsed.success) return { status: "error", error: "invalid" };
+
+  const { error } = await supabase.rpc("replace_specialty_weekly_availability", {
+    requested_specialty_id: parsed.data.specialtyId,
+    requested_rules: parsed.data.rules,
+  });
+  if (error) {
+    if (error.message.includes("overlap")) return { status: "error", error: "overlap" };
+    if (error.message.includes("specialty")) return { status: "error", error: "specialty" };
+    if (error.message.includes("invalid")) return { status: "error", error: "invalid" };
+    return { status: "error", error: "save" };
+  }
   revalidatePath("/admin");
-  redirect("/admin?availabilitySaved=1#disponibilidad");
+  revalidatePath("/reservar");
+  redirect(`/admin?availabilitySaved=1&availabilitySpecialty=${parsed.data.specialtyId}#disponibilidad`);
 }
 
 export async function createAvailabilityException(formData: FormData) {

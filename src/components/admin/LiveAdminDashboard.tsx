@@ -25,13 +25,12 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AdminRouteNav } from "@/components/admin/AdminRouteNav";
 import { BookingStatusTransitionForm } from "@/components/admin/BookingStatusTransitionForm";
+import { WeeklyAvailabilityEditor } from "@/components/admin/WeeklyAvailabilityEditor";
 import {
   createAvailabilityException,
-  createAvailabilityRule,
   createManualBooking,
   createSpecialty,
   deleteAvailabilityException,
-  deleteAvailabilityRule,
   saveMonthlySpecial,
   signOutAdmin,
   toggleSpecialty,
@@ -71,7 +70,6 @@ interface AvailabilityRuleRow {
   weekday: number;
   start_time: string;
   end_time: string;
-  slot_interval_minutes: number;
 }
 
 interface AvailabilityExceptionRow {
@@ -89,6 +87,8 @@ interface TreatmentRow {
   name: string;
   specialty_id: string;
   duration_minutes: number;
+  buffer_minutes: number;
+  start_interval_minutes: number;
   price_cents: number;
   is_active: boolean;
 }
@@ -161,7 +161,6 @@ interface LiveAdminDashboardProps {
   feedback: Record<string, string | undefined>;
 }
 
-const weekdayNames = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const navItems = [
   ["resumen", "Resumen"],
   ["reservas", "Agenda"],
@@ -321,12 +320,14 @@ export function LiveAdminDashboard({
       </section>
 
       <section className="live-admin__section" id="disponibilidad" aria-labelledby="availability-title">
-        <div className="admin-section-heading"><div><h2 id="availability-title">Disponibilidad habitual</h2><p>Definí las ventanas que alimentan el calendario público para cada especialidad.</p></div><CalendarClock aria-hidden="true" strokeWidth={1.75} /></div>
-        <Feedback show={feedback.availabilitySaved === "1"} error={feedback.availabilityError} success="Disponibilidad actualizada." errorText={feedback.availabilityError === "duplicate" ? "Ese horario ya está configurado." : "No se pudo guardar el horario."} />
-        <div className="availability-admin-grid">
-          <form action={createAvailabilityRule} className="admin-form"><h3>Agregar horario</h3><label>Especialidad<select name="specialtyId" required><option value="">Seleccionar</option>{specialties.filter((item) => item.is_active).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>Día<select name="weekday" defaultValue="1" required>{weekdayNames.map((name,index) => <option key={name} value={index}>{name}</option>)}</select></label><div className="admin-form-grid"><label>Desde<input name="startTime" type="time" defaultValue="09:00" required /></label><label>Hasta<input name="endTime" type="time" defaultValue="18:00" required /></label></div><label>Intervalo entre inicios<select name="slotIntervalMinutes" defaultValue="15"><option value="15">15 minutos</option><option value="30">30 minutos</option><option value="60">60 minutos</option></select></label><button className="button button--primary" type="submit"><Plus aria-hidden="true" strokeWidth={1.75} />Agregar horario</button></form>
-          <div className="availability-list"><h3>Horarios configurados</h3>{rules.length === 0 ? <p className="availability-empty">Todavía no hay horarios habilitados.</p> : <ul>{rules.map((rule) => <li key={rule.id}><Clock3 aria-hidden="true" strokeWidth={1.75} /><div><strong>{specialtyName.get(rule.specialty_id) ?? "Especialidad"}</strong><span>{weekdayNames[rule.weekday]} · {rule.start_time.slice(0,5)} a {rule.end_time.slice(0,5)} · cada {rule.slot_interval_minutes} min</span></div><form action={deleteAvailabilityRule}><input name="id" type="hidden" value={rule.id} /><button className="icon-button" type="submit" aria-label={`Desactivar horario de ${specialtyName.get(rule.specialty_id)}`}><Trash2 aria-hidden="true" strokeWidth={1.75} /></button></form></li>)}</ul>}</div>
-        </div>
+        <div className="admin-section-heading"><div><h2 id="availability-title">Disponibilidad habitual</h2><p>Elegí una especialidad y definí en qué días y franjas puede recibir turnos. La duración y la frecuencia de inicio se configuran en cada tratamiento.</p></div><CalendarClock aria-hidden="true" strokeWidth={1.75} /></div>
+        <WeeklyAvailabilityEditor
+          specialties={specialties}
+          rules={rules}
+          treatments={treatments}
+          initialSpecialtyId={feedback.availabilitySpecialty}
+          saved={feedback.availabilitySaved === "1"}
+        />
       </section>
 
       <section className="live-admin__section" id="excepciones" aria-labelledby="exceptions-title">

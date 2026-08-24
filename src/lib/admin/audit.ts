@@ -53,6 +53,7 @@ const fieldLabels: Record<string, string> = {
   price_cents: "Precio",
   special_price_cents: "Precio especial",
   duration_minutes: "Duración",
+  start_interval_minutes: "Frecuencia de inicio",
   business_name: "Nombre comercial",
   whatsapp_number: "WhatsApp público",
   address: "Dirección",

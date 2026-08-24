@@ -51,6 +51,7 @@ export interface Treatment {
   characteristics: readonly string[];
   durationMinutes: number;
   bufferMinutes: number;
+  startIntervalMinutes: 15 | 30 | 60;
   priceCents: number;
   preparation: string | null;
   contraindications: string | null;

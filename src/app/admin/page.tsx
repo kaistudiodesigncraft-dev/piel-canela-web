@@ -70,9 +70,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     confirmedCountResult,
   ] = await Promise.all([
     supabase.from("specialties").select("id,name,slug,description,display_order,is_active").order("display_order"),
-    supabase.from("availability_rules").select("id,specialty_id,weekday,start_time,end_time,slot_interval_minutes").eq("is_active", true).order("weekday").order("start_time"),
+    supabase.from("availability_rules").select("id,specialty_id,weekday,start_time,end_time").eq("is_active", true).order("weekday").order("start_time"),
     supabase.from("availability_exceptions").select("id,specialty_id,kind,starts_at,ends_at,public_reason,internal_reason").gte("ends_at", nowIso).order("starts_at").limit(40),
-    supabase.from("treatments").select("id,name,specialty_id,duration_minutes,price_cents,is_active").eq("is_active", true).order("name"),
+    supabase.from("treatments").select("id,name,specialty_id,duration_minutes,buffer_minutes,start_interval_minutes,price_cents,is_active").eq("is_active", true).order("name"),
     supabase.from("monthly_specials").select("id,treatment_id,title,short_description,detail,image_path,image_alt,special_price_cents,reference_price_cents,starts_at,ends_at,terms,is_active,display_order").order("display_order"),
     bookingsRequest,
     supabase.from("bookings").select("id", { count: "exact", head: true })
