@@ -6,6 +6,7 @@ import { z } from "zod";
 import {
   isSiteContentKey,
   SITE_CONTENT_DEFINITIONS,
+  getSiteContentCharacterLimit,
   type SiteContentKey,
   type SiteContentSection,
 } from "@/domain/site-content";
@@ -131,7 +132,7 @@ function buildDraftEntries(section: SiteContentSection, formData: FormData) {
 
   for (const field of definitions) {
     if (field.kind !== "image") {
-      const parsed = safeTextSchema(field.kind === "short_text" ? 180 : 1400).safeParse(formData.get(field.key));
+      const parsed = safeTextSchema(getSiteContentCharacterLimit(field)).safeParse(formData.get(field.key));
       if (!parsed.success) {
         fieldErrors[field.key] = parsed.error.issues.map((issue) => issue.message);
         continue;

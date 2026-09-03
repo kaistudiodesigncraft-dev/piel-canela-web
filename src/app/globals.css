@@ -308,6 +308,10 @@ svg {
     box-shadow var(--motion-fast) var(--ease-standard);
 }
 
+.site-header :is(.wordmark, .site-nav__link, .site-header__cta) {
+  min-height: 2.75rem;
+}
+
 .button svg,
 .text-link svg,
 .icon-text-link svg {
@@ -5386,7 +5390,7 @@ svg {
     padding-right: 7rem;
   }
 
-  .admin-route-nav__scroll-hint {
+  .admin-route-nav-shell.has-scroll-hint .admin-route-nav__scroll-hint {
     position: absolute;
     z-index: 2;
     top: 50%;
@@ -5472,7 +5476,7 @@ svg {
 }
 
 .content-preview-toggle button {
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   padding-inline: .75rem;
   border: 0;
   border-radius: .45rem;
@@ -5508,6 +5512,10 @@ svg {
   background: var(--color-bone);
 }
 
+.content-preview--surface-plain { background: var(--color-white); }
+.content-preview--surface-soft { background: var(--color-bone); }
+.content-preview--surface-contrast { color: var(--color-white); background: var(--color-deep-green); }
+
 .content-preview--desktop { min-width: 56rem; }
 .content-preview--mobile { min-width: 18rem; }
 
@@ -5515,20 +5523,31 @@ svg {
   position: absolute;
   z-index: -2;
   inset: 0;
-  background-size: cover;
+  overflow: hidden;
 }
 
-.content-preview__background::after {
+.content-preview__background img {
   position: absolute;
-  z-index: -1;
   inset: 0;
-  background: rgba(248, 245, 237, .18);
-  content: "";
+  object-fit: cover;
 }
 
-.content-preview__background--medium::after { background: rgba(248, 245, 237, .46); }
-.content-preview__background--strong::after { background: rgba(248, 245, 237, .72); }
-.content-preview__background--none::after { display: none; }
+.content-preview__background > span { position: absolute; inset: 0; background: rgba(248, 245, 237, .18); }
+.content-preview__background--light > span { background: rgba(248, 245, 237, .78); }
+.content-preview__background--medium > span { background: rgba(36, 50, 46, .58); }
+.content-preview__background--strong > span { background: rgba(36, 50, 46, .74); }
+.content-preview__background--none > span { display: none; }
+
+.content-preview__layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-height: 17rem;
+}
+
+.content-preview--desktop .content-preview__layout--with-image {
+  grid-template-columns: minmax(0, 1.08fr) minmax(16rem, .92fr);
+}
 
 .content-preview__copy {
   display: grid;
@@ -5537,16 +5556,45 @@ svg {
   padding: clamp(1.5rem, 5vw, 4rem);
 }
 
+.content-preview__image {
+  position: relative;
+  min-height: 17rem;
+  overflow: hidden;
+  border-radius: 45% 0 0 45% / 22% 0 0 78%;
+  background: var(--color-green-mist);
+}
+
+.content-preview__image img { object-fit: cover; }
+
+.content-preview--mobile .content-preview__image {
+  min-height: 13rem;
+  margin: 0 1rem 1rem;
+  border-radius: 42% 3rem 1.5rem 2rem / 22% 3rem 2rem 38%;
+}
+
+.content-preview:has(.content-preview__background--medium),
+.content-preview:has(.content-preview__background--strong) {
+  color: var(--color-white);
+}
+
+.content-preview:has(.content-preview__background--medium) .content-preview__copy > p:not(.eyebrow),
+.content-preview:has(.content-preview__background--strong) .content-preview__copy > p:not(.eyebrow) {
+  color: var(--color-white);
+}
+
 .content-preview__copy h3 {
   max-width: 18ch;
   margin-block: .35rem .8rem;
   font-size: clamp(1.65rem, 4vw, 3.5rem);
   line-height: 1;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 .content-preview__copy > p:not(.eyebrow) {
   max-width: 58ch;
   color: var(--color-text-muted);
+  overflow-wrap: anywhere;
 }
 
 .content-revisions {
@@ -5631,11 +5679,37 @@ svg {
 }
 
 @media (max-width: 39.99rem) {
+  .content-admin {
+    width: min(100% - 1rem, 76rem);
+  }
+  .content-admin__header h1 {
+    overflow-wrap: anywhere;
+    font-size: clamp(2rem, 11vw, 2.8rem);
+    text-wrap: pretty;
+  }
+  .content-admin__nav {
+    margin-inline: -0.5rem;
+    padding-inline: 0.5rem;
+    scrollbar-width: thin;
+  }
+  .content-editor-section__heading {
+    gap: 0.75rem;
+  }
   .content-image-field { grid-template-columns: 1fr; }
   .content-image-field__preview { min-height: 12rem; }
   .content-image-settings { grid-template-columns: 1fr; }
   .content-editor-form__footer .button-row { display: grid; width: 100%; }
   .content-editor-form__footer .button { width: 100%; }
+  .content-preview-panel {
+    padding-inline: 0.75rem;
+  }
+  .content-preview-viewport {
+    padding: 0.5rem;
+  }
+  .content-revisions li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

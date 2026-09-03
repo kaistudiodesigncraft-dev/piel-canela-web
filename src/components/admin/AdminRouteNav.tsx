@@ -1,5 +1,8 @@
+"use client";
+
 import { ArrowRight, CalendarDays, ContactRound, FilePenLine, HandHeart, Settings, ShieldCheck, UsersRound } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 
 type AdminRoute = "operations" | "catalog" | "professionals" | "customers" | "settings" | "content" | "governance";
 
@@ -14,9 +17,31 @@ const routes: readonly { id: AdminRoute; href: string; label: string; icon: type
 ];
 
 export function AdminRouteNav({ current, canManageAccess = false }: { current: AdminRoute; canManageAccess?: boolean }) {
+  const navRef = useRef<HTMLElement>(null);
+  const [showScrollHint, setShowScrollHint] = useState(false);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const updateHint = () => {
+      const remaining = nav.scrollWidth - nav.clientWidth - nav.scrollLeft;
+      setShowScrollHint(remaining > 8);
+    };
+    updateHint();
+    nav.addEventListener("scroll", updateHint, { passive: true });
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateHint);
+    observer?.observe(nav);
+    window.addEventListener("resize", updateHint);
+    return () => {
+      nav.removeEventListener("scroll", updateHint);
+      window.removeEventListener("resize", updateHint);
+      observer?.disconnect();
+    };
+  }, [canManageAccess]);
+
   return (
-    <div className="admin-route-nav-shell">
-      <nav className="admin-route-nav" aria-label="Navegación administrativa">
+    <div className={`admin-route-nav-shell${showScrollHint ? " has-scroll-hint" : ""}`}>
+      <nav className="admin-route-nav" aria-label="Navegación administrativa" ref={navRef}>
         {routes.filter((route) => route.id !== "governance" || canManageAccess).map((route) => {
           const Icon = route.icon;
           return (

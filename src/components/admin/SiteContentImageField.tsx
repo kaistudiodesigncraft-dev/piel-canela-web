@@ -13,7 +13,13 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type UploadStatus = "idle" | "preparing" | "uploading" | "processing" | "complete" | "failed";
 
-export function SiteContentImageField({ field }: { field: SiteContentField }) {
+export function SiteContentImageField({
+  field,
+  onPreviewChange,
+}: {
+  field: SiteContentField;
+  onPreviewChange?: (field: SiteContentField) => void;
+}) {
   const inputId = useId();
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [message, setMessage] = useState<string>();
@@ -76,6 +82,11 @@ export function SiteContentImageField({ field }: { field: SiteContentField }) {
     if (previewUrl.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
     setImagePath(finalized.imagePath);
     setPreviewUrl(finalized.publicUrl);
+    onPreviewChange?.({
+      ...field,
+      value: finalized.publicUrl,
+      imagePath: finalized.imagePath,
+    });
     setStatus("complete");
     setMessage("Imagen lista. Guardá el borrador o publicá para conservar el cambio.");
   }
@@ -92,7 +103,7 @@ export function SiteContentImageField({ field }: { field: SiteContentField }) {
             src={previewUrl}
             alt={decorative ? "" : field.imageAlt ?? "Vista previa"}
             fill
-            unoptimized={previewUrl.startsWith("blob:")}
+            unoptimized={previewUrl.startsWith("blob:") || undefined}
             sizes="(max-width: 720px) 90vw, 360px"
             style={{ objectPosition: `${field.settings.focalX}% ${field.settings.focalY}%` }}
           />
@@ -137,15 +148,29 @@ export function SiteContentImageField({ field }: { field: SiteContentField }) {
         <div className="content-image-settings">
           <label>
             Punto focal horizontal
-            <input type="range" name={`${field.key}_focal_x`} min="0" max="100" defaultValue={field.settings.focalX} />
+            <input
+              type="range"
+              name={`${field.key}_focal_x`}
+              min="0"
+              max="100"
+              defaultValue={field.settings.focalX}
+              onChange={(event) => onPreviewChange?.({ ...field, value: previewUrl, imagePath, settings: { ...field.settings, focalX: Number(event.target.value) } })}
+            />
           </label>
           <label>
             Punto focal vertical
-            <input type="range" name={`${field.key}_focal_y`} min="0" max="100" defaultValue={field.settings.focalY} />
+            <input
+              type="range"
+              name={`${field.key}_focal_y`}
+              min="0"
+              max="100"
+              defaultValue={field.settings.focalY}
+              onChange={(event) => onPreviewChange?.({ ...field, value: previewUrl, imagePath, settings: { ...field.settings, focalY: Number(event.target.value) } })}
+            />
           </label>
           <label>
             Superficie
-            <select name={`${field.key}_surface`} defaultValue={field.settings.surfacePreset}>
+            <select name={`${field.key}_surface`} defaultValue={field.settings.surfacePreset} onChange={(event) => onPreviewChange?.({ ...field, value: previewUrl, imagePath, settings: { ...field.settings, surfacePreset: event.target.value as SiteContentField["settings"]["surfacePreset"] } })}>
               <option value="plain">Clara</option>
               <option value="soft">Suave</option>
               <option value="contrast">Contraste</option>
@@ -153,7 +178,7 @@ export function SiteContentImageField({ field }: { field: SiteContentField }) {
           </label>
           <label>
             Protección de texto
-            <select name={`${field.key}_overlay`} defaultValue={field.settings.overlayPreset}>
+            <select name={`${field.key}_overlay`} defaultValue={field.settings.overlayPreset} onChange={(event) => onPreviewChange?.({ ...field, value: previewUrl, imagePath, settings: { ...field.settings, overlayPreset: event.target.value as SiteContentField["settings"]["overlayPreset"] } })}>
               <option value="none">Sin capa</option>
               <option value="light">Ligera</option>
               <option value="medium">Media</option>

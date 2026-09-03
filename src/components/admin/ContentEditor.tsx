@@ -63,7 +63,7 @@ export function ContentEditor({
           const published = publishedFields.filter((field) => field.section === section).sort((a, b) => a.displayOrder - b.displayOrder);
           return (
             <ContentSectionEditor
-              key={section}
+              key={`${section}-${fields.map((field) => field.updatedAt ?? "default").join("-")}`}
               section={section}
               title={details.title}
               description={details.description}

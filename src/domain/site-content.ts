@@ -84,6 +84,52 @@ export interface SiteContentField {
   settings: SiteAssetSettings;
 }
 
+const SITE_CONTENT_CHARACTER_LIMITS: Partial<Record<SiteContentKey, number>> = {
+  hero_eyebrow: 72,
+  hero_title: 96,
+  hero_lead: 320,
+  hero_image_caption: 160,
+  categories_eyebrow: 72,
+  categories_title: 72,
+  categories_lead: 240,
+  specials_eyebrow: 72,
+  specials_title: 72,
+  specials_lead: 240,
+  approach_eyebrow: 72,
+  approach_title: 96,
+  approach_body_primary: 700,
+  approach_body_secondary: 700,
+  booking_eyebrow: 72,
+  booking_title: 96,
+  booking_step_1_title: 40,
+  booking_step_1_text: 180,
+  booking_step_2_title: 40,
+  booking_step_2_text: 180,
+  booking_step_3_title: 40,
+  booking_step_3_text: 180,
+  booking_step_4_title: 40,
+  booking_step_4_text: 180,
+  faq_eyebrow: 72,
+  faq_title: 72,
+  faq_1_question: 140,
+  faq_1_answer: 500,
+  faq_2_question: 140,
+  faq_2_answer: 500,
+  faq_3_question: 140,
+  faq_3_answer: 500,
+  catalog_header_eyebrow: 72,
+  catalog_header_title: 96,
+  catalog_header_lead: 320,
+  booking_header_eyebrow: 72,
+  booking_header_title: 96,
+  booking_header_lead: 320,
+};
+
+export function getSiteContentCharacterLimit(field: Pick<SiteContentField, "key" | "kind">) {
+  if (field.kind === "image") return 0;
+  return SITE_CONTENT_CHARACTER_LIMITS[field.key] ?? (field.kind === "long_text" ? 900 : 180);
+}
+
 const contentSettings: SiteAssetSettings = {
   focalX: 50,
   focalY: 50,
