@@ -10,22 +10,14 @@ import {
   percentageToFocalPoint,
   splitAdminLines,
 } from "@/lib/admin/catalog";
-import { inspectAdminImage } from "@/lib/admin/image-upload";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import {
   isTreatmentDeleteCodeConfigured,
   verifyTreatmentDeleteCode,
 } from "@/lib/admin/treatment-delete-code";
 
-const imageExtension: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/avif": "avif",
-};
-
 const treatmentSchema = z.object({
-  treatmentId: z.string().uuid().optional(),
+  treatmentId: z.string().uuid(),
   categoryId: z.string().uuid(),
   specialtyId: z.string().uuid(),
   professionalId: z.string().uuid().optional(),
@@ -57,22 +49,33 @@ const deleteTreatmentSchema = z.object({
 });
 
 export interface SaveTreatmentState {
-  status: "idle" | "error";
+  status: "idle" | "invalid" | "failed";
   error?: string;
-  fieldErrors?: Record<string, string>;
+  fieldErrors?: Record<string, string[]>;
+  incidentId?: string;
 }
 
 export const initialSaveTreatmentState: SaveTreatmentState = { status: "idle" };
 
-function treatmentFailure(error: string, fieldErrors?: Record<string, string>): SaveTreatmentState {
-  return { status: "error", error, fieldErrors };
+function treatmentFailure(error: string, fieldErrors?: Record<string, string[]>): SaveTreatmentState {
+  return {
+    status: error === "save" || error === "missing" ? "failed" : "invalid",
+    error,
+    fieldErrors,
+  };
+}
+
+function operationalFailure(stage: string, code?: string): SaveTreatmentState {
+  const incidentId = randomUUID().slice(0, 8).toUpperCase();
+  console.error("admin_treatment_mutation", { stage, code: code ?? "unknown", incidentId });
+  return { status: "failed", error: "save", incidentId };
 }
 
 function schemaFieldErrors(error: z.ZodError) {
-  const fields: Record<string, string> = {};
+  const fields: Record<string, string[]> = {};
   for (const issue of error.issues) {
     const field = String(issue.path[0] ?? "");
-    if (field && !fields[field]) fields[field] = "Revisá este dato antes de guardar.";
+    if (field && !fields[field]) fields[field] = ["Revisá este dato antes de guardar."];
   }
   return fields;
 }
@@ -85,9 +88,9 @@ export async function saveTreatment(
   _previousState: SaveTreatmentState,
   formData: FormData,
 ): Promise<SaveTreatmentState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, userId } = await requireAdmin();
   const parsed = treatmentSchema.safeParse({
-    treatmentId: formData.get("treatmentId") || undefined,
+    treatmentId: formData.get("treatmentId"),
     categoryId: formData.get("categoryId"),
     specialtyId: formData.get("specialtyId"),
     professionalId: formData.get("professionalId") || undefined,
@@ -111,21 +114,23 @@ export async function saveTreatment(
   const characteristics = splitAdminLines(String(formData.get("characteristics") ?? ""), 3);
   if (expectations.some((item) => item.length > 180) || characteristics.some((item) => item.length > 80)) {
     return treatmentFailure("lists", {
-      ...(expectations.some((item) => item.length > 180) ? { expectations: "Cada expectativa puede tener hasta 180 caracteres." } : {}),
-      ...(characteristics.some((item) => item.length > 80) ? { characteristics: "Cada característica puede tener hasta 80 caracteres." } : {}),
+      ...(expectations.some((item) => item.length > 180) ? { expectations: ["Cada expectativa puede tener hasta 180 caracteres."] } : {}),
+      ...(characteristics.some((item) => item.length > 80) ? { characteristics: ["Cada característica puede tener hasta 80 caracteres."] } : {}),
     });
   }
 
-  const isActive = formData.get("isActive") === "on";
-  const id = parsed.data.treatmentId ?? randomUUID();
+  const submitIntent = formData.get("submitIntent") === "publish" ? "publish" : "draft";
+  const isActive = submitIntent === "publish";
+  const isNew = formData.get("isNew") === "true";
+  const id = parsed.data.treatmentId;
   const [{ data: category }, { data: specialty }] = await Promise.all([
     supabase.from("treatment_categories").select("id,is_active").eq("id", parsed.data.categoryId).single(),
     supabase.from("specialties").select("id,is_active").eq("id", parsed.data.specialtyId).single(),
   ]);
   if (!category?.is_active || !specialty?.is_active) {
     return treatmentFailure("taxonomy", {
-      ...(!category?.is_active ? { categoryId: "Elegí una categoría activa." } : {}),
-      ...(!specialty?.is_active ? { specialtyId: "Elegí una especialidad activa." } : {}),
+      ...(!category?.is_active ? { categoryId: ["Elegí una categoría activa."] } : {}),
+      ...(!specialty?.is_active ? { specialtyId: ["Elegí una especialidad activa."] } : {}),
     });
   }
 
@@ -133,74 +138,68 @@ export async function saveTreatment(
     const { data: professional } = await supabase.from("professionals")
       .select("id,specialty_id,is_active").eq("id", parsed.data.professionalId).single();
     if (!professional || professional.specialty_id !== parsed.data.specialtyId || (isActive && !professional.is_active)) {
-      return treatmentFailure("professional", { professionalId: "Elegí un profesional activo de esta especialidad." });
+      return treatmentFailure("professional", { professionalId: ["Elegí un profesional activo de esta especialidad."] });
     }
   }
 
   let existing: {
     slug: string;
     image_path: string | null;
+    specialty_id: string;
     duration_minutes: number;
     buffer_minutes: number;
+    start_interval_minutes: number;
     is_active: boolean;
   } | null = null;
   let futureBookings = 0;
-  if (parsed.data.treatmentId) {
-    const [{ data }, { count }] = await Promise.all([
-      supabase.from("treatments")
-        .select("slug,image_path,duration_minutes,buffer_minutes,is_active")
-        .eq("id", id).single(),
-      supabase.from("bookings").select("id", { count: "exact", head: true })
-        .eq("treatment_id", id)
-        .in("status", [...OCCUPYING_BOOKING_STATUSES])
-        .gte("starts_at", new Date().toISOString()),
-    ]);
-    existing = data;
-    futureBookings = count ?? 0;
+  if (!isNew) {
+    const treatmentResult = await supabase.from("treatments")
+      .select("slug,image_path,specialty_id,duration_minutes,buffer_minutes,start_interval_minutes,is_active")
+      .eq("id", id).single();
+    existing = treatmentResult.data;
+    if (treatmentResult.error && treatmentResult.error.code !== "PGRST116") {
+      return operationalFailure("load_existing", treatmentResult.error.code);
+    }
     if (!existing) return treatmentFailure("missing");
     const affectsAgenda = existing.duration_minutes !== parsed.data.durationMinutes
       || existing.buffer_minutes !== parsed.data.bufferMinutes
+      || existing.start_interval_minutes !== parsed.data.startIntervalMinutes
+      || existing.specialty_id !== parsed.data.specialtyId
       || (existing.is_active && !isActive);
-    if (affectsAgenda && futureBookings > 0 && formData.get("confirmImpact") !== "on") {
-      return treatmentFailure("impact", { confirmImpact: "Confirmá el impacto sobre las reservas futuras para continuar." });
+    if (affectsAgenda) {
+      const bookingsResult = await supabase.from("bookings").select("id", { count: "exact", head: true })
+        .eq("treatment_id", id)
+        .in("status", [...OCCUPYING_BOOKING_STATUSES])
+        .gte("starts_at", new Date().toISOString());
+      if (bookingsResult.error) return operationalFailure("load_booking_impact", bookingsResult.error.code);
+      futureBookings = bookingsResult.count ?? 0;
+      if (futureBookings > 0 && formData.get("confirmImpact") !== "on") {
+        return treatmentFailure("impact", { confirmImpact: ["Confirmá el impacto sobre las reservas futuras para continuar."] });
+      }
     }
   }
 
+  const submittedImagePath = String(formData.get("imagePath") ?? "").trim() || null;
   let imagePath = existing?.image_path ?? null;
-  let uploadedImagePath: string | null = null;
-  const imageFile = formData.get("imageFile");
-  const hasNewImage = imageFile instanceof File && imageFile.size > 0;
-  if (isActive) {
-    const publicationErrors: Record<string, string> = {};
-    if (!imagePath && !hasNewImage) publicationErrors.imageFile = "Cargá una imagen antes de publicar.";
-    if (!parsed.data.imageAlt || parsed.data.imageAlt.length < 3) publicationErrors.imageAlt = "Describí la imagen con al menos 3 caracteres.";
-    if (parsed.data.pricePesos <= 0) publicationErrors.pricePesos = "Ingresá un precio mayor que cero para publicar.";
-    if (Object.keys(publicationErrors).length > 0) return treatmentFailure("publishable", publicationErrors);
+  if (submittedImagePath && submittedImagePath !== existing?.image_path) {
+    const { data: finalizedUpload } = await supabase.from("treatment_media_uploads")
+      .select("id,final_path,status")
+      .eq("user_id", userId)
+      .eq("treatment_id", id)
+      .eq("final_path", submittedImagePath)
+      .eq("status", "finalized")
+      .single();
+    if (!finalizedUpload) {
+      return treatmentFailure("image", { imagePath: ["La carga no pudo verificarse. Volvé a seleccionar la imagen."] });
+    }
+    imagePath = finalizedUpload.final_path;
   }
-  if (hasNewImage) {
-    const inspection = await inspectAdminImage(imageFile);
-    if (!inspection.valid) {
-      const reason = inspection.error === "too-small" || inspection.error === "too-large" || inspection.error === "dimensions"
-        ? "image-dimensions"
-        : "image";
-      return treatmentFailure(reason, {
-        imageFile: inspection.error === "too-small"
-          ? "La imagen debe tener al menos 640 × 640 píxeles."
-          : inspection.error === "too-large"
-            ? "La imagen supera los 40 megapíxeles permitidos."
-            : inspection.error === "dimensions"
-              ? "No pudimos leer las dimensiones de la imagen."
-              : "Usá una imagen JPG, PNG, WebP o AVIF válida de hasta 8 MB.",
-      });
-    }
-    imagePath = `treatments/${id}/${randomUUID()}.${imageExtension[imageFile.type]}`;
-    uploadedImagePath = imagePath;
-    const { error: uploadError } = await supabase.storage.from("treatment-media")
-      .upload(imagePath, imageFile, { contentType: imageFile.type, upsert: false });
-    if (uploadError) {
-      await supabase.storage.from("treatment-media").remove([imagePath]);
-      return treatmentFailure("upload", { imageFile: "La imagen no pudo cargarse. Intentá nuevamente." });
-    }
+  if (isActive) {
+    const publicationErrors: Record<string, string[]> = {};
+    if (!imagePath) publicationErrors.imagePath = ["Cargá una imagen antes de publicar."];
+    if (!parsed.data.imageAlt || parsed.data.imageAlt.length < 3) publicationErrors.imageAlt = ["Describí la imagen con al menos 3 caracteres."];
+    if (parsed.data.pricePesos <= 0) publicationErrors.pricePesos = ["Ingresá un precio mayor que cero para publicar."];
+    if (Object.keys(publicationErrors).length > 0) return treatmentFailure("publishable", publicationErrors);
   }
 
   const payload = {
@@ -227,22 +226,20 @@ export async function saveTreatment(
     display_order: parsed.data.displayOrder,
   };
   if (!payload.slug) {
-    if (uploadedImagePath) await supabase.storage.from("treatment-media").remove([uploadedImagePath]);
-    return treatmentFailure("invalid", { name: "El nombre debe contener letras o números para crear la URL." });
+    return treatmentFailure("invalid", { name: ["El nombre debe contener letras o números para crear la URL."] });
   }
 
-  const result = parsed.data.treatmentId
-    ? await supabase.from("treatments").update(payload).eq("id", id)
-    : await supabase.from("treatments").insert({ id, ...payload });
+  const result = isNew
+    ? await supabase.from("treatments").insert({ id, ...payload })
+    : await supabase.from("treatments").update(payload).eq("id", id);
   if (result.error) {
-    if (uploadedImagePath) await supabase.storage.from("treatment-media").remove([uploadedImagePath]);
+    if (isNew && result.error.code === "23505") {
+      const { data: duplicateSubmission } = await supabase.from("treatments").select("id").eq("id", id).maybeSingle();
+      if (duplicateSubmission) redirect(`/admin/catalogo/${id}?saved=1`);
+    }
     const reason = result.error.code === "23505" ? "duplicate" : "save";
-    return treatmentFailure(reason, reason === "duplicate" ? { name: "Ya existe un tratamiento con esta URL." } : undefined);
-  }
-
-  if (uploadedImagePath && existing?.image_path && existing.image_path !== uploadedImagePath
-    && !existing.image_path.startsWith("/") && !existing.image_path.startsWith("https://")) {
-    await supabase.storage.from("treatment-media").remove([existing.image_path]);
+    if (reason === "save") return operationalFailure("save", result.error.code);
+    return treatmentFailure(reason, { name: ["Ya existe un tratamiento con esta URL."] });
   }
 
   revalidatePath("/");
@@ -251,7 +248,7 @@ export async function saveTreatment(
   revalidatePath("/reservar");
   revalidatePath("/admin");
   revalidatePath("/admin/catalogo");
-  catalogRedirect(`treatmentSaved=1&treatment=${id}`);
+  redirect(`/admin/catalogo/${id}?${isActive ? "published" : "saved"}=1`);
 }
 
 export async function updateTreatmentCategory(formData: FormData) {
@@ -299,8 +296,21 @@ export async function deleteTreatment(formData: FormData) {
 
   let mediaCleanupFailed = false;
   if (treatment.image_path && !treatment.image_path.startsWith("/") && !treatment.image_path.startsWith("https://")) {
-    const { error: mediaError } = await supabase.storage.from("treatment-media").remove([treatment.image_path]);
-    mediaCleanupFailed = Boolean(mediaError);
+    const [otherTreatments, otherSpecials] = await Promise.all([
+      supabase.from("treatments").select("id", { count: "exact", head: true })
+        .eq("image_path", treatment.image_path),
+      supabase.from("monthly_specials").select("id", { count: "exact", head: true })
+        .eq("image_path", treatment.image_path),
+    ]);
+    const referenceCheckFailed = Boolean(otherTreatments.error || otherSpecials.error);
+    const isStillReferenced = (otherTreatments.count ?? 0) > 0 || (otherSpecials.count ?? 0) > 0;
+    if (!referenceCheckFailed && !isStillReferenced) {
+      const { error: mediaError } = await supabase.storage.from("treatment-media").remove([treatment.image_path]);
+      mediaCleanupFailed = Boolean(mediaError);
+    } else {
+      // Retaining an unreferenced file is recoverable; deleting a referenced one is not.
+      mediaCleanupFailed = referenceCheckFailed;
+    }
   }
 
   revalidatePath("/");

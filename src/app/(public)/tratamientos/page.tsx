@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { EditableSectionMedia, editableSurfaceClassName } from "@/components/content/EditableSectionMedia";
 import { CatalogExperience } from "@/components/treatments/CatalogExperience";
+import { siteContentMap } from "@/domain/site-content";
 import { getPublicCatalogSnapshot } from "@/lib/supabase/public-catalog";
+import { getSiteContent } from "@/lib/supabase/site-content";
 
 export const metadata: Metadata = {
   title: "Tratamientos",
@@ -11,19 +14,22 @@ export const metadata: Metadata = {
 };
 
 export default async function TreatmentsPage() {
-  const {
+  const [{
     categories: treatmentCategories,
     treatments,
     monthlySpecials,
-  } = await getPublicCatalogSnapshot();
+  }, siteFields] = await Promise.all([getPublicCatalogSnapshot(), getSiteContent()]);
+  const content = siteContentMap(siteFields);
+  const headerImage = content.get("catalog_header_image");
   return (
     <>
-      <section className="page-hero page-hero--catalog">
+      <section className={editableSurfaceClassName("page-hero page-hero--catalog", headerImage)}>
+        <EditableSectionMedia field={headerImage} priority />
         <div className="site-container page-hero__content">
-          <p className="eyebrow">Catálogo Piel Canela</p>
-          <h1>Encontrá el tratamiento adecuado.</h1>
+          <p className="eyebrow">{content.get("catalog_header_eyebrow")?.value}</p>
+          <h1>{content.get("catalog_header_title")?.value}</h1>
           <p>
-            Filtrá por categoría y abrí cada ficha para conocer qué incluye, cuánto dura y qué considerar antes de reservar.
+            {content.get("catalog_header_lead")?.value}
           </p>
         </div>
       </section>

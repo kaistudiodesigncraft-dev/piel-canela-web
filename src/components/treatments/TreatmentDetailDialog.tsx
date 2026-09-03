@@ -2,7 +2,7 @@
 
 import { ExternalLink, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   MonthlySpecial,
   Treatment,
@@ -24,6 +24,22 @@ export function TreatmentDetailDialog({
   onClose,
 }: TreatmentDetailDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const requestClose = useCallback(() => {
+    const dialog = dialogRef.current;
+    if (!dialog || isClosing) return;
+
+    const reduceMotion = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) {
+      dialog.close();
+      return;
+    }
+
+    setIsClosing(true);
+    closeTimerRef.current = setTimeout(() => dialog.close(), 180);
+  }, [isClosing]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -33,18 +49,19 @@ export function TreatmentDetailDialog({
     if (!dialog.open) dialog.showModal();
 
     return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
       document.body.style.overflow = previousOverflow;
     };
   }, []);
 
   return (
     <dialog
-      className="treatment-dialog"
+      className={`treatment-dialog${isClosing ? " is-closing" : ""}`}
       ref={dialogRef}
       aria-label={`Detalle de ${treatment.name}`}
       onCancel={(event) => {
         event.preventDefault();
-        dialogRef.current?.close();
+        requestClose();
       }}
       onClose={onClose}
     >
@@ -61,7 +78,7 @@ export function TreatmentDetailDialog({
           type="button"
           aria-label="Cerrar detalle"
           autoFocus
-          onClick={() => dialogRef.current?.close()}
+          onClick={requestClose}
         >
           <X aria-hidden="true" strokeWidth={1.75} />
         </button>

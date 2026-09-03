@@ -1,4 +1,4 @@
-import { CalendarDays, ContactRound, FilePenLine, HandHeart, Settings, ShieldCheck, UsersRound } from "lucide-react";
+import { ArrowRight, CalendarDays, ContactRound, FilePenLine, HandHeart, Settings, ShieldCheck, UsersRound } from "lucide-react";
 import Link from "next/link";
 
 type AdminRoute = "operations" | "catalog" | "professionals" | "customers" | "settings" | "content" | "governance";
@@ -15,20 +15,25 @@ const routes: readonly { id: AdminRoute; href: string; label: string; icon: type
 
 export function AdminRouteNav({ current, canManageAccess = false }: { current: AdminRoute; canManageAccess?: boolean }) {
   return (
-    <nav className="admin-route-nav" aria-label="Navegación administrativa">
-      {routes.filter((route) => !["content", "governance"].includes(route.id) || canManageAccess).map((route) => {
-        const Icon = route.icon;
-        return (
-          <Link
-            key={route.id}
-            href={route.href}
-            aria-current={current === route.id ? "page" : undefined}
-          >
-            <Icon aria-hidden="true" strokeWidth={1.75} />
-            {route.label}
-          </Link>
-        );
-      })}
-    </nav>
+    <div className="admin-route-nav-shell">
+      <nav className="admin-route-nav" aria-label="Navegación administrativa">
+        {routes.filter((route) => route.id !== "governance" || canManageAccess).map((route) => {
+          const Icon = route.icon;
+          return (
+            <Link
+              key={route.id}
+              href={route.href}
+              aria-current={current === route.id ? "page" : undefined}
+            >
+              <Icon aria-hidden="true" strokeWidth={1.75} />
+              {route.label}
+            </Link>
+          );
+        })}
+      </nav>
+      <span className="admin-route-nav__scroll-hint" aria-hidden="true">
+        Deslizá <ArrowRight strokeWidth={1.75} />
+      </span>
+    </div>
   );
 }

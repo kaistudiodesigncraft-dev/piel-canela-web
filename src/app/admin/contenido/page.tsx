@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
-import { ContentEditor, ContentEditorLock } from "@/components/admin/ContentEditor";
-import {
-  hasAgencyUnlockSession,
-  isAgencyUnlockConfigured,
-} from "@/lib/admin/agency-unlock";
-import { requireOwner } from "@/lib/admin/require-admin";
-import { getSiteContent } from "@/lib/supabase/site-content";
+import { ContentEditor } from "@/components/admin/ContentEditor";
+import { requireAdmin } from "@/lib/admin/require-admin";
+import { getSiteContent, getSiteContentDrafts, getSiteContentRevisions } from "@/lib/supabase/site-content";
 
 export const metadata: Metadata = {
   title: "Contenido del sitio",
@@ -13,36 +9,19 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-interface ContentPageProps {
-  searchParams: Promise<{
-    unlocked?: string;
-    unlockError?: string;
-    saved?: string;
-    saveError?: string;
-  }>;
-}
-
-export default async function ContentPage({ searchParams }: ContentPageProps) {
-  const { userId, profile } = await requireOwner();
-  const query = await searchParams;
-  const unlocked = await hasAgencyUnlockSession(userId);
-
-  if (!unlocked) {
-    return (
-      <ContentEditorLock
-        configured={isAgencyUnlockConfigured()}
-        error={query.unlockError}
-      />
-    );
-  }
-
-  const fields = await getSiteContent();
+export default async function ContentPage() {
+  const { supabase, profile } = await requireAdmin();
+  const [draftFields, publishedFields, revisions] = await Promise.all([
+    getSiteContentDrafts(supabase),
+    getSiteContent(),
+    getSiteContentRevisions(supabase),
+  ]);
   return (
     <ContentEditor
-      fields={fields}
+      draftFields={draftFields}
+      publishedFields={publishedFields}
+      revisions={revisions}
       canManageAccess={profile.role === "admin"}
-      savedSection={query.saved}
-      saveError={query.saveError}
     />
   );
 }

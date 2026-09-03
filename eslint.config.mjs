@@ -14,6 +14,7 @@ const eslintConfig = defineConfig([
     "design/**",
     "sources/**",
     "codex-handoff/**",
+    ".claude/**",
   ]),
 ]);
 

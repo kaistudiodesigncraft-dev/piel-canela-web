@@ -192,7 +192,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
       <section className="booking-success" aria-labelledby="booking-success-title">
         <div className="booking-success__mark" aria-hidden="true"><Check strokeWidth={1.75} /></div>
         <p className="eyebrow">Pre-reserva creada</p>
-        <h1 id="booking-success-title" tabIndex={-1}>Tu horario quedó reservado de forma provisional.</h1>
+        <h2 id="booking-success-title" tabIndex={-1}>Tu horario quedó reservado de forma provisional.</h2>
         <p className="booking-success__lead">
           Para confirmarlo, enviá el resumen por WhatsApp y seguí las indicaciones para abonar la seña.
         </p>
@@ -233,11 +233,11 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
       <div className="booking-flow__header">
         <div>
           <p className="eyebrow">Pre-reserva online</p>
-          <h1 id="booking-flow-title" tabIndex={-1}>
+          <h2 id="booking-flow-title" tabIndex={-1}>
             {step === "schedule" && "Elegí cuándo querés venir."}
             {step === "details" && "Contanos cómo contactarte."}
             {step === "review" && "Revisá antes de crear la pre-reserva."}
-          </h1>
+          </h2>
         </div>
         <div className="demo-badge">
           <ShieldCheck aria-hidden="true" strokeWidth={1.75} />

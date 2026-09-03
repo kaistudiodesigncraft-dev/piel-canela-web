@@ -9,7 +9,7 @@ import {
   pesosToCents,
   slugifySpecialty,
 } from "@/lib/admin/operations";
-import { ADMIN_IMAGE_TYPES, hasExpectedImageSignature } from "@/lib/admin/image-upload";
+import { ADMIN_IMAGE_MAX_BYTES, ADMIN_IMAGE_TYPES, hasExpectedImageSignature } from "@/lib/admin/image-upload";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -277,7 +277,7 @@ export async function saveMonthlySpecial(formData: FormData) {
   }
   const file = formData.get("imageFile");
   if (file instanceof File && file.size > 0) {
-    if (file.size > 8 * 1024 * 1024 || !ADMIN_IMAGE_TYPES.has(file.type) || !(await hasExpectedImageSignature(file))) {
+    if (file.size > ADMIN_IMAGE_MAX_BYTES || !ADMIN_IMAGE_TYPES.has(file.type) || !(await hasExpectedImageSignature(file))) {
       redirect("/admin?specialError=image#especiales-mes");
     }
     imagePath = `specials/${randomUUID()}.${imageExtension[file.type]}`;

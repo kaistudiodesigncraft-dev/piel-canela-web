@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CategoryEntryCard } from "@/components/treatments/CategoryEntryCard";
 import { MonthlySpecialsSection } from "@/components/specials/MonthlySpecialsSection";
+import { EditableSectionMedia, editableSurfaceClassName } from "@/components/content/EditableSectionMedia";
 import { getPublicMonthlySpecials } from "@/lib/treatments";
 import { getPublicCatalogSnapshot } from "@/lib/supabase/public-catalog";
 import { getSiteContent } from "@/lib/supabase/site-content";
@@ -21,6 +22,12 @@ export default async function HomePage() {
   ]);
   const content = siteContentMap(siteFields);
   const text = (key: Parameters<typeof content.get>[0]) => content.get(key)?.value ?? "";
+  const heroImage = content.get("hero_image");
+  const categoriesBackground = content.get("categories_background");
+  const specialsBackground = content.get("specials_background");
+  const approachBackground = content.get("approach_background");
+  const bookingBackground = content.get("booking_background");
+  const faqBackground = content.get("faq_background");
   const publicSpecials = getPublicMonthlySpecials(monthlySpecials);
 
   return (
@@ -48,15 +55,15 @@ export default async function HomePage() {
               <li><Check aria-hidden="true" strokeWidth={1.75} />Pre-reserva sin crear una cuenta</li>
             </ul>
           </div>
-          <div className="home-hero__visual" aria-label="Imagen conceptual de muestra">
+          <div className="home-hero__visual">
             <div className="home-hero__image-frame">
               <Image
-                src={text("hero_image")}
-                alt={content.get("hero_image")?.imageAlt ?? "Imagen principal de Piel Canela"}
+                src={heroImage?.value || "/images/treatment-massage-concept.png"}
+                alt={heroImage?.imageAlt ?? "Imagen principal de Piel Canela"}
                 fill
                 priority
                 sizes="(max-width: 767px) 92vw, 48vw"
-                style={{ objectPosition: "38% 50%" }}
+                style={{ objectPosition: `${heroImage?.settings.focalX ?? 38}% ${heroImage?.settings.focalY ?? 50}%` }}
               />
             </div>
             <p className="home-hero__caption">{text("hero_image_caption")}</p>
@@ -64,7 +71,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="section section--categories" aria-labelledby="categories-title">
+      <section className={editableSurfaceClassName("section section--categories", categoriesBackground)} aria-labelledby="categories-title">
+        <EditableSectionMedia field={categoriesBackground} />
         <div className="site-container">
           <div className="section-heading section-heading--centered">
             <p className="eyebrow">{text("categories_eyebrow")}</p>
@@ -83,9 +91,16 @@ export default async function HomePage() {
         specials={publicSpecials}
         treatments={treatments}
         categories={treatmentCategories}
+        heading={{
+          eyebrow: text("specials_eyebrow"),
+          title: text("specials_title"),
+          lead: text("specials_lead"),
+          background: specialsBackground,
+        }}
       />
 
-      <section className="section section--approach" id="piel-canela" aria-labelledby="approach-title">
+      <section className={editableSurfaceClassName("section section--approach", approachBackground)} id="piel-canela" aria-labelledby="approach-title">
+        <EditableSectionMedia field={approachBackground} />
         <div className="site-container approach-grid">
           <div className="approach-grid__intro">
             <p className="eyebrow">{text("approach_eyebrow")}</p>
@@ -102,7 +117,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="section section--steps" aria-labelledby="steps-title">
+      <section className={editableSurfaceClassName("section section--steps", bookingBackground)} aria-labelledby="steps-title">
+        <EditableSectionMedia field={bookingBackground} />
         <div className="site-container">
           <div className="section-heading">
             <p className="eyebrow">{text("booking_eyebrow")}</p>
@@ -117,7 +133,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="section section--faq" aria-labelledby="faq-title">
+      <section className={editableSurfaceClassName("section section--faq", faqBackground)} aria-labelledby="faq-title">
+        <EditableSectionMedia field={faqBackground} />
         <div className="site-container faq-grid">
           <div className="section-heading">
             <p className="eyebrow">{text("faq_eyebrow")}</p>

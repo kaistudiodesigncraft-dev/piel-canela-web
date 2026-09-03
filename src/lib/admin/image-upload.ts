@@ -1,5 +1,8 @@
 export const ADMIN_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
-export const ADMIN_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
+// A 4 MiB ceiling keeps uploads predictable on the current free hosting/storage
+// plan. Treatment and content images still use signed direct uploads, so this is
+// a storage policy rather than a Server Action transport workaround.
+export const ADMIN_IMAGE_MAX_BYTES = 4 * 1024 * 1024;
 export const ADMIN_IMAGE_MIN_WIDTH = 640;
 export const ADMIN_IMAGE_MIN_HEIGHT = 640;
 export const ADMIN_IMAGE_MAX_PIXELS = 40_000_000;

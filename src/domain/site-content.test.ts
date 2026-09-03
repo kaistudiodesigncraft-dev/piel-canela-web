@@ -11,15 +11,16 @@ describe("fixed site content contract", () => {
     expect(new Set(SITE_CONTENT_DEFINITIONS.map((field) => field.key)).size).toBe(SITE_CONTENT_KEYS.length);
   });
 
-  it("keeps the editor limited to the five approved sections", () => {
+  it("keeps the editor limited to the eight approved fixed sections", () => {
     expect(new Set(SITE_CONTENT_DEFINITIONS.map((field) => field.section))).toEqual(
-      new Set(["hero", "categories", "approach", "booking", "faq"]),
+      new Set(["hero", "categories", "specials", "approach", "booking", "faq", "catalog_header", "booking_header"]),
     );
   });
 
-  it("provides accessible text for every image field", () => {
+  it("provides accessible text for content images and marks decorative assets as backgrounds", () => {
     const imageFields = getDefaultSiteContent().filter((field) => field.kind === "image");
     expect(imageFields.length).toBeGreaterThan(0);
-    expect(imageFields.every((field) => Boolean(field.imageAlt?.trim()))).toBe(true);
+    expect(imageFields.every((field) => field.settings.presentation === "background" || Boolean(field.imageAlt?.trim()))).toBe(true);
+    expect(imageFields.filter((field) => field.settings.presentation === "background").every((field) => !field.settings.enabled)).toBe(true);
   });
 });

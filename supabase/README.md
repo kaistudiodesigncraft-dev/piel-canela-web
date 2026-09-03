@@ -50,3 +50,8 @@ pnpm exec supabase db push
 ```
 
 Antes de `db push`, revisar siempre el dry run y confirmar que se está conectado al proyecto correcto.
+
+Antes y después de toda migración remota, ejecutar
+`supabase/audits/production_inventory.sql`. El inventario no sustituye el
+respaldo privado de tablas y Storage, pero permite detectar cualquier cambio
+inesperado sin exponer datos personales.
