@@ -201,7 +201,11 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
         : `${(normalized.blob.size / 1024 / 1024).toFixed(1)} MB`;
       setMediaMetadata(`${normalized.width} × ${normalized.height} px · ${sizeText}`);
       const intentResult = await createTreatmentMediaUploadIntent(treatmentId);
-      if (!intentResult.ok) throw new Error(`intent_${intentResult.incidentId}`);
+      if (!intentResult.ok) {
+        console.error("treatment_media_intent_result", intentResult);
+        const suffix = intentResult.detail ? `:${intentResult.detail}` : "";
+        throw new Error(`intent_${intentResult.error}_${intentResult.incidentId}${suffix}`);
+      }
       setMediaStage("uploading");
       const client = createSupabaseBrowserClient();
       const { error: uploadError } = await client.storage.from(TREATMENT_MEDIA_INGEST_BUCKET).uploadToSignedUrl(
@@ -223,7 +227,11 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
       if (sequence !== uploadSequence.current) return;
       setMediaStage("processing");
       const finalized = await finalizeTreatmentMediaUpload(intentResult.intent.id);
-      if (!finalized.ok) throw new Error(`finalize_${finalized.incidentId}`);
+      if (!finalized.ok) {
+        console.error("treatment_media_finalize_result", finalized);
+        const suffix = finalized.detail ? `:${finalized.detail}` : "";
+        throw new Error(`finalize_${finalized.error}_${finalized.incidentId}${suffix}`);
+      }
       if (sequence !== uploadSequence.current) return;
       setImagePath(finalized.imagePath);
       setMediaStage("completed");
@@ -247,7 +255,13 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
                 : code === "upload_failed"
                   ? `La subida directa a Supabase falló${detail ? `: ${detail}` : "."} Revisá la consola del navegador (treatment_media_upload_failed) para el detalle.`
                   : code.startsWith("intent_") || code.startsWith("finalize_")
-                    ? `No pudimos completar la carga. Código de soporte: ${code.split("_")[1]}`
+                    ? (() => {
+                        const parts = code.split("_");
+                        const stage = parts[0];
+                        const reason = parts[1] ?? "unknown";
+                        const support = parts[2] ?? "";
+                        return `${stage === "intent" ? "La preparación" : "La finalización"} falló (${reason}${detail ? `: ${detail}` : ""}). Código de soporte: ${support}`;
+                      })()
                     : `La preparación falló (${rawCode}). Contactá a soporte con este código.`;
       input.setCustomValidity(message);
       setMediaIssue(message);

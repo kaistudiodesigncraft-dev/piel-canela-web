@@ -16,17 +16,35 @@ const uploadIdSchema = z.string().uuid();
 
 export type MediaIntentResult =
   | { ok: true; intent: MediaUploadIntent }
-  | { ok: false; error: "invalid" | "create" | "sign"; incidentId: string };
+  | { ok: false; error: "invalid" | "create" | "sign" | "unexpected"; incidentId: string; detail?: string };
 
 export type MediaFinalizeResult =
   | { ok: true; imagePath: string; width: number; height: number }
-  | { ok: false; error: "invalid" | "missing" | "expired" | "download" | "image" | "store" | "finalize"; incidentId: string };
+  | { ok: false; error: "invalid" | "missing" | "expired" | "download" | "image" | "store" | "finalize" | "unexpected"; incidentId: string; detail?: string };
 
 function incidentId() {
   return randomUUID().slice(0, 8).toUpperCase();
 }
 
+function isNextRedirect(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const digest = (error as { digest?: unknown }).digest;
+  return typeof digest === "string" && digest.startsWith("NEXT_REDIRECT");
+}
+
 export async function createTreatmentMediaUploadIntent(treatmentId: string): Promise<MediaIntentResult> {
+  try {
+    return await createTreatmentMediaUploadIntentImpl(treatmentId);
+  } catch (error) {
+    if (isNextRedirect(error)) throw error;
+    const incident = incidentId();
+    const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+    console.error("treatment_media_intent_unexpected", { incidentId: incident, detail });
+    return { ok: false, error: "unexpected", incidentId: incident, detail };
+  }
+}
+
+async function createTreatmentMediaUploadIntentImpl(treatmentId: string): Promise<MediaIntentResult> {
   const incident = incidentId();
   const parsedTreatmentId = treatmentIdSchema.safeParse(treatmentId);
   if (!parsedTreatmentId.success) return { ok: false, error: "invalid", incidentId: incident };
@@ -63,6 +81,18 @@ export async function createTreatmentMediaUploadIntent(treatmentId: string): Pro
 }
 
 export async function finalizeTreatmentMediaUpload(uploadId: string): Promise<MediaFinalizeResult> {
+  try {
+    return await finalizeTreatmentMediaUploadImpl(uploadId);
+  } catch (error) {
+    if (isNextRedirect(error)) throw error;
+    const incident = incidentId();
+    const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+    console.error("treatment_media_finalize_unexpected", { incidentId: incident, detail });
+    return { ok: false, error: "unexpected", incidentId: incident, detail };
+  }
+}
+
+async function finalizeTreatmentMediaUploadImpl(uploadId: string): Promise<MediaFinalizeResult> {
   const incident = incidentId();
   const parsedUploadId = uploadIdSchema.safeParse(uploadId);
   if (!parsedUploadId.success) return { ok: false, error: "invalid", incidentId: incident };
