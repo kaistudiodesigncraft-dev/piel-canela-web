@@ -202,9 +202,11 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
       setMediaMetadata(`${normalized.width} × ${normalized.height} px · ${sizeText}`);
       const intentResult = await createTreatmentMediaUploadIntent(treatmentId);
       if (!intentResult.ok) {
-        console.error("treatment_media_intent_result", intentResult);
-        const suffix = intentResult.detail ? `:${intentResult.detail}` : "";
-        throw new Error(`intent_${intentResult.error}_${intentResult.incidentId}${suffix}`);
+        console.error("treatment_media_intent_result", {
+          error: intentResult.error,
+          incidentId: intentResult.incidentId,
+        });
+        throw new Error(`intent_${intentResult.error}_${intentResult.incidentId}`);
       }
       setMediaStage("uploading");
       const client = createSupabaseBrowserClient();
@@ -216,21 +218,21 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
       );
       if (uploadError) {
         console.error("treatment_media_upload_failed", {
-          path: intentResult.intent.path,
           blobType: normalized.blob.type,
           blobSize: normalized.blob.size,
           errorName: uploadError.name,
-          errorMessage: uploadError.message,
         });
-        throw new Error(`upload_failed:${uploadError.message || uploadError.name || "unknown"}`);
+        throw new Error("upload_failed");
       }
       if (sequence !== uploadSequence.current) return;
       setMediaStage("processing");
       const finalized = await finalizeTreatmentMediaUpload(intentResult.intent.id);
       if (!finalized.ok) {
-        console.error("treatment_media_finalize_result", finalized);
-        const suffix = finalized.detail ? `:${finalized.detail}` : "";
-        throw new Error(`finalize_${finalized.error}_${finalized.incidentId}${suffix}`);
+        console.error("treatment_media_finalize_result", {
+          error: finalized.error,
+          incidentId: finalized.incidentId,
+        });
+        throw new Error(`finalize_${finalized.error}_${finalized.incidentId}`);
       }
       if (sequence !== uploadSequence.current) return;
       setImagePath(finalized.imagePath);
@@ -240,8 +242,7 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
       if (sequence !== uploadSequence.current) return;
       const rawCode = error instanceof Error ? error.message : "unknown";
       const code = rawCode.split(":")[0] ?? "unknown";
-      const detail = rawCode.includes(":") ? rawCode.slice(code.length + 1) : "";
-      console.error("treatment_media_flow_failed", { rawCode, detail, error });
+      console.error("treatment_media_flow_failed", { code });
       const message = code === "image_too-small"
         ? "La imagen debe tener al menos 640 × 640 píxeles."
         : code === "image_too-large"
@@ -253,16 +254,16 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
               : code === "image_canvas_unavailable"
                 ? "Tu navegador no soporta la preparación de imagen en canvas."
                 : code === "upload_failed"
-                  ? `La subida directa a Supabase falló${detail ? `: ${detail}` : "."} Revisá la consola del navegador (treatment_media_upload_failed) para el detalle.`
+                  ? "No pudimos subir la imagen. Revisá tu conexión e intentá nuevamente."
                   : code.startsWith("intent_") || code.startsWith("finalize_")
                     ? (() => {
                         const parts = code.split("_");
                         const stage = parts[0];
                         const reason = parts[1] ?? "unknown";
                         const support = parts[2] ?? "";
-                        return `${stage === "intent" ? "La preparación" : "La finalización"} falló (${reason}${detail ? `: ${detail}` : ""}). Código de soporte: ${support}`;
+                        return `${stage === "intent" ? "La preparación" : "La finalización"} falló (${reason}). Código de soporte: ${support}`;
                       })()
-                    : `La preparación falló (${rawCode}). Contactá a soporte con este código.`;
+                    : "No pudimos preparar la imagen. Intentá nuevamente o contactá a soporte.";
       input.setCustomValidity(message);
       setMediaIssue(message);
       setMediaStage("failed");

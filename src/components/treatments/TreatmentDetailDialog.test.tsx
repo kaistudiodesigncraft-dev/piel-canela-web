@@ -1,11 +1,15 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { StrictMode } from "react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { treatmentCategories, treatments } from "@/data/fixtures";
 import { TreatmentDetailDialog } from "./TreatmentDetailDialog";
 
 describe("TreatmentDetailDialog", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("stays open when React Strict Mode replays effects", () => {
     const treatment = treatments[0]!;
     const category = treatmentCategories.find((item) => item.id === treatment.categoryId)!;
@@ -67,5 +71,28 @@ describe("TreatmentDetailDialog", () => {
       new Event("cancel", { bubbles: false, cancelable: true }),
     );
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+  });
+
+  it("closes immediately when reduced motion is requested", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true })));
+    const user = userEvent.setup();
+    const treatment = treatments[0]!;
+    const category = treatmentCategories.find((item) => item.id === treatment.categoryId)!;
+    const onClose = vi.fn();
+
+    render(
+      <TreatmentDetailDialog
+        treatment={treatment}
+        category={category}
+        onClose={onClose}
+      />,
+    );
+
+    const dialog = screen.getByRole("dialog", { name: `Detalle de ${treatment.name}` });
+
+    await user.click(screen.getByRole("button", { name: "Cerrar detalle" }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(dialog).not.toHaveAttribute("open");
+    expect(dialog).not.toHaveClass("is-closing");
   });
 });

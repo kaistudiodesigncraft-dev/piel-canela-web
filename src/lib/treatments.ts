@@ -56,11 +56,14 @@ export function getMonthlySpecialForTreatment(
   source: readonly MonthlySpecial[],
   specialId: string | null | undefined,
   treatmentId: string,
+  now = new Date(),
 ): MonthlySpecial | undefined {
   if (!specialId) return undefined;
   return source.find(
     (special) =>
-      special.id === specialId && special.treatmentId === treatmentId && special.isActive,
+      special.id === specialId &&
+      special.treatmentId === treatmentId &&
+      isMonthlySpecialPublic(special, now),
   );
 }
 
@@ -97,4 +100,3 @@ export function resolveBookingSelection(
     appliedPriceCents: monthlySpecial?.specialPriceCents ?? treatment.priceCents,
   };
 }
-

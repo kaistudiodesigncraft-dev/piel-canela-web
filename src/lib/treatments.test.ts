@@ -4,6 +4,7 @@ import {
   buildBookingHref,
   buildCatalogHref,
   filterTreatmentsByCategory,
+  getMonthlySpecialForTreatment,
   getPublicMonthlySpecials,
   resolveBookingSelection,
 } from "./treatments";
@@ -48,5 +49,30 @@ describe("treatment domain helpers", () => {
     expect(getPublicMonthlySpecials(monthlySpecials.slice(0, 1), now)).toHaveLength(1);
     expect(getPublicMonthlySpecials(monthlySpecials, now)).toHaveLength(3);
   });
-});
 
+  it("only applies a current special linked to the selected treatment", () => {
+    const now = new Date("2026-07-31T12:00:00.000Z");
+    const current = getMonthlySpecialForTreatment(
+      monthlySpecials,
+      "special-pausa-profunda",
+      "treatment-relajacion",
+      now,
+    );
+    const mismatched = getMonthlySpecialForTreatment(
+      monthlySpecials,
+      "special-pausa-profunda",
+      "treatment-kinesica",
+      now,
+    );
+    const expired = getMonthlySpecialForTreatment(
+      monthlySpecials,
+      "special-pausa-profunda",
+      "treatment-relajacion",
+      new Date("2026-09-02T03:00:00.000Z"),
+    );
+
+    expect(current?.id).toBe("special-pausa-profunda");
+    expect(mismatched).toBeUndefined();
+    expect(expired).toBeUndefined();
+  });
+});

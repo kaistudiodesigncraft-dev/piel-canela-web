@@ -32,6 +32,8 @@ const dates = [{
 
 describe("LiveBookingFlow", () => {
   beforeEach(() => {
+    getAvailableSlotsMock.mockReset();
+    createPublicBookingMock.mockReset();
     getAvailableSlotsMock.mockResolvedValue({
       ok: true,
       slots: [{ startsAt: "2026-08-17T15:30:00.000Z", endsAt: "2026-08-17T16:45:00.000Z" }],
@@ -98,5 +100,27 @@ describe("LiveBookingFlow", () => {
     expect(screen.queryByRole("button", { name: /18 Sep/i })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Ver 4 fechas más" }));
     expect(screen.getByRole("button", { name: /18 Sep/i })).toBeInTheDocument();
+  });
+
+  it("recovers from a slot taken concurrently without losing customer data", async () => {
+    const user = userEvent.setup();
+    createPublicBookingMock.mockResolvedValueOnce({ ok: false, reason: "slot" });
+    render(<LiveBookingFlow selection={selection} dates={dates} whatsappNumber="5493515550000" />);
+
+    await user.click(await screen.findByRole("button", { name: "12:30" }));
+    await user.click(screen.getAllByRole("button", { name: /continuar/i })[0]!);
+    await user.type(screen.getByLabelText("Nombre y apellido"), "Laura Gómez");
+    await user.type(screen.getByLabelText("WhatsApp"), "3515550000");
+    await user.click(screen.getByRole("button", { name: /revisar reserva/i }));
+    await user.click(screen.getByRole("button", { name: /crear pre-reserva/i }));
+
+    expect(await screen.findByText("Ese horario acaba de ocuparse. Elegí otra opción disponible.")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Elegí cuándo querés venir." })).toBeInTheDocument();
+    await waitFor(() => expect(getAvailableSlotsMock).toHaveBeenCalledTimes(2));
+
+    await user.click(await screen.findByRole("button", { name: "12:30" }));
+    await user.click(screen.getAllByRole("button", { name: /continuar/i })[0]!);
+    expect(screen.getByLabelText("Nombre y apellido")).toHaveValue("Laura Gómez");
+    expect(screen.getByLabelText("WhatsApp")).toHaveValue("3515550000");
   });
 });

@@ -16,11 +16,11 @@ const uploadIdSchema = z.string().uuid();
 
 export type MediaIntentResult =
   | { ok: true; intent: MediaUploadIntent }
-  | { ok: false; error: "invalid" | "create" | "sign" | "unexpected"; incidentId: string; detail?: string };
+  | { ok: false; error: "invalid" | "create" | "sign" | "unexpected"; incidentId: string };
 
 export type MediaFinalizeResult =
   | { ok: true; imagePath: string; width: number; height: number }
-  | { ok: false; error: "invalid" | "missing" | "expired" | "download" | "image" | "store" | "finalize" | "unexpected"; incidentId: string; detail?: string };
+  | { ok: false; error: "invalid" | "missing" | "expired" | "download" | "image" | "store" | "finalize" | "unexpected"; incidentId: string };
 
 function incidentId() {
   return randomUUID().slice(0, 8).toUpperCase();
@@ -40,7 +40,7 @@ export async function createTreatmentMediaUploadIntent(treatmentId: string): Pro
     const incident = incidentId();
     const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
     console.error("treatment_media_intent_unexpected", { incidentId: incident, detail });
-    return { ok: false, error: "unexpected", incidentId: incident, detail };
+    return { ok: false, error: "unexpected", incidentId: incident };
   }
 }
 
@@ -88,7 +88,7 @@ export async function finalizeTreatmentMediaUpload(uploadId: string): Promise<Me
     const incident = incidentId();
     const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
     console.error("treatment_media_finalize_unexpected", { incidentId: incident, detail });
-    return { ok: false, error: "unexpected", incidentId: incident, detail };
+    return { ok: false, error: "unexpected", incidentId: incident };
   }
 }
 

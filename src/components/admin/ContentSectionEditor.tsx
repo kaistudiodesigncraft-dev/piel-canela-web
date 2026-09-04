@@ -192,7 +192,7 @@ export function ContentSectionEditor({
             </div>
           </div>
           <div className="content-preview-viewport">
-            <Preview fields={previewFields} width={previewWidth} />
+            <Preview key={previewWidth} fields={previewFields} width={previewWidth} />
           </div>
 
           <details className="content-revisions">
