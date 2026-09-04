@@ -210,7 +210,16 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
         normalized.blob,
         { contentType: normalized.blob.type },
       );
-      if (uploadError) throw new Error("upload_failed");
+      if (uploadError) {
+        console.error("treatment_media_upload_failed", {
+          path: intentResult.intent.path,
+          blobType: normalized.blob.type,
+          blobSize: normalized.blob.size,
+          errorName: uploadError.name,
+          errorMessage: uploadError.message,
+        });
+        throw new Error(`upload_failed:${uploadError.message || uploadError.name || "unknown"}`);
+      }
       if (sequence !== uploadSequence.current) return;
       setMediaStage("processing");
       const finalized = await finalizeTreatmentMediaUpload(intentResult.intent.id);
@@ -221,16 +230,25 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
       setIsDirty(true);
     } catch (error) {
       if (sequence !== uploadSequence.current) return;
-      const code = error instanceof Error ? error.message : "unknown";
+      const rawCode = error instanceof Error ? error.message : "unknown";
+      const code = rawCode.split(":")[0] ?? "unknown";
+      const detail = rawCode.includes(":") ? rawCode.slice(code.length + 1) : "";
+      console.error("treatment_media_flow_failed", { rawCode, detail, error });
       const message = code === "image_too-small"
         ? "La imagen debe tener al menos 640 × 640 píxeles."
         : code === "image_too-large"
           ? "La imagen supera los 40 megapíxeles permitidos."
           : code === "image_size"
             ? "La imagen supera el máximo de 4 MB."
-            : code.startsWith("intent_") || code.startsWith("finalize_")
-              ? `No pudimos completar la carga. Código de soporte: ${code.split("_")[1]}`
-              : "Usá una imagen JPG, PNG, WebP o AVIF válida e intentá nuevamente.";
+            : code === "image_normalization_failed"
+              ? "Tu navegador no pudo convertir la imagen a WebP. Probá con JPG."
+              : code === "image_canvas_unavailable"
+                ? "Tu navegador no soporta la preparación de imagen en canvas."
+                : code === "upload_failed"
+                  ? `La subida directa a Supabase falló${detail ? `: ${detail}` : "."} Revisá la consola del navegador (treatment_media_upload_failed) para el detalle.`
+                  : code.startsWith("intent_") || code.startsWith("finalize_")
+                    ? `No pudimos completar la carga. Código de soporte: ${code.split("_")[1]}`
+                    : `La preparación falló (${rawCode}). Contactá a soporte con este código.`;
       input.setCustomValidity(message);
       setMediaIssue(message);
       setMediaStage("failed");
