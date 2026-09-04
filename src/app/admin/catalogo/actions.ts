@@ -57,16 +57,27 @@ export interface SaveTreatmentState {
 
 export const initialSaveTreatmentState: SaveTreatmentState = { status: "idle" };
 
+function newIncidentId() {
+  return randomUUID().slice(0, 8).toUpperCase();
+}
+
 function treatmentFailure(error: string, fieldErrors?: Record<string, string[]>): SaveTreatmentState {
+  const incidentId = newIncidentId();
+  console.error("admin_treatment_mutation", {
+    stage: error,
+    incidentId,
+    fieldKeys: fieldErrors ? Object.keys(fieldErrors) : [],
+  });
   return {
     status: error === "save" || error === "missing" ? "failed" : "invalid",
     error,
     fieldErrors,
+    incidentId,
   };
 }
 
 function operationalFailure(stage: string, code?: string): SaveTreatmentState {
-  const incidentId = randomUUID().slice(0, 8).toUpperCase();
+  const incidentId = newIncidentId();
   console.error("admin_treatment_mutation", { stage, code: code ?? "unknown", incidentId });
   return { status: "failed", error: "save", incidentId };
 }
@@ -75,7 +86,9 @@ function schemaFieldErrors(error: z.ZodError) {
   const fields: Record<string, string[]> = {};
   for (const issue of error.issues) {
     const field = String(issue.path[0] ?? "");
-    if (field && !fields[field]) fields[field] = ["Revisá este dato antes de guardar."];
+    if (!field) continue;
+    fields[field] ??= [];
+    fields[field].push(issue.message);
   }
   return fields;
 }
@@ -84,7 +97,33 @@ function catalogRedirect(params: string, anchor = "tratamientos"): never {
   redirect(`/admin/catalogo?${params}#${anchor}`);
 }
 
+function isNextRedirect(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const digest = (error as { digest?: unknown }).digest;
+  return typeof digest === "string" && digest.startsWith("NEXT_REDIRECT");
+}
+
 export async function saveTreatment(
+  previousState: SaveTreatmentState,
+  formData: FormData,
+): Promise<SaveTreatmentState> {
+  try {
+    return await saveTreatmentImpl(previousState, formData);
+  } catch (error) {
+    if (isNextRedirect(error)) throw error;
+    const incidentId = newIncidentId();
+    const errorName = error instanceof Error ? error.name : "unknown";
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("admin_treatment_mutation_unexpected", {
+      incidentId,
+      errorName,
+      errorMessage,
+    });
+    return { status: "failed", error: "unexpected", incidentId };
+  }
+}
+
+async function saveTreatmentImpl(
   _previousState: SaveTreatmentState,
   formData: FormData,
 ): Promise<SaveTreatmentState> {

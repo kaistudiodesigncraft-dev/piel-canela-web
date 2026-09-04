@@ -49,6 +49,7 @@ const treatmentErrorMessages: Record<string, string> = {
   missing: "El tratamiento ya no existe o no está disponible.",
   invalid: "Hay datos que necesitan corrección.",
   save: "No pudimos guardar el tratamiento.",
+  unexpected: "Se interrumpió el guardado. Volvé a intentar.",
 };
 
 const mediaStageLabels: Record<TreatmentMediaStage, string> = {
@@ -72,12 +73,15 @@ function TreatmentActionFeedback({ state, formId }: { state: SaveTreatmentState;
   }, [state]);
   if (state.status === "idle") return null;
   const fields = Object.entries(state.fieldErrors ?? {});
+  const knownTitle = treatmentErrorMessages[state.error ?? ""];
+  const unknownCode = !knownTitle && state.error ? state.error : null;
   return (
     <div className="form-message form-message--error admin-form-error-summary" role="alert" tabIndex={-1} ref={feedbackRef}>
-      <strong>{treatmentErrorMessages[state.error ?? ""] ?? "No pudimos guardar los cambios."}</strong>
+      <strong>{knownTitle ?? "No pudimos guardar los cambios."}</strong>
       {fields.length > 0 ? (
         <ul>{fields.map(([field, messages]) => <li key={field}><a href={`#${formId}-${field}`}>{messages[0]}</a></li>)}</ul>
       ) : <p>Volvé a intentar. Tus datos siguen en el formulario.</p>}
+      {unknownCode ? <small>Detalle técnico: {unknownCode}</small> : null}
       {state.incidentId ? <small>Código de soporte: {state.incidentId}</small> : null}
     </div>
   );
@@ -192,7 +196,10 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
       setMediaStage("preparing");
       const normalized = await normalizeTreatmentImage(file);
       if (sequence !== uploadSequence.current) return;
-      setMediaMetadata(`${normalized.width} × ${normalized.height} px · ${(normalized.blob.size / 1024 / 1024).toFixed(1)} MB`);
+      const sizeText = normalized.blob.size < 1024 * 1024
+        ? `${Math.max(1, Math.round(normalized.blob.size / 1024))} KB`
+        : `${(normalized.blob.size / 1024 / 1024).toFixed(1)} MB`;
+      setMediaMetadata(`${normalized.width} × ${normalized.height} px · ${sizeText}`);
       const intentResult = await createTreatmentMediaUploadIntent(treatmentId);
       if (!intentResult.ok) throw new Error(`intent_${intentResult.incidentId}`);
       setMediaStage("uploading");
