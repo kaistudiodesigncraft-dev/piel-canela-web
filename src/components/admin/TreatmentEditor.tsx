@@ -7,9 +7,7 @@ import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   deleteTreatment,
-  initialSaveTreatmentState,
   saveTreatment,
-  type SaveTreatmentState,
 } from "@/app/admin/catalogo/actions";
 import {
   createTreatmentMediaUploadIntent,
@@ -17,6 +15,10 @@ import {
 } from "@/app/admin/catalogo/media-actions";
 import { focalPointToPercentage, linesToAdminText } from "@/lib/admin/catalog";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import {
+  initialSaveTreatmentState,
+  type SaveTreatmentState,
+} from "@/lib/admin/treatment-action-state";
 import {
   normalizeTreatmentImage,
   TREATMENT_MEDIA_INGEST_BUCKET,

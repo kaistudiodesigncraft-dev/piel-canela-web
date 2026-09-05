@@ -15,6 +15,7 @@ import {
   isTreatmentDeleteCodeConfigured,
   verifyTreatmentDeleteCode,
 } from "@/lib/admin/treatment-delete-code";
+import type { SaveTreatmentState } from "@/lib/admin/treatment-action-state";
 
 const treatmentSchema = z.object({
   treatmentId: z.string().uuid(),
@@ -47,15 +48,6 @@ const deleteTreatmentSchema = z.object({
   confirmationCode: z.string().trim().min(4).max(128),
   confirmDeletion: z.literal("on"),
 });
-
-export interface SaveTreatmentState {
-  status: "idle" | "invalid" | "failed";
-  error?: string;
-  fieldErrors?: Record<string, string[]>;
-  incidentId?: string;
-}
-
-export const initialSaveTreatmentState: SaveTreatmentState = { status: "idle" };
 
 function newIncidentId() {
   return randomUUID().slice(0, 8).toUpperCase();
