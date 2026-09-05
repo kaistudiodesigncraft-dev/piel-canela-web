@@ -4,7 +4,14 @@ import { getSupabasePublicConfig } from "@/lib/supabase/env";
 
 export async function proxy(request: NextRequest) {
   const config = getSupabasePublicConfig();
-  if (!config) return NextResponse.next({ request });
+  if (!config) {
+    const isProtectedAdminRoute = request.nextUrl.pathname.startsWith("/admin")
+      && !request.nextUrl.pathname.startsWith("/admin/login");
+    if (isProtectedAdminRoute) {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
+    }
+    return NextResponse.next({ request });
+  }
 
   let response = NextResponse.next({ request });
   const supabase = createServerClient(config.url, config.publishableKey, {
