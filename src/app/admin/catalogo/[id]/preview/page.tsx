@@ -15,13 +15,15 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
   const { data: row } = await supabase.from("treatments")
     .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,category:treatment_categories(id,name,slug,short_description,icon_name,display_order,is_active),professional:professionals(public_name,full_name,is_active)")
     .eq("id", id).single();
-  if (!row || !row.image_path || !row.image_alt) notFound();
+  if (!row) notFound();
   const categoryRaw = Array.isArray(row.category) ? row.category[0] : row.category;
   const professionalRaw = Array.isArray(row.professional) ? row.professional[0] : row.professional;
   if (!categoryRaw) notFound();
-  const imageUrl = row.image_path.startsWith("/") || row.image_path.startsWith("https://")
-    ? row.image_path
-    : supabase.storage.from("treatment-media").getPublicUrl(row.image_path).data.publicUrl;
+  const imageUrl = row.image_path
+    ? row.image_path.startsWith("/") || row.image_path.startsWith("https://")
+      ? row.image_path
+      : supabase.storage.from("treatment-media").getPublicUrl(row.image_path).data.publicUrl
+    : null;
   const category: TreatmentCategory = {
     id: categoryRaw.id,
     name: categoryRaw.name,
@@ -49,13 +51,13 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
     preparation: row.preparation,
     contraindications: row.contraindications,
     professional: professionalRaw?.is_active ? (professionalRaw.public_name || null) : null,
-    image: {
+    image: imageUrl && row.image_alt ? {
       src: imageUrl,
       alt: row.image_alt,
       focalPoint: `${Math.round(Number(row.image_focal_x) * 100)}% ${Math.round(Number(row.image_focal_y) * 100)}%`,
       width: 1086,
       height: 1449,
-    },
+    } : null,
     isActive: row.is_active,
     displayOrder: row.display_order,
     createdAt: row.created_at,

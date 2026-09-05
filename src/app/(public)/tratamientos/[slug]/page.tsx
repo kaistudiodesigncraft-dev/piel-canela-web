@@ -29,12 +29,12 @@ export async function generateMetadata({ params }: TreatmentPageProps): Promise<
       title: treatment.name,
       description: treatment.shortDescription,
       url: `/tratamientos/${treatment.slug}`,
-      images: [{
+      images: treatment.image ? [{
         url: treatment.image.src,
         width: treatment.image.width,
         height: treatment.image.height,
         alt: treatment.image.alt,
-      }],
+      }] : undefined,
     },
   };
 }

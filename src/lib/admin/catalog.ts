@@ -28,9 +28,17 @@ export function getTreatmentPublicationState(input: {
   isActive: boolean;
   imagePath: string | null;
   imageAlt: string | null;
+  shortDescription?: string;
+  description?: string;
+  priceCents?: number;
 }) {
   if (input.isActive) return "published" as const;
-  if (input.imagePath && input.imageAlt?.trim()) return "ready" as const;
+  const imageIsValid = !input.imagePath || Boolean(input.imageAlt?.trim());
+  if (
+    imageIsValid
+    && (input.shortDescription?.trim().length ?? 0) >= 10
+    && (input.description?.trim().length ?? 0) >= 20
+    && (input.priceCents ?? 0) > 0
+  ) return "ready" as const;
   return "draft" as const;
 }
-

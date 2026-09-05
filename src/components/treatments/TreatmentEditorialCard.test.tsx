@@ -5,6 +5,23 @@ import { treatmentCategories, treatments } from "@/data/fixtures";
 import { TreatmentEditorialCard } from "./TreatmentEditorialCard";
 
 describe("TreatmentEditorialCard", () => {
+  it("keeps a published treatment usable while its image is pending", () => {
+    const treatment = { ...treatments[0]!, image: null };
+    const category = treatmentCategories.find((item) => item.id === treatment.categoryId)!;
+
+    render(
+      <TreatmentEditorialCard
+        treatment={treatment}
+        category={category}
+        detailHref={`/tratamientos?treatment=${treatment.slug}`}
+        onOpen={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Imagen en preparación")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: `Ver detalles de ${treatment.name}` })).toBeInTheDocument();
+  });
+
   it("shows specific editorial information and opens from its only action", async () => {
     const user = userEvent.setup();
     const treatment = treatments[0]!;

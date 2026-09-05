@@ -235,8 +235,9 @@ async function saveTreatmentImpl(
     const publicationErrors: Record<string, string[]> = {};
     if (parsed.data.shortDescription.length < 10) publicationErrors.shortDescription = ["Escribí al menos 10 caracteres para publicar."];
     if (parsed.data.description.length < 20) publicationErrors.description = ["Escribí al menos 20 caracteres para publicar."];
-    if (!imagePath) publicationErrors.imagePath = ["Cargá una imagen antes de publicar."];
-    if (!parsed.data.imageAlt || parsed.data.imageAlt.length < 3) publicationErrors.imageAlt = ["Describí la imagen con al menos 3 caracteres."];
+    if (imagePath && (!parsed.data.imageAlt || parsed.data.imageAlt.length < 3)) {
+      publicationErrors.imageAlt = ["Describí la imagen con al menos 3 caracteres."];
+    }
     if (parsed.data.pricePesos <= 0) publicationErrors.pricePesos = ["Ingresá un precio mayor que cero para publicar."];
     if (Object.keys(publicationErrors).length > 0) return treatmentFailure("publishable", publicationErrors);
   }

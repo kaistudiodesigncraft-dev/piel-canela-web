@@ -21,8 +21,8 @@ describe("admin catalog helpers", () => {
 
   it("distinguishes draft, ready and published treatments", () => {
     expect(getTreatmentPublicationState({ isActive: false, imagePath: null, imageAlt: null })).toBe("draft");
-    expect(getTreatmentPublicationState({ isActive: false, imagePath: "treatments/a.webp", imageAlt: "Cabina" })).toBe("ready");
+    expect(getTreatmentPublicationState({ isActive: false, imagePath: null, imageAlt: null, shortDescription: "Una descripción suficiente", description: "Un detalle completo y suficientemente claro.", priceCents: 10000 })).toBe("ready");
+    expect(getTreatmentPublicationState({ isActive: false, imagePath: "treatments/a.webp", imageAlt: null, shortDescription: "Una descripción suficiente", description: "Un detalle completo y suficientemente claro.", priceCents: 10000 })).toBe("draft");
     expect(getTreatmentPublicationState({ isActive: true, imagePath: "treatments/a.webp", imageAlt: "Cabina" })).toBe("published");
   });
 });
-

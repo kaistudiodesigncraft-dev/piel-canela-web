@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Clock3 } from "lucide-react";
+import { ArrowRight, Check, Clock3, ImageIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type {
@@ -25,19 +25,27 @@ export function TreatmentDetailContent({
   preview = false,
 }: TreatmentDetailContentProps) {
   const price = monthlySpecial?.specialPriceCents ?? treatment.priceCents;
+  const image = monthlySpecial?.image ?? treatment.image;
 
   return (
     <article className={`treatment-detail${compact ? " treatment-detail--compact" : ""}`}>
       <div className="treatment-detail__hero">
         <div className="treatment-detail__image">
-          <Image
-            src={monthlySpecial?.image.src ?? treatment.image.src}
-            alt={monthlySpecial?.image.alt ?? treatment.image.alt}
-            fill
-            priority={!compact}
-            sizes={compact ? "(max-width: 767px) 100vw, 560px" : "(max-width: 767px) 100vw, 48vw"}
-            style={{ objectPosition: monthlySpecial?.image.focalPoint ?? treatment.image.focalPoint }}
-          />
+          {image ? (
+            <Image
+              src={image.src}
+              alt={image.alt}
+              fill
+              priority={!compact}
+              sizes={compact ? "(max-width: 767px) 100vw, 560px" : "(max-width: 767px) 100vw, 48vw"}
+              style={{ objectPosition: image.focalPoint }}
+            />
+          ) : (
+            <span className="treatment-image-placeholder treatment-image-placeholder--detail">
+              <ImageIcon aria-hidden="true" strokeWidth={1.75} />
+              Imagen en preparación
+            </span>
+          )}
         </div>
         <div className="treatment-detail__intro">
           <p className="eyebrow">{monthlySpecial ? "Especial del mes" : category.name}</p>

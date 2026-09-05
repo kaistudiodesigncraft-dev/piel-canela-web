@@ -41,7 +41,7 @@ export function CatalogAdmin({ categories, specialties, treatments, feedback, bo
   const categoryName = useMemo(() => new Map(categories.map((item) => [item.id, item.name])), [categories]);
   const specialtyName = useMemo(() => new Map(specialties.map((item) => [item.id, item.name])), [specialties]);
   const filtered = treatments.filter((treatment) => {
-    const state = getTreatmentPublicationState({ isActive: treatment.is_active, imagePath: treatment.image_path, imageAlt: treatment.image_alt });
+    const state = getTreatmentPublicationState({ isActive: treatment.is_active, imagePath: treatment.image_path, imageAlt: treatment.image_alt, shortDescription: treatment.short_description, description: treatment.description, priceCents: treatment.price_cents });
     if (stateFilter !== "all" && state !== stateFilter) return false;
     return `${treatment.name} ${categoryName.get(treatment.category_id)} ${specialtyName.get(treatment.specialty_id)}`.toLocaleLowerCase("es-AR").includes(query.trim().toLocaleLowerCase("es-AR"));
   });
@@ -60,7 +60,7 @@ export function CatalogAdmin({ categories, specialties, treatments, feedback, bo
           <span className="admin-count numeric">{filtered.length} resultados</span>
         </div>
         {filtered.length === 0 ? <div className="admin-empty"><ImageIcon aria-hidden="true" strokeWidth={1.75} /><h3>No hay tratamientos para esta vista.</h3><p>Probá otro filtro o creá un nuevo borrador.</p><Link className="button button--primary" href="/admin/catalogo/nuevo">Nuevo tratamiento</Link></div> : <div className="admin-treatment-manager-list">{filtered.map((treatment) => {
-          const state = getTreatmentPublicationState({ isActive: treatment.is_active, imagePath: treatment.image_path, imageAlt: treatment.image_alt });
+          const state = getTreatmentPublicationState({ isActive: treatment.is_active, imagePath: treatment.image_path, imageAlt: treatment.image_alt, shortDescription: treatment.short_description, description: treatment.description, priceCents: treatment.price_cents });
           return <article key={treatment.id} className="admin-treatment-manager-item admin-treatment-manager-item--link"><Link className="admin-treatment-manager-item__summary" href={`/admin/catalogo/${treatment.id}`}><div className="admin-treatment-manager-item__image">{treatment.image_url ? <Image src={treatment.image_url} alt={treatment.image_alt ?? ""} fill sizes="96px" style={{ objectPosition: `${focalPointToPercentage(treatment.image_focal_x)}% ${focalPointToPercentage(treatment.image_focal_y)}%` }} /> : <ImageIcon aria-hidden="true" strokeWidth={1.75} />}</div><div><span className={`status-badge status-${state === "published" ? "confirmed" : state === "ready" ? "awaiting_deposit" : "expired"}`}>{publicationLabels[state]}</span><h3>{treatment.name}</h3><p>{categoryName.get(treatment.category_id)} · {specialtyName.get(treatment.specialty_id)}</p></div><div className="admin-treatment-manager-item__facts numeric"><span>{formatDuration(treatment.duration_minutes)} + {treatment.buffer_minutes} min</span><small>Inicios cada {treatment.start_interval_minutes} min</small><strong>{formatPrice(treatment.price_cents)}</strong>{bookingCountsAvailable && treatment.future_booking_count > 0 ? <small>{treatment.future_booking_count} reservas futuras</small> : null}</div><span className="admin-treatment-manager-item__edit">Editar <ArrowRight aria-hidden="true" strokeWidth={1.75} /></span></Link></article>;
         })}</div>}
       </section>

@@ -249,6 +249,8 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
           ? "La imagen supera los 40 megapíxeles permitidos."
           : code === "image_size"
             ? "La imagen supera el máximo de 4 MB."
+            : code === "image_decode_failed"
+              ? "El navegador no pudo leer esta imagen. Probá exportarla otra vez como JPG, PNG o WebP."
             : code === "image_normalization_failed"
               ? "Tu navegador no pudo convertir la imagen a WebP. Probá con JPG."
               : code === "image_canvas_unavailable"
@@ -319,7 +321,7 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
           <div className="admin-treatment-image-control">
             <div className="admin-treatment-image-preview">{imagePreview ? <Image src={imagePreview} alt="Vista previa de la imagen seleccionada" fill sizes="260px" style={{ objectPosition: `${focalX}% ${focalY}%` }} /> : <span><ImageIcon aria-hidden="true" strokeWidth={1.75} />Todavía no hay una imagen</span>}</div>
             <div className="admin-treatment-image-fields">
-              <label htmlFor={`${formId}-imageFile`}>Subir o reemplazar imagen<input id={`${formId}-imageFile`} type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={mediaBusy} aria-invalid={Boolean(mediaIssue || fieldError("imagePath")) || undefined} onChange={(event) => void uploadImage(event.target.files?.[0], event.currentTarget)} /><small>JPG, PNG, WebP o AVIF. Mínimo 640 × 640 px, máximo 4 MB.</small><FieldError id={`${formId}-imagePath-error`} messages={mediaIssue ? [mediaIssue] : fieldError("imagePath")} /></label>
+              <label htmlFor={`${formId}-imageFile`}>Subir o reemplazar imagen <small>opcional</small><input id={`${formId}-imageFile`} type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={mediaBusy} aria-invalid={Boolean(mediaIssue || fieldError("imagePath")) || undefined} aria-describedby={`${formId}-imageFile-help${mediaIssue || fieldError("imagePath") ? ` ${formId}-imagePath-error` : ""}`} onChange={(event) => void uploadImage(event.target.files?.[0], event.currentTarget)} /><small id={`${formId}-imageFile-help`}>Podés guardar o publicar el tratamiento sin imagen y agregarla después. JPG, PNG, WebP o AVIF; mínimo 640 × 640 px y máximo 4 MB.</small><FieldError id={`${formId}-imagePath-error`} messages={mediaIssue ? [mediaIssue] : fieldError("imagePath")} /></label>
               <div className={`admin-media-status admin-media-status--${mediaStage}`} role="status" aria-live="polite">{mediaBusy ? <LoaderCircle aria-hidden="true" className="admin-media-status__spinner" /> : mediaStage === "completed" ? <Check aria-hidden="true" /> : mediaStage === "failed" ? <AlertCircle aria-hidden="true" /> : <UploadCloud aria-hidden="true" />}<span>{mediaStageLabels[mediaStage]}{mediaMetadata ? <small>{mediaMetadata}</small> : null}</span></div>
               <label htmlFor={`${formId}-imageAlt`}>Descripción accesible<input id={`${formId}-imageAlt`} name="imageAlt" defaultValue={treatment?.image_alt ?? ""} minLength={3} maxLength={240} aria-invalid={Boolean(fieldError("imageAlt")) || undefined} aria-describedby={fieldError("imageAlt") ? `${formId}-imageAlt-error` : undefined} /><small>Describí lo visible sin repetir el nombre.</small><FieldError id={`${formId}-imageAlt-error`} messages={fieldError("imageAlt")} /></label>
             </div>
@@ -327,14 +329,14 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
           <div className="admin-form-grid"><label htmlFor={`${formId}-focalX`}>Foco horizontal: <output>{focalX}%</output><input id={`${formId}-focalX`} name="focalX" type="range" min="0" max="100" value={focalX} onChange={(event) => setFocalX(Number(event.target.value))} /></label><label htmlFor={`${formId}-focalY`}>Foco vertical: <output>{focalY}%</output><input id={`${formId}-focalY`} name="focalY" type="range" min="0" max="100" value={focalY} onChange={(event) => setFocalY(Number(event.target.value))} /></label></div>
         </fieldset>
 
-        <div className="admin-form-footer admin-treatment-editor-footer"><p>Guardar borrador no publica. Publicar requiere imagen, descripción accesible y precio mayor que cero.</p><EditorSubmitButtons isNew={isNew} isPublished={Boolean(treatment?.is_active)} mediaBusy={mediaBusy} /></div>
+        <div className="admin-form-footer admin-treatment-editor-footer"><p>La imagen es opcional y puede agregarse o reemplazarse después. Si cargás una, su descripción accesible sí es obligatoria.</p><EditorSubmitButtons isNew={isNew} isPublished={Boolean(treatment?.is_active)} mediaBusy={mediaBusy} /></div>
       </form>
 
       <aside className="admin-treatment-editor-side" aria-label="Estado del tratamiento">
         <strong>{treatment?.is_active ? "Publicado" : "Borrador"}</strong>
         <p>La URL queda estable después del primer guardado.</p>
         {isDirty ? <p className="admin-unsaved-note" role="status">Tenés cambios sin guardar.</p> : null}
-        {!isNew && treatment?.image_url ? <Link className="button button--quiet" href={`/admin/catalogo/${treatment.id}/preview`}><Eye aria-hidden="true" strokeWidth={1.75} />Abrir vista previa</Link> : null}
+        {!isNew && treatment ? <Link className="button button--quiet" href={`/admin/catalogo/${treatment.id}/preview`}><Eye aria-hidden="true" strokeWidth={1.75} />Abrir vista previa</Link> : null}
         <Link className="button button--quiet" href="/admin/catalogo">Volver al catálogo</Link>
         {!isNew && treatment ? <DeleteTreatmentForm treatment={treatment} /> : null}
       </aside>

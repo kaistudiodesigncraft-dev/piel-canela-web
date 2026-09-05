@@ -27,7 +27,7 @@ describe("CatalogAdmin", () => {
     const user = userEvent.setup();
     render(<CatalogAdmin categories={categories} specialties={specialties} professionals={[]} treatments={[
       treatment({}),
-      treatment({ id: "40000000-0000-4000-8000-000000000002", name: "Borrador nuevo", is_active: false, image_path: null, image_url: null, image_alt: null }),
+      treatment({ id: "40000000-0000-4000-8000-000000000002", name: "Borrador nuevo", short_description: "", description: "", price_cents: 0, is_active: false, image_path: null, image_url: null, image_alt: null }),
     ]} feedback={{}} />);
 
     expect(screen.getByRole("link", { name: /nuevo tratamiento/i })).toHaveAttribute("href", "/admin/catalogo/nuevo");

@@ -48,6 +48,15 @@ describe("TreatmentEditor", () => {
     expect(screen.getByRole("button", { name: "Publicar tratamiento" })).toHaveAttribute("value", "publish");
   });
 
+  it("keeps media optional so catalog work can continue without a photograph", () => {
+    render(<TreatmentEditor treatmentId="40000000-0000-4000-8000-000000000001" isNew categories={[category]} specialties={[specialty]} professionals={[]} />);
+
+    expect(screen.getByLabelText(/subir o reemplazar imagen/i)).not.toBeRequired();
+    expect(screen.getByText(/podés guardar o publicar el tratamiento sin imagen/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Guardar borrador" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Publicar tratamiento" })).toBeEnabled();
+  });
+
   it("uploads normalized media directly and only then exposes the final path", async () => {
     const user = userEvent.setup();
     const { container } = render(<TreatmentEditor treatmentId="40000000-0000-4000-8000-000000000001" isNew categories={[category]} specialties={[specialty]} professionals={[]} />);

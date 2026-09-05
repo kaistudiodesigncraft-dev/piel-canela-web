@@ -56,7 +56,7 @@ export interface Treatment {
   preparation: string | null;
   contraindications: string | null;
   professional: string | null;
-  image: TreatmentImage;
+  image: TreatmentImage | null;
   isActive: boolean;
   displayOrder: number;
   createdAt: string;

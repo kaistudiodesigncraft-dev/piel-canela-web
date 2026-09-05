@@ -42,6 +42,48 @@ function canvasToBlob(canvas: HTMLCanvasElement) {
   });
 }
 
+async function decodeTreatmentImage(file: File): Promise<{
+  source: CanvasImageSource;
+  width: number;
+  height: number;
+  cleanup: () => void;
+}> {
+  try {
+    let bitmap: ImageBitmap;
+    try {
+      bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    } catch {
+      bitmap = await createImageBitmap(file);
+    }
+    return {
+      source: bitmap,
+      width: bitmap.width,
+      height: bitmap.height,
+      cleanup: () => bitmap.close(),
+    };
+  } catch {
+    // A valid image can still fail createImageBitmap on some Windows/browser
+    // combinations. The HTML image decoder is a reliable second path and also
+    // applies the displayed EXIF orientation before canvas export.
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      const image = document.createElement("img");
+      image.src = objectUrl;
+      await image.decode();
+      if (!image.naturalWidth || !image.naturalHeight) throw new Error("image_decode_failed");
+      return {
+        source: image,
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+        cleanup: () => URL.revokeObjectURL(objectUrl),
+      };
+    } catch {
+      URL.revokeObjectURL(objectUrl);
+      throw new Error("image_decode_failed");
+    }
+  }
+}
+
 /**
  * Rendering through a canvas applies the browser's EXIF orientation and emits a
  * fresh WebP without the source metadata. The server still verifies the uploaded
@@ -56,19 +98,19 @@ export async function normalizeTreatmentImage(file: File): Promise<{
   const inspection = await inspectAdminImage(file);
   if (!inspection.valid) throw new Error(`image_${inspection.error}`);
 
-  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  const decoded = await decodeTreatmentImage(file);
   try {
-    const size = constrainedImageSize(bitmap.width, bitmap.height);
+    const size = constrainedImageSize(decoded.width, decoded.height);
     const canvas = document.createElement("canvas");
     canvas.width = size.width;
     canvas.height = size.height;
-    const context = canvas.getContext("2d", { alpha: false });
+    const context = canvas.getContext("2d");
     if (!context) throw new Error("image_canvas_unavailable");
-    context.drawImage(bitmap, 0, 0, size.width, size.height);
+    context.drawImage(decoded.source, 0, 0, size.width, size.height);
     const blob = await canvasToBlob(canvas);
     if (blob.size > ADMIN_IMAGE_MAX_BYTES) throw new Error("image_size");
     return { blob, ...size, sourceInspection: inspection };
   } finally {
-    bitmap.close();
+    decoded.cleanup();
   }
 }

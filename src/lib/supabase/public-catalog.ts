@@ -82,8 +82,8 @@ interface TreatmentRow {
   price_cents: number;
   preparation: string | null;
   contraindications: string | null;
-  image_path: string;
-  image_alt: string;
+  image_path: string | null;
+  image_alt: string | null;
   image_focal_x: number | string;
   image_focal_y: number | string;
   is_active: boolean;
@@ -190,13 +190,13 @@ export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot>
       professional: professional?.is_active
         ? professional.public_name
         : null,
-      image: {
+      image: row.image_path && row.image_alt ? {
         src: publicImageUrl(supabase, "treatment-media", row.image_path),
         alt: row.image_alt,
         focalPoint: focalPoint(row.image_focal_x, row.image_focal_y),
         width: 1086,
         height: 1449,
-      },
+      } : null,
       isActive: row.is_active,
       displayOrder: row.display_order,
       createdAt: row.created_at,

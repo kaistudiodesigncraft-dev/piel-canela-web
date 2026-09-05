@@ -1,4 +1,4 @@
-import { ArrowRight, Clock3 } from "lucide-react";
+import { ArrowRight, Clock3, ImageIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type { Treatment, TreatmentCategory } from "@/domain/treatment";
@@ -21,13 +21,20 @@ export function TreatmentEditorialCard({
     <article className="treatment-editorial-card">
       <div className="treatment-editorial-card__top">
         <div className="treatment-editorial-card__image">
-          <Image
-            src={treatment.image.src}
-            alt={treatment.image.alt}
-            fill
-            sizes="(max-width: 767px) 92vw, (max-width: 1100px) 48vw, 30vw"
-            style={{ objectPosition: treatment.image.focalPoint }}
-          />
+          {treatment.image ? (
+            <Image
+              src={treatment.image.src}
+              alt={treatment.image.alt}
+              fill
+              sizes="(max-width: 767px) 92vw, (max-width: 1100px) 48vw, 30vw"
+              style={{ objectPosition: treatment.image.focalPoint }}
+            />
+          ) : (
+            <span className="treatment-image-placeholder">
+              <ImageIcon aria-hidden="true" strokeWidth={1.75} />
+              Imagen en preparación
+            </span>
+          )}
         </div>
         <div className="treatment-editorial-card__content">
           <p className="eyebrow">{category.name}</p>

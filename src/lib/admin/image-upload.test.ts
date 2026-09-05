@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   ADMIN_IMAGE_MAX_BYTES,
@@ -15,6 +17,17 @@ function signatureFile(bytes: number[], type: string) {
 }
 
 describe("administrative image validation", () => {
+  it("accepts the real QA catalog image", async () => {
+    const bytes = readFileSync(resolve("src/lib/admin/__fixtures__/treatment-upload-valid.png"));
+    const file = new File([bytes], "treatment-upload-valid.png", { type: "image/png" });
+
+    await expect(inspectAdminImage(file)).resolves.toMatchObject({
+      valid: true,
+      width: 1254,
+      height: 1254,
+    });
+  });
+
   it("accepts a matching PNG signature", async () => {
     const file = signatureFile(
       [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0],
