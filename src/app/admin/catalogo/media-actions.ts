@@ -38,8 +38,8 @@ export async function createTreatmentMediaUploadIntent(treatmentId: string): Pro
   } catch (error) {
     if (isNextRedirect(error)) throw error;
     const incident = incidentId();
-    const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
-    console.error("treatment_media_intent_unexpected", { incidentId: incident, detail });
+    const errorName = error instanceof Error ? error.name : "unknown";
+    console.error("treatment_media_intent_unexpected", { incidentId: incident, errorName });
     return { ok: false, error: "unexpected", incidentId: incident };
   }
 }
@@ -86,8 +86,8 @@ export async function finalizeTreatmentMediaUpload(uploadId: string): Promise<Me
   } catch (error) {
     if (isNextRedirect(error)) throw error;
     const incident = incidentId();
-    const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
-    console.error("treatment_media_finalize_unexpected", { incidentId: incident, detail });
+    const errorName = error instanceof Error ? error.name : "unknown";
+    console.error("treatment_media_finalize_unexpected", { incidentId: incident, errorName });
     return { ok: false, error: "unexpected", incidentId: incident };
   }
 }

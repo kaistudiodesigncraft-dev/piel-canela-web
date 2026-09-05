@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { getSupabasePublicConfig } from "@/lib/supabase/env";
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const config = getSupabasePublicConfig();
   if (!config) return NextResponse.next({ request });
 

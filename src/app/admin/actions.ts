@@ -10,7 +10,7 @@ import {
   slugifySpecialty,
 } from "@/lib/admin/operations";
 import { ADMIN_IMAGE_MAX_BYTES, ADMIN_IMAGE_TYPES, hasExpectedImageSignature } from "@/lib/admin/image-upload";
-import { requireAdmin } from "@/lib/admin/require-admin";
+import { isOperationalAdminRole, requireAdmin } from "@/lib/admin/require-admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const loginSchema = z.object({ email: z.string().email(), password: z.string().min(8) });
@@ -72,8 +72,20 @@ export async function signInAdmin(formData: FormData) {
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) redirect("/admin/login?error=invalid");
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) redirect("/admin/login?error=credentials");
+  const userId = data.user?.id;
+  const { data: profile } = userId
+    ? await supabase
+        .from("profiles")
+        .select("is_active,role")
+        .eq("user_id", userId)
+        .maybeSingle()
+    : { data: null };
+  if (!profile?.is_active || !isOperationalAdminRole(profile.role)) {
+    await supabase.auth.signOut();
+    redirect("/admin/login?error=profile");
+  }
   redirect("/admin");
 }
 

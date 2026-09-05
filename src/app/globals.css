@@ -10,7 +10,7 @@
   --color-cloud: #eff3f1;
   --color-green-mist: #e7ede5;
   --color-border: #d6dcd7;
-  --color-text-secondary: #66716d;
+  --color-text-secondary: #59645f;
   --color-action: var(--color-petrol);
   --color-text-muted: var(--color-text-secondary);
   --color-surface-soft: var(--color-cloud);
@@ -142,8 +142,9 @@ svg {
 }
 
 :focus-visible {
-  outline: 0.1875rem solid var(--color-focus);
+  outline: 0.1875rem solid var(--color-white);
   outline-offset: 0.1875rem;
+  box-shadow: 0 0 0 0.375rem var(--color-focus);
 }
 
 .sr-only {
@@ -686,7 +687,7 @@ svg {
 }
 
 .section--approach .eyebrow {
-  color: color-mix(in srgb, var(--color-sky) 85%, var(--color-white));
+  color: #d8e8ec;
 }
 
 .approach-grid {
@@ -849,9 +850,14 @@ svg {
   gap: 0.5rem 1rem;
 }
 
-.site-footer__legal-links a,
 .form-assurance a {
   color: var(--color-deep-petrol);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.site-footer__legal-links a {
+  color: color-mix(in srgb, var(--color-white) 82%, transparent);
   text-decoration: underline;
   text-underline-offset: 0.18em;
 }
@@ -3345,7 +3351,7 @@ svg {
   }
 
   .wordmark {
-    min-height: 2.5rem;
+    min-height: 2.75rem;
   }
 
   .wordmark__main {
@@ -3358,7 +3364,7 @@ svg {
 
   .site-header__cta,
   .site-nav__link {
-    min-height: 2.5rem;
+    min-height: 2.75rem;
   }
 
   .site-header__cta {

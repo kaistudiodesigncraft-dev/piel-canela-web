@@ -35,7 +35,7 @@ export default async function TreatmentsPage() {
       </section>
       <section className="section section--catalog" id="catalogo" aria-label="Catálogo de tratamientos">
         <div className="site-container">
-          <Suspense fallback={<div className="catalog-skeleton" aria-label="Cargando catálogo" />}>
+          <Suspense fallback={<div className="catalog-skeleton" role="status" aria-label="Cargando catálogo" />}>
             <CatalogExperience
               categories={treatmentCategories}
               treatments={treatments}

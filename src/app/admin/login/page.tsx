@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { signInAdmin } from "../actions";
 import { usesSupabaseDataSource } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isOperationalAdminRole } from "@/lib/admin/require-admin";
 
 export const metadata: Metadata = { title: "Acceso administrativo" };
 
@@ -16,7 +17,18 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
   if (isConfigured) {
     const supabase = await createSupabaseServerClient();
     const { data } = await supabase.auth.getClaims();
-    if (data?.claims?.sub) redirect("/admin");
+    const userId = data?.claims?.sub;
+    if (userId) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_active,role")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (profile?.is_active && isOperationalAdminRole(profile.role)) {
+        redirect("/admin");
+      }
+    }
   }
 
   const { error } = await searchParams;

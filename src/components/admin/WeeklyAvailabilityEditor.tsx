@@ -69,6 +69,7 @@ export function WeeklyAvailabilityEditor({
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState(initialId);
   const [days, setDays] = useState(() => buildWeeklyAvailability(rules.filter((rule) => rule.specialty_id === initialId)));
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const initialActionState: WeeklyAvailabilityActionState = { status: "idle" };
   const [actionState, formAction] = useActionState(saveWeeklyAvailability, initialActionState);
   const validation = useMemo(() => validateWeeklyAvailability(days), [days]);
@@ -77,12 +78,18 @@ export function WeeklyAvailabilityEditor({
   const enabledDays = days.filter((day) => day.enabled && day.ranges.length > 0);
 
   function selectSpecialty(id: string) {
+    if (id === selectedSpecialtyId) return;
+    if (isDirty && !window.confirm("Hay cambios sin guardar en esta semana. ¿Querés descartarlos y cambiar de especialidad?")) {
+      return;
+    }
     setSelectedSpecialtyId(id);
     setDays(buildWeeklyAvailability(rules.filter((rule) => rule.specialty_id === id)));
     setAttemptedSubmit(false);
+    setIsDirty(false);
   }
 
   function updateDay(weekday: number, updater: (day: WeeklyAvailabilityDay) => WeeklyAvailabilityDay) {
+    setIsDirty(true);
     setDays((current) => current.map((day) => day.weekday === weekday ? updater(day) : day));
   }
 
@@ -152,7 +159,10 @@ export function WeeklyAvailabilityEditor({
         <button
           className="button button--quiet"
           type="button"
-          onClick={() => setDays((current) => copyMondayToWeekdays(cloneDays(current)))}
+          onClick={() => {
+            setIsDirty(true);
+            setDays((current) => copyMondayToWeekdays(cloneDays(current)));
+          }}
         >
           <Copy aria-hidden="true" strokeWidth={1.75} />
           Copiar lunes a martes–viernes
@@ -160,6 +170,7 @@ export function WeeklyAvailabilityEditor({
       </div>
 
       {saved ? <p className="form-message" role="status">La semana quedó guardada. Los turnos ya reservados no se modificaron.</p> : null}
+      {isDirty ? <p className="admin-unsaved-note" role="status">Tenés cambios sin guardar en esta semana.</p> : null}
       {actionState.status === "error" ? <p className="form-message form-message--error" role="alert">{actionMessages[actionState.error ?? "save"]}</p> : null}
 
       <input type="hidden" name="rules" value={JSON.stringify(serializeWeeklyAvailability(days))} readOnly />

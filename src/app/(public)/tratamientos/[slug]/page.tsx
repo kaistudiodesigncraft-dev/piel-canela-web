@@ -74,7 +74,7 @@ export default async function TreatmentPage({ params }: TreatmentPageProps) {
         </Link>
       </div>
       <div className="site-container treatment-page__content">
-        <Suspense fallback={<div className="catalog-skeleton" aria-label="Cargando tratamiento" />}>
+        <Suspense fallback={<div className="catalog-skeleton" role="status" aria-label="Cargando tratamiento" />}>
           <TreatmentPageClient
             treatment={treatment}
             category={category}

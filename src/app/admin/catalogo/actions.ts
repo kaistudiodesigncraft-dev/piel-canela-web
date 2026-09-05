@@ -22,8 +22,8 @@ const treatmentSchema = z.object({
   specialtyId: z.string().uuid(),
   professionalId: z.string().uuid().optional(),
   name: z.string().trim().min(2).max(120),
-  shortDescription: z.string().trim().min(10).max(240),
-  description: z.string().trim().min(20).max(3000),
+  shortDescription: z.string().trim().max(240),
+  description: z.string().trim().max(3000),
   durationMinutes: z.coerce.number().int().min(5).max(480),
   bufferMinutes: z.coerce.number().int().min(0).max(180),
   startIntervalMinutes: z.coerce.number().int().refine((value) => [15, 30, 60].includes(value)),
@@ -113,11 +113,9 @@ export async function saveTreatment(
     if (isNextRedirect(error)) throw error;
     const incidentId = newIncidentId();
     const errorName = error instanceof Error ? error.name : "unknown";
-    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("admin_treatment_mutation_unexpected", {
       incidentId,
       errorName,
-      errorMessage,
     });
     return { status: "failed", error: "unexpected", incidentId };
   }
@@ -235,6 +233,8 @@ async function saveTreatmentImpl(
   }
   if (isActive) {
     const publicationErrors: Record<string, string[]> = {};
+    if (parsed.data.shortDescription.length < 10) publicationErrors.shortDescription = ["Escribí al menos 10 caracteres para publicar."];
+    if (parsed.data.description.length < 20) publicationErrors.description = ["Escribí al menos 20 caracteres para publicar."];
     if (!imagePath) publicationErrors.imagePath = ["Cargá una imagen antes de publicar."];
     if (!parsed.data.imageAlt || parsed.data.imageAlt.length < 3) publicationErrors.imageAlt = ["Describí la imagen con al menos 3 caracteres."];
     if (parsed.data.pricePesos <= 0) publicationErrors.pricePesos = ["Ingresá un precio mayor que cero para publicar."];
@@ -315,6 +315,8 @@ export async function deleteTreatment(formData: FormData) {
   if (!parsed.success) catalogRedirect("treatmentError=deleteConfirmation");
   if (!isTreatmentDeleteCodeConfigured()) catalogRedirect("treatmentError=deleteNotConfigured");
   if (!verifyTreatmentDeleteCode(parsed.data.confirmationCode)) catalogRedirect("treatmentError=deleteCode");
+  const guardSecret = process.env.BOOKING_GUARD_SECRET;
+  if (!guardSecret || guardSecret.length < 32) catalogRedirect("treatmentError=deleteNotConfigured");
 
   const [treatmentResult, bookingResult, specialResult] = await Promise.all([
     supabase.from("treatments").select("id,slug,image_path").eq("id", parsed.data.treatmentId).single(),
@@ -328,28 +330,12 @@ export async function deleteTreatment(formData: FormData) {
     catalogRedirect("treatmentError=deleteLinked");
   }
 
-  const { error } = await supabase.from("treatments").delete().eq("id", parsed.data.treatmentId);
+  const { error } = await supabase.rpc("delete_treatment_if_unlinked", {
+    requested_treatment_id: parsed.data.treatmentId,
+    request_guard_secret: guardSecret,
+  });
   if (error) {
-    catalogRedirect(`treatmentError=${error.code === "23503" ? "deleteLinked" : "deleteFailed"}`);
-  }
-
-  let mediaCleanupFailed = false;
-  if (treatment.image_path && !treatment.image_path.startsWith("/") && !treatment.image_path.startsWith("https://")) {
-    const [otherTreatments, otherSpecials] = await Promise.all([
-      supabase.from("treatments").select("id", { count: "exact", head: true })
-        .eq("image_path", treatment.image_path),
-      supabase.from("monthly_specials").select("id", { count: "exact", head: true })
-        .eq("image_path", treatment.image_path),
-    ]);
-    const referenceCheckFailed = Boolean(otherTreatments.error || otherSpecials.error);
-    const isStillReferenced = (otherTreatments.count ?? 0) > 0 || (otherSpecials.count ?? 0) > 0;
-    if (!referenceCheckFailed && !isStillReferenced) {
-      const { error: mediaError } = await supabase.storage.from("treatment-media").remove([treatment.image_path]);
-      mediaCleanupFailed = Boolean(mediaError);
-    } else {
-      // Retaining an unreferenced file is recoverable; deleting a referenced one is not.
-      mediaCleanupFailed = referenceCheckFailed;
-    }
+    catalogRedirect(`treatmentError=${error.code === "23503" ? "deleteLinked" : error.code === "42501" ? "deleteNotConfigured" : "deleteFailed"}`);
   }
 
   revalidatePath("/");
@@ -358,5 +344,7 @@ export async function deleteTreatment(formData: FormData) {
   revalidatePath("/reservar");
   revalidatePath("/admin");
   revalidatePath("/admin/catalogo");
-  catalogRedirect(`treatmentDeleted=1${mediaCleanupFailed ? "&mediaCleanup=failed" : ""}`);
+  // The image remains immutable for rollback and is reclaimed only by an
+  // owner-operated, reference-aware maintenance job.
+  catalogRedirect("treatmentDeleted=1");
 }
