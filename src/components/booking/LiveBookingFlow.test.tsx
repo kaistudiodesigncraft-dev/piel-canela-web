@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ResolvedBookingSelection } from "@/domain/treatment";
@@ -54,8 +54,8 @@ describe("LiveBookingFlow", () => {
     await user.click(slot);
     await user.click(screen.getAllByRole("button", { name: /continuar/i })[0]!);
     await waitFor(() => expect(screen.getByRole("heading", { name: "Contanos cómo contactarte." })).toHaveFocus());
-    await user.type(screen.getByLabelText("Nombre y apellido"), "Laura Gómez");
-    await user.type(screen.getByLabelText("WhatsApp"), "3515550000");
+    fireEvent.change(screen.getByLabelText("Nombre y apellido"), { target: { value: "Laura Gómez" } });
+    fireEvent.change(screen.getByLabelText("WhatsApp"), { target: { value: "3515550000" } });
     await user.click(screen.getByRole("button", { name: /revisar reserva/i }));
     await waitFor(() => expect(screen.getByRole("heading", { name: "Revisá antes de crear la pre-reserva." })).toHaveFocus());
     await user.click(screen.getByRole("button", { name: /crear pre-reserva/i }));
@@ -109,8 +109,8 @@ describe("LiveBookingFlow", () => {
 
     await user.click(await screen.findByRole("button", { name: "12:30" }));
     await user.click(screen.getAllByRole("button", { name: /continuar/i })[0]!);
-    await user.type(screen.getByLabelText("Nombre y apellido"), "Laura Gómez");
-    await user.type(screen.getByLabelText("WhatsApp"), "3515550000");
+    fireEvent.change(screen.getByLabelText("Nombre y apellido"), { target: { value: "Laura Gómez" } });
+    fireEvent.change(screen.getByLabelText("WhatsApp"), { target: { value: "3515550000" } });
     await user.click(screen.getByRole("button", { name: /revisar reserva/i }));
     await user.click(screen.getByRole("button", { name: /crear pre-reserva/i }));
 
