@@ -5718,6 +5718,7 @@ svg {
 @media (max-width: 39.99rem) {
   .content-admin {
     width: min(100% - 1rem, 76rem);
+    overflow-x: clip;
   }
   .content-admin__header h1 {
     overflow-wrap: anywhere;
