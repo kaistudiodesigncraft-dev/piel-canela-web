@@ -71,6 +71,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
   const hiddenSlotCount = Math.max(0, slots.length - visibleSlots.length);
   const visibleDates = dates.slice(0, visibleDateCount);
   const hiddenDateCount = Math.max(0, dates.length - visibleDates.length);
+  const canContinueByWhatsApp = Boolean(whatsappNumber?.replace(/\D/g, ""));
 
   useEffect(() => {
     if (initialStepRender.current) {
@@ -194,7 +195,9 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
         <p className="eyebrow">Pre-reserva creada</p>
         <h2 id="booking-success-title" tabIndex={-1}>Tu horario quedó reservado de forma provisional.</h2>
         <p className="booking-success__lead">
-          Para confirmarlo, enviá el resumen por WhatsApp y seguí las indicaciones para abonar la seña.
+          {canContinueByWhatsApp
+            ? "Para confirmarlo, enviá el resumen por WhatsApp y seguí las indicaciones para abonar la seña."
+            : "Piel Canela recibió tu solicitud y se comunicará al WhatsApp que informaste para confirmar la seña."}
         </p>
 
         <dl className="booking-confirmation numeric">
@@ -204,17 +207,19 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
           <div><dt>Valor</dt><dd>{formatPrice(selection.appliedPriceCents)}</dd></div>
         </dl>
 
-        <div className="booking-success__actions">
-          <a
-            className="button button--primary"
-            href={buildWhatsAppUrl(whatsappNumber, whatsappMessage)}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <MessageCircle aria-hidden="true" strokeWidth={1.75} />
-            Continuar por WhatsApp
-          </a>
-        </div>
+        {canContinueByWhatsApp ? (
+          <div className="booking-success__actions">
+            <a
+              className="button button--primary"
+              href={buildWhatsAppUrl(whatsappNumber, whatsappMessage)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <MessageCircle aria-hidden="true" strokeWidth={1.75} />
+              Continuar por WhatsApp
+            </a>
+          </div>
+        ) : null}
         <p className="booking-success__fine-print">
           La solicitud permanece pendiente hasta que Piel Canela confirme la seña.
         </p>

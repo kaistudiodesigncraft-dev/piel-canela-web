@@ -69,6 +69,21 @@ describe("LiveBookingFlow", () => {
     );
   });
 
+  it("keeps the confirmation usable when the business WhatsApp is not configured", async () => {
+    const user = userEvent.setup();
+    render(<LiveBookingFlow selection={selection} dates={dates} whatsappNumber={null} />);
+
+    await user.click(await screen.findByRole("button", { name: "12:30" }));
+    await user.click(screen.getAllByRole("button", { name: /continuar/i })[0]!);
+    fireEvent.change(screen.getByLabelText("Nombre y apellido"), { target: { value: "Laura Gómez" } });
+    fireEvent.change(screen.getByLabelText("WhatsApp"), { target: { value: "3515550000" } });
+    await user.click(screen.getByRole("button", { name: /revisar reserva/i }));
+    await user.click(screen.getByRole("button", { name: /crear pre-reserva/i }));
+
+    expect(await screen.findByText(/se comunicará al WhatsApp que informaste/i)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /continuar por whatsapp/i })).not.toBeInTheDocument();
+  });
+
   it("keeps long availability lists compact until the person asks for more", async () => {
     const user = userEvent.setup();
     getAvailableSlotsMock.mockResolvedValue({

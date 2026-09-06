@@ -5732,7 +5732,20 @@ svg {
   .content-editor-section__heading {
     gap: 0.75rem;
   }
-  .content-image-field { grid-template-columns: 1fr; }
+  .content-image-field {
+    grid-template-columns: minmax(0, 1fr);
+    padding-inline: 0;
+  }
+  .content-image-field > *,
+  .content-image-field__controls,
+  .content-file-control,
+  .content-file-control input {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .content-file-control {
+    overflow: hidden;
+  }
   .content-image-field__preview { min-height: 12rem; }
   .content-image-settings { grid-template-columns: 1fr; }
   .content-editor-form__footer .button-row { display: grid; width: 100%; }
