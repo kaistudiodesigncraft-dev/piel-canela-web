@@ -649,11 +649,11 @@ begin
   ), candidates as (
     select slot_start,
       slot_start + make_interval(mins => selected.duration_minutes + selected.buffer_minutes) as slot_end,
-      window.window_end
-    from windows window
+      availability_window.window_end
+    from windows availability_window
     cross join lateral generate_series(
-      window.window_start,
-      window.window_end - make_interval(mins => selected.duration_minutes + selected.buffer_minutes),
+      availability_window.window_start,
+      availability_window.window_end - make_interval(mins => selected.duration_minutes + selected.buffer_minutes),
       make_interval(mins => selected.start_interval_minutes)
     ) slot_start
   )
@@ -1030,10 +1030,10 @@ begin
   ), candidates as (
     select slot_start,
       slot_start + make_interval(mins => selected_package.duration_snapshot_minutes + selected_package.buffer_snapshot_minutes) as slot_end,
-      window.window_end
-    from windows window cross join lateral generate_series(
-      window.window_start,
-      window.window_end - make_interval(mins => selected_package.duration_snapshot_minutes + selected_package.buffer_snapshot_minutes),
+      availability_window.window_end
+    from windows availability_window cross join lateral generate_series(
+      availability_window.window_start,
+      availability_window.window_end - make_interval(mins => selected_package.duration_snapshot_minutes + selected_package.buffer_snapshot_minutes),
       make_interval(mins => selected_treatment.start_interval_minutes)
     ) slot_start
   )
