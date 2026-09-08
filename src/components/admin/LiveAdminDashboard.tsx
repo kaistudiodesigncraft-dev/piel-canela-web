@@ -89,7 +89,18 @@ interface TreatmentRow {
   duration_minutes: number;
   buffer_minutes: number;
   start_interval_minutes: number;
+  selection_mode: "simple" | "closed_combo";
   price_cents: number;
+  is_active: boolean;
+}
+
+interface TreatmentComboRow {
+  id: string;
+  treatment_id: string;
+  name: string;
+  mode: "single_session" | "package";
+  session_count: number;
+  fixed_price_cents: number;
   is_active: boolean;
 }
 
@@ -102,6 +113,7 @@ interface MonthlySpecialRow {
   image_path: string;
   image_url: string;
   image_alt: string;
+  pricing_mode: "special_price" | "combo_catalog";
   special_price_cents: number;
   reference_price_cents: number | null;
   starts_at: string;
@@ -129,6 +141,9 @@ interface AdminBookingRow {
   deposit_confirmed_at: string | null;
   completed_at: string | null;
   no_show_at: string | null;
+  combo_name_snapshot: string | null;
+  package_charge_kind: "standard" | "package_initial" | "package_included";
+  customer_package_id: string | null;
   history: Array<{
     id: number;
     previous_status: BookingStatus | null;
@@ -149,6 +164,7 @@ interface LiveAdminDashboardProps {
   rules: AvailabilityRuleRow[];
   exceptions: AvailabilityExceptionRow[];
   treatments: TreatmentRow[];
+  treatmentCombos: TreatmentComboRow[];
   monthlySpecials: MonthlySpecialRow[];
   bookings: AdminBookingRow[];
   agenda: {
@@ -192,6 +208,7 @@ export function LiveAdminDashboard({
   rules,
   exceptions,
   treatments,
+  treatmentCombos,
   monthlySpecials,
   bookings,
   agenda,
@@ -199,6 +216,7 @@ export function LiveAdminDashboard({
 }: LiveAdminDashboardProps) {
   const [bookingQuery, setBookingQuery] = useState("");
   const [manualTreatmentId, setManualTreatmentId] = useState(treatments[0]?.id ?? "");
+  const [manualComboId, setManualComboId] = useState("");
   const specialtyName = useMemo(() => new Map(specialties.map((item) => [item.id, item.name])), [specialties]);
   const treatmentName = useMemo(() => new Map(treatments.map((item) => [item.id, item.name])), [treatments]);
   const referenceTimestamp = new Date(referenceTime).getTime();
@@ -214,6 +232,8 @@ export function LiveAdminDashboard({
   }), [bookingQuery, bookings]);
   const activeSpecials = monthlySpecials.filter((special) => special.is_active);
   const manualSpecials = activeSpecials.filter((special) => special.treatment_id === manualTreatmentId);
+  const manualTreatment = treatments.find((treatment) => treatment.id === manualTreatmentId);
+  const manualCombos = treatmentCombos.filter((combo) => combo.treatment_id === manualTreatmentId && combo.is_active);
   const defaultStart = toArgentinaDateTimeInput(new Date(referenceTimestamp + 60 * 60 * 1000).toISOString());
   const defaultEnd = toArgentinaDateTimeInput(new Date(referenceTimestamp + 2 * 60 * 60 * 1000).toISOString());
   const totalPages = Math.max(1, Math.ceil(agenda.total / agenda.pageSize));
@@ -282,7 +302,7 @@ export function LiveAdminDashboard({
               return <article key={booking.id} className="live-booking-row">
                 <div className="live-booking-row__time numeric"><Clock3 aria-hidden="true" strokeWidth={1.75} /><time dateTime={booking.starts_at}>{bookingDate(booking.starts_at)}</time></div>
                 <div className="live-booking-row__identity"><strong>{customerName}</strong><a href={`https://wa.me/${normalizePhone(phone)}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer"><MessageCircle aria-hidden="true" strokeWidth={1.75} />{phone || "Sin teléfono"}</a></div>
-                <div className="live-booking-row__treatment"><strong>{treatmentName}</strong><span className="numeric">{booking.booking_code} · {formatPrice(booking.applied_price_snapshot_cents)}</span></div>
+                <div className="live-booking-row__treatment"><strong>{treatmentName}</strong>{booking.combo_name_snapshot ? <span>{booking.combo_name_snapshot}</span> : null}<span className="numeric">{booking.booking_code} · {booking.package_charge_kind === "package_included" ? "Incluida en paquete" : formatPrice(booking.applied_price_snapshot_cents)}</span>{booking.customer_package_id && (booking.status === "completed" || booking.status === "no_show") ? <Link className="text-link" href="/admin/paquetes">Resolver consumo de sesión</Link> : null}</div>
                 <span className={`status-badge status-${booking.status}`}>{BOOKING_STATUS_LABELS[booking.status]}</span>
                 {transitions.length > 0 ? <BookingStatusTransitionForm bookingId={booking.id} bookingCode={booking.booking_code} transitions={transitions} /> : <span className="booking-status-closed">Estado final</span>}
                 <details className="booking-detail-disclosure" id={`booking-${booking.id}`}>
@@ -309,13 +329,13 @@ export function LiveAdminDashboard({
         <Feedback show={feedback.manualBookingSaved === "1"} error={feedback.manualBookingError} success="Turno manual creado y agregado a la agenda." errorText={feedback.manualBookingError === "conflict" ? "Ese horario ya está ocupado para la especialidad seleccionada." : "No se pudo crear el turno manual."} />
         <form action={createManualBooking} className="admin-form admin-form--wide">
           <div className="admin-form-grid admin-form-grid--3">
-            <label>Tratamiento<select name="treatmentId" required value={manualTreatmentId} onChange={(event) => setManualTreatmentId(event.target.value)}>{treatments.map((treatment) => <option key={treatment.id} value={treatment.id}>{treatment.name} · {specialtyName.get(treatment.specialty_id)}</option>)}</select></label>
-            <label>Especial del mes<select name="monthlySpecialId" defaultValue=""><option value="">Sin promoción</option>{manualSpecials.map((special) => <option key={special.id} value={special.id}>{special.title}</option>)}</select></label>
+            <label>Tratamiento<select name="treatmentId" required value={manualTreatmentId} onChange={(event) => { setManualTreatmentId(event.target.value); setManualComboId(""); }}>{treatments.map((treatment) => <option key={treatment.id} value={treatment.id}>{treatment.name} · {specialtyName.get(treatment.specialty_id)}</option>)}</select></label>
+            {manualTreatment?.selection_mode === "closed_combo" ? <label>Combo<select name="comboId" value={manualComboId} onChange={(event) => setManualComboId(event.target.value)} required><option value="">Seleccionar combo</option>{manualCombos.map((combo) => <option key={combo.id} value={combo.id}>{combo.name} · {combo.session_count} {combo.session_count === 1 ? "sesión" : "sesiones"} · {formatPrice(combo.fixed_price_cents)}</option>)}</select></label> : <label>Especial del mes<select name="monthlySpecialId" defaultValue=""><option value="">Sin promoción</option>{manualSpecials.map((special) => <option key={special.id} value={special.id}>{special.title}</option>)}</select></label>}
             <label>Fecha y horario<input name="startsAt" type="datetime-local" min={defaultStart.slice(0, 10) + "T00:00"} defaultValue={defaultStart} required /></label>
           </div>
           <div className="admin-form-grid admin-form-grid--3"><label>Nombre y apellido<input name="fullName" minLength={2} maxLength={100} required /></label><label>WhatsApp<input name="phone" type="tel" minLength={8} maxLength={30} required /></label><label>Correo opcional<input name="email" type="email" maxLength={180} /></label></div>
           <div className="admin-form-grid"><label>Estado inicial<select name="status" defaultValue="confirmed"><option value="pending">Pendiente</option><option value="awaiting_deposit">Esperando seña</option><option value="confirmed">Confirmada</option></select></label><label>Nota del cliente<textarea name="customerNotes" rows={3} maxLength={240} /></label><label>Nota interna<textarea name="internalNotes" rows={3} maxLength={1000} /></label></div>
-          <div className="admin-form-footer"><p>El horario puede ser excepcional; solo se rechaza si ya existe otro turno de la misma especialidad.</p><button className="button button--primary" type="submit"><CheckCircle2 aria-hidden="true" strokeWidth={1.75} />Guardar turno</button></div>
+          <div className="admin-form-footer"><p>La base valida la disponibilidad, los bloqueos y la capacidad de la especialidad antes de guardar.</p><button className="button button--primary" type="submit"><CheckCircle2 aria-hidden="true" strokeWidth={1.75} />Guardar turno</button></div>
         </form>
       </section>
 
@@ -346,18 +366,26 @@ export function LiveAdminDashboard({
         <div className="admin-section-heading"><div><h2 id="specials-title">Especiales del mes</h2><p>Creá o editá las únicas propuestas concretas que aparecen destacadas en la home.</p></div><Sparkles aria-hidden="true" strokeWidth={1.75} /></div>
         <Feedback show={feedback.specialSaved === "1"} error={feedback.specialError} success="Especial del mes guardado y web actualizada." errorText="No se pudo guardar. Revisá fechas, precios, imagen y superposición de vigencia." />
         <details className="admin-disclosure"><summary><span><Plus aria-hidden="true" strokeWidth={1.75} />Crear especial del mes</span><ChevronDown aria-hidden="true" strokeWidth={1.75} /></summary><MonthlySpecialForm treatments={treatments} /></details>
-        <div className="monthly-special-admin-list">{monthlySpecials.length === 0 ? <div className="admin-empty"><Sparkles aria-hidden="true" strokeWidth={1.75} /><h3>No hay especiales cargados.</h3><p>Creá el primero y definí cuándo debe mostrarse.</p></div> : monthlySpecials.map((special) => <article key={special.id} className="monthly-special-admin-item"><div className="monthly-special-admin-item__image"><Image src={special.image_url} alt={special.image_alt} fill sizes="160px" /></div><div className="monthly-special-admin-item__summary"><span className={`status-badge ${special.is_active ? "status-confirmed" : "status-expired"}`}>{special.is_active ? "Activo" : "Pausado"}</span><h3>{special.title}</h3><p>{treatmentName.get(special.treatment_id)} · {formatPrice(special.special_price_cents)}</p><small>{bookingDate(special.starts_at)} → {bookingDate(special.ends_at)}</small></div><details className="admin-disclosure admin-disclosure--inline"><summary><span>Editar especial</span><ChevronDown aria-hidden="true" strokeWidth={1.75} /></summary><MonthlySpecialForm treatments={treatments} special={special} /></details></article>)}</div>
+        <div className="monthly-special-admin-list">{monthlySpecials.length === 0 ? <div className="admin-empty"><Sparkles aria-hidden="true" strokeWidth={1.75} /><h3>No hay especiales cargados.</h3><p>Creá el primero y definí cuándo debe mostrarse.</p></div> : monthlySpecials.map((special) => <article key={special.id} className="monthly-special-admin-item"><div className="monthly-special-admin-item__image"><Image src={special.image_url} alt={special.image_alt} fill sizes="160px" /></div><div className="monthly-special-admin-item__summary"><span className={`status-badge ${special.is_active ? "status-confirmed" : "status-expired"}`}>{special.is_active ? "Activo" : "Pausado"}</span><h3>{special.title}</h3><p>{treatmentName.get(special.treatment_id)} · {special.pricing_mode === "combo_catalog" ? "Promoción de combos" : formatPrice(special.special_price_cents)}</p><small>{bookingDate(special.starts_at)} → {bookingDate(special.ends_at)}</small></div><details className="admin-disclosure admin-disclosure--inline"><summary><span>Editar especial</span><ChevronDown aria-hidden="true" strokeWidth={1.75} /></summary><MonthlySpecialForm treatments={treatments} special={special} /></details></article>)}</div>
       </section>
     </div>
   );
 }
 
 function MonthlySpecialForm({ treatments, special }: { treatments: TreatmentRow[]; special?: MonthlySpecialRow }) {
+  const [treatmentId, setTreatmentId] = useState(special?.treatment_id ?? "");
+  const selectedTreatment = treatments.find((treatment) => treatment.id === treatmentId);
+  const promotesCombos = selectedTreatment?.selection_mode === "closed_combo";
+
   return <form action={saveMonthlySpecial} className="admin-form admin-form--special">
     {special ? <input type="hidden" name="specialId" value={special.id} /> : null}
-    <div className="admin-form-grid admin-form-grid--3"><label>Tratamiento<select name="treatmentId" defaultValue={special?.treatment_id ?? ""} required><option value="">Seleccionar</option>{treatments.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>Título<input name="title" defaultValue={special?.title ?? ""} minLength={2} maxLength={120} required /></label><label>Orden<select name="displayOrder" defaultValue={special?.display_order ?? 1}>{[1,2,3,4].map((value) => <option key={value} value={value}>{value}</option>)}</select></label></div>
+    <div className="admin-form-grid admin-form-grid--3"><label>Tratamiento<select name="treatmentId" value={treatmentId} onChange={(event) => setTreatmentId(event.target.value)} required><option value="">Seleccionar</option>{treatments.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>Título<input name="title" defaultValue={special?.title ?? ""} minLength={2} maxLength={120} required /></label><label>Orden<select name="displayOrder" defaultValue={special?.display_order ?? 1}>{[1,2,3,4].map((value) => <option key={value} value={value}>{value}</option>)}</select></label></div>
     <label>Descripción breve<textarea name="shortDescription" defaultValue={special?.short_description ?? ""} rows={2} minLength={10} maxLength={240} required /></label><label>Detalle completo<textarea name="detail" defaultValue={special?.detail ?? ""} rows={4} minLength={20} maxLength={1400} required /></label>
-    <div className="admin-form-grid admin-form-grid--3"><label>Precio especial en pesos<input name="specialPricePesos" type="number" min="1" step="1" defaultValue={special ? special.special_price_cents / 100 : ""} required /></label><label>Precio de referencia opcional<input name="referencePricePesos" type="number" min="1" step="1" defaultValue={special?.reference_price_cents ? special.reference_price_cents / 100 : ""} /></label><label className="admin-check"><input type="checkbox" name="isActive" defaultChecked={special?.is_active ?? false} /><span>Publicar durante la vigencia</span></label></div>
+    {promotesCombos ? <>
+      <input type="hidden" name="specialPricePesos" value="0" />
+      <p className="admin-field-note admin-field-note--prominent">Este especial presenta los combos publicados. Cada combo conserva su propio precio y no acumula descuentos.</p>
+      <label className="admin-check"><input type="checkbox" name="isActive" defaultChecked={special?.is_active ?? false} /><span>Publicar durante la vigencia</span></label>
+    </> : <div className="admin-form-grid admin-form-grid--3"><label>Precio especial en pesos<input name="specialPricePesos" type="number" min="1" step="1" defaultValue={special ? special.special_price_cents / 100 : ""} required /></label><label>Precio de referencia opcional<input name="referencePricePesos" type="number" min="1" step="1" defaultValue={special?.reference_price_cents ? special.reference_price_cents / 100 : ""} /></label><label className="admin-check"><input type="checkbox" name="isActive" defaultChecked={special?.is_active ?? false} /><span>Publicar durante la vigencia</span></label></div>}
     <div className="admin-form-grid"><label>Inicio<input name="startsAt" type="datetime-local" defaultValue={special ? toArgentinaDateTimeInput(special.starts_at) : ""} required /></label><label>Fin<input name="endsAt" type="datetime-local" defaultValue={special ? toArgentinaDateTimeInput(special.ends_at) : ""} required /></label></div>
     <div className="admin-form-grid"><label>Imagen {special ? "opcional para reemplazar" : ""}<input name="imageFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required={!special} /></label><label>Descripción accesible<input name="imageAlt" defaultValue={special?.image_alt ?? ""} minLength={3} maxLength={240} required /></label></div><label>Condiciones opcionales<textarea name="terms" defaultValue={special?.terms ?? ""} rows={2} maxLength={500} /></label>
     <div className="admin-form-footer"><p>La home muestra entre uno y cuatro especiales activos y vigentes.</p><button className="button button--primary" type="submit">Guardar especial</button></div>

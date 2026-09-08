@@ -132,6 +132,7 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
   const [durationMinutes, setDurationMinutes] = useState(treatment?.duration_minutes ?? 60);
   const [bufferMinutes, setBufferMinutes] = useState(treatment?.buffer_minutes ?? 15);
   const [startIntervalMinutes, setStartIntervalMinutes] = useState<15 | 30 | 60>(treatment?.start_interval_minutes ?? 30);
+  const [selectionMode, setSelectionMode] = useState<"simple" | "closed_combo">(treatment?.selection_mode ?? "simple");
   const [focalX, setFocalX] = useState(focalPointToPercentage(treatment?.image_focal_x ?? 0.5));
   const [focalY, setFocalY] = useState(focalPointToPercentage(treatment?.image_focal_y ?? 0.5));
   const [imagePath, setImagePath] = useState(treatment?.image_path ?? "");
@@ -303,17 +304,30 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
 
         <fieldset>
           <legend>Operación y precio</legend>
-          <div className="admin-form-grid admin-form-grid--3">
+          <div className="admin-selection-mode">
+            <label htmlFor={`${formId}-selectionMode`}>Forma de reserva
+              <select id={`${formId}-selectionMode`} name="selectionMode" value={selectionMode} onChange={(event) => setSelectionMode(event.target.value as "simple" | "closed_combo")} aria-invalid={Boolean(fieldError("selectionMode")) || undefined}>
+                <option value="simple">Tratamiento simple</option>
+                <option value="closed_combo">Usa combos cerrados</option>
+              </select>
+              <small>{selectionMode === "closed_combo" ? "La persona deberá elegir un combo publicado antes de reservar." : "La duración y el precio de esta ficha se aplican directamente."}</small>
+              <FieldError id={`${formId}-selectionMode-error`} messages={fieldError("selectionMode")} />
+            </label>
+            {selectionMode === "closed_combo" && !isNew ? <Link className="button button--quiet" href={`/admin/catalogo/${treatmentId}/combos`}>Configurar zonas y combos</Link> : null}
+            {selectionMode === "closed_combo" && isNew ? <p className="admin-field-note">Guardá primero el borrador para poder crear sus zonas y combos.</p> : null}
+          </div>
+          <div className={`admin-form-grid ${selectionMode === "simple" ? "admin-form-grid--3" : ""}`}>
             <label htmlFor={`${formId}-specialtyId`}>Especialidad<select id={`${formId}-specialtyId`} name="specialtyId" value={selectedSpecialty} onChange={(event) => { setSelectedSpecialty(event.target.value); setSelectedProfessional(""); }} required aria-invalid={Boolean(fieldError("specialtyId")) || undefined} aria-describedby={fieldError("specialtyId") ? `${formId}-specialtyId-error` : undefined}><option value="">Seleccionar</option>{activeSpecialties.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select><FieldError id={`${formId}-specialtyId-error`} messages={fieldError("specialtyId")} /></label>
             <label htmlFor={`${formId}-professionalId`}>Profesional opcional<select id={`${formId}-professionalId`} name="professionalId" value={selectedProfessional} onChange={(event) => setSelectedProfessional(event.target.value)} aria-invalid={Boolean(fieldError("professionalId")) || undefined}><option value="">Sin asignación fija</option>{availableProfessionals.map((item) => <option key={item.id} value={item.id}>{item.public_name || item.full_name}</option>)}</select><FieldError id={`${formId}-professionalId-error`} messages={fieldError("professionalId")} /></label>
-            <label htmlFor={`${formId}-pricePesos`}>Precio en pesos<input id={`${formId}-pricePesos`} name="pricePesos" type="number" min="0" step="1" defaultValue={treatment ? treatment.price_cents / 100 : ""} aria-invalid={Boolean(fieldError("pricePesos")) || undefined} aria-describedby={fieldError("pricePesos") ? `${formId}-pricePesos-error` : undefined} /><FieldError id={`${formId}-pricePesos-error`} messages={fieldError("pricePesos")} /></label>
+            {selectionMode === "simple" ? <label htmlFor={`${formId}-pricePesos`}>Precio en pesos<input id={`${formId}-pricePesos`} name="pricePesos" type="number" min="0" step="1" defaultValue={treatment ? treatment.price_cents / 100 : ""} aria-invalid={Boolean(fieldError("pricePesos")) || undefined} aria-describedby={fieldError("pricePesos") ? `${formId}-pricePesos-error` : undefined} /><FieldError id={`${formId}-pricePesos-error`} messages={fieldError("pricePesos")} /></label> : <input type="hidden" name="pricePesos" value="0" />}
           </div>
-          <div className="admin-form-grid admin-form-grid--3">
-            <label htmlFor={`${formId}-durationMinutes`}>Duración<input id={`${formId}-durationMinutes`} name="durationMinutes" type="number" min="5" max="480" step="5" value={durationMinutes} onChange={(event) => setDurationMinutes(Number(event.target.value))} required /></label>
+          {selectionMode === "closed_combo" ? <div className="admin-field-note admin-field-note--prominent"><strong>Precio y duración se definen en cada combo.</strong><span>La duración real será la suma de sus zonas más un único margen de preparación. La frecuencia continúa siendo común a este tratamiento.</span><input type="hidden" name="durationMinutes" value={durationMinutes} /></div> : null}
+          <div className={`admin-form-grid ${selectionMode === "simple" ? "admin-form-grid--3" : ""}`}>
+            {selectionMode === "simple" ? <label htmlFor={`${formId}-durationMinutes`}>Duración<input id={`${formId}-durationMinutes`} name="durationMinutes" type="number" min="5" max="480" step="5" value={durationMinutes} onChange={(event) => setDurationMinutes(Number(event.target.value))} required /></label> : null}
             <label htmlFor={`${formId}-bufferMinutes`}>Preparación entre turnos<input id={`${formId}-bufferMinutes`} name="bufferMinutes" type="number" min="0" max="180" step="5" value={bufferMinutes} onChange={(event) => setBufferMinutes(Number(event.target.value))} required /></label>
             <label htmlFor={`${formId}-startIntervalMinutes`}>Frecuencia de inicio<select id={`${formId}-startIntervalMinutes`} name="startIntervalMinutes" value={startIntervalMinutes} onChange={(event) => setStartIntervalMinutes(Number(event.target.value) as 15 | 30 | 60)} required><option value="15">15 minutos</option><option value="30">30 minutos</option><option value="60">60 minutos</option></select><small>Define cada cuánto puede comenzar. No modifica su duración.</small></label>
           </div>
-          <div className="admin-scheduling-explainer" aria-live="polite"><div><span>Duración</span><strong>{durationMinutes} min</strong></div><div><span>Preparación</span><strong>{bufferMinutes} min</strong></div><div><span>Puede comenzar cada</span><strong>{startIntervalMinutes} min</strong></div><p>Cada reserva ocupa <strong>{durationMinutes + bufferMinutes} minutos</strong>.</p></div>
+          <div className="admin-scheduling-explainer" aria-live="polite">{selectionMode === "simple" ? <div><span>Duración</span><strong>{durationMinutes} min</strong></div> : <div><span>Duración</span><strong>Según zonas</strong></div>}<div><span>Preparación</span><strong>{bufferMinutes} min</strong></div><div><span>Puede comenzar cada</span><strong>{startIntervalMinutes} min</strong></div><p>{selectionMode === "simple" ? <>Cada reserva ocupa <strong>{durationMinutes + bufferMinutes} minutos</strong>.</> : <>Cada reserva ocupa <strong>la suma de zonas + {bufferMinutes} minutos</strong>.</>}</p></div>
           {treatment && treatment.future_booking_count > 0 ? <label className="admin-impact-check" htmlFor={`${formId}-confirmImpact`}><input id={`${formId}-confirmImpact`} type="checkbox" name="confirmImpact" required={actionState.error === "impact"} /><span><strong>{treatment.future_booking_count} reservas futuras.</strong> Confirmo cambios que puedan afectar su agenda.</span><FieldError id={`${formId}-confirmImpact-error`} messages={fieldError("confirmImpact")} /></label> : null}
         </fieldset>
 

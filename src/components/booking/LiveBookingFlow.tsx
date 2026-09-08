@@ -103,7 +103,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
   useEffect(() => {
     let active = true;
 
-    void getAvailableSlots({ treatmentId: selection.treatmentId, date }).then((result) => {
+    void getAvailableSlots({ treatmentId: selection.treatmentId, comboId: selection.comboId ?? null, date }).then((result) => {
       if (!active) return;
       if (result.ok) {
         setSlots(result.slots);
@@ -117,13 +117,14 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
     return () => {
       active = false;
     };
-  }, [date, selection.treatmentId, slotRefresh]);
+  }, [date, selection.comboId, selection.treatmentId, slotRefresh]);
 
   const whatsappMessage = useMemo(() => {
     if (!booking || !selectedDate || !selectedTime) return "";
     return [
       "Hola, quiero confirmar mi pre-reserva en Piel Canela.",
       `Tratamiento: ${selection.monthlySpecialTitle ?? selection.treatmentName}`,
+      ...(selection.comboName ? [`Combo: ${selection.comboName}`, `Sesiones: ${selection.sessionCount ?? 1}`] : []),
       `Fecha: ${selectedDate.longLabel}`,
       `Horario: ${selectedTime}`,
       `Nombre: ${customer.fullName}`,
@@ -151,6 +152,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
     const result = await createPublicBooking({
       treatmentId: selection.treatmentId,
       monthlySpecialId: selection.monthlySpecialId ?? null,
+      comboId: selection.comboId ?? null,
       startsAt: selectedSlot,
       idempotencyKey: idempotencyKey.current,
       website,
@@ -203,6 +205,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
         <dl className="booking-confirmation numeric">
           <div><dt>Código</dt><dd>{booking.code}</dd></div>
           <div><dt>Tratamiento</dt><dd>{selection.monthlySpecialTitle ?? selection.treatmentName}</dd></div>
+          {selection.comboName ? <div><dt>Combo</dt><dd>{selection.comboName} · {selection.sessionCount} {selection.sessionCount === 1 ? "sesión" : "sesiones"}</dd></div> : null}
           <div><dt>Cuándo</dt><dd>{selectedDate.longLabel}, {selectedTime}</dd></div>
           <div><dt>Valor</dt><dd>{formatPrice(selection.appliedPriceCents)}</dd></div>
         </dl>
@@ -422,9 +425,12 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
           <p className="eyebrow">Tu elección</p>
           <h2>{selection.monthlySpecialTitle ?? selection.treatmentName}</h2>
           {selection.monthlySpecialTitle ? <p>{selection.treatmentName}</p> : null}
+          {selection.comboName ? <><p className="booking-selection-rail__combo">{selection.comboName}</p><p>{selection.comboZones?.join(" · ")}</p></> : null}
           <dl className="numeric">
-            <div><dt>Duración</dt><dd>{formatDuration(selection.durationMinutes)}</dd></div>
-            <div><dt>Valor</dt><dd>{formatPrice(selection.appliedPriceCents)}</dd></div>
+            <div><dt>Duración</dt><dd>{formatDuration(selection.occupiedDurationMinutes ?? selection.durationMinutes)}</dd></div>
+            {selection.sessionCount && selection.sessionCount > 1 ? <div><dt>Sesiones</dt><dd>{selection.sessionCount}</dd></div> : null}
+            <div><dt>Valor total</dt><dd>{formatPrice(selection.appliedPriceCents)}</dd></div>
+            {selection.pricePerSessionCents && selection.sessionCount && selection.sessionCount > 1 ? <div><dt>Por sesión</dt><dd>{formatPrice(selection.pricePerSessionCents)}</dd></div> : null}
           </dl>
           {selectedDate && selectedTime ? (
             <p className="booking-selection-rail__slot"><CalendarDays aria-hidden="true" strokeWidth={1.75} />{selectedDate.longLabel}, {selectedTime}</p>

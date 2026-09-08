@@ -30,6 +30,13 @@ describe("treatment domain helpers", () => {
     })).toBe("/reservar?treatmentId=treatment-relajacion&monthlySpecialId=special-pausa-profunda");
   });
 
+  it("transfers a closed combo without inventing a cart", () => {
+    expect(buildBookingHref({
+      treatmentId: "treatment-depilacion",
+      comboId: "combo-cerrado",
+    })).toBe("/reservar?treatmentId=treatment-depilacion&comboId=combo-cerrado");
+  });
+
   it("resolves the applied price without overwriting the base price", () => {
     const treatment = treatments.find((item) => item.id === "treatment-relajacion");
     const special = monthlySpecials.find((item) => item.id === "special-pausa-profunda");
@@ -40,6 +47,64 @@ describe("treatment domain helpers", () => {
     expect(selection.basePriceCents).toBe(6500000);
     expect(selection.appliedPriceCents).toBe(5500000);
     expect(selection.monthlySpecialId).toBe("special-pausa-profunda");
+  });
+
+  it("resolves a closed combo using its zones, package price and one treatment buffer", () => {
+    const treatment = treatments[0]!;
+    const combo = {
+      id: "50000000-0000-4000-8000-000000000001",
+      treatmentId: treatment.id,
+      name: "Paquete cerrado",
+      description: "Dos zonas.",
+      audience: "shared" as const,
+      mode: "package" as const,
+      sessionCount: 6,
+      fixedPriceCents: 6000000,
+      referencePriceCents: 7200000,
+      pricePerSessionCents: 1000000,
+      savingsCents: 1200000,
+      durationMinutes: 45,
+      validityDays: 120,
+      zones: [
+        { id: "60000000-0000-4000-8000-000000000001", name: "Zona A", audience: "shared" as const, referencePriceCents: 600000, durationMinutes: 20, displayOrder: 1, isActive: true },
+        { id: "60000000-0000-4000-8000-000000000002", name: "Zona B", audience: "shared" as const, referencePriceCents: 600000, durationMinutes: 25, displayOrder: 2, isActive: true },
+      ],
+      displayOrder: 1,
+      isActive: true,
+    };
+
+    const selection = resolveBookingSelection(treatment, undefined, combo);
+    expect(selection.durationMinutes).toBe(45);
+    expect(selection.occupiedDurationMinutes).toBe(45 + treatment.bufferMinutes);
+    expect(selection.appliedPriceCents).toBe(6000000);
+    expect(selection.pricePerSessionCents).toBe(1000000);
+    expect(selection.comboZones).toEqual(["Zona A", "Zona B"]);
+  });
+
+  it("rejects stacking a monthly special with a closed combo", () => {
+    const treatment = treatments[0]!;
+    const special = monthlySpecials[0]!;
+    const combo = {
+      id: "50000000-0000-4000-8000-000000000001",
+      treatmentId: treatment.id,
+      name: "Combo cerrado",
+      description: "",
+      audience: "shared" as const,
+      mode: "single_session" as const,
+      sessionCount: 1,
+      fixedPriceCents: 1000000,
+      referencePriceCents: 1200000,
+      pricePerSessionCents: 1000000,
+      savingsCents: 200000,
+      durationMinutes: 20,
+      validityDays: null,
+      zones: [],
+      displayOrder: 1,
+      isActive: true,
+    };
+
+    expect(() => resolveBookingSelection(treatment, special, combo))
+      .toThrow("Los combos cerrados no acumulan especiales del mes.");
   });
 
   it("returns zero, one and multiple active specials from the same contract", () => {

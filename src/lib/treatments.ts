@@ -3,6 +3,7 @@ import type {
   MonthlySpecial,
   ResolvedBookingSelection,
   Treatment,
+  TreatmentCombo,
   TreatmentCategorySlug,
 } from "@/domain/treatment";
 
@@ -83,20 +84,43 @@ export function buildBookingHref(selection: BookingInitialSelection): string {
   if (selection.monthlySpecialId) {
     params.set("monthlySpecialId", selection.monthlySpecialId);
   }
+  if (selection.comboId) params.set("comboId", selection.comboId);
   return `/reservar?${params.toString()}`;
 }
 
 export function resolveBookingSelection(
   treatment: Treatment,
   monthlySpecial?: MonthlySpecial,
+  combo?: TreatmentCombo,
 ): ResolvedBookingSelection {
+  if (combo && monthlySpecial) {
+    throw new Error("Los combos cerrados no acumulan especiales del mes.");
+  }
   return {
     treatmentId: treatment.id,
     treatmentName: treatment.name,
     monthlySpecialId: monthlySpecial?.id,
     monthlySpecialTitle: monthlySpecial?.title,
-    durationMinutes: treatment.durationMinutes,
-    basePriceCents: treatment.priceCents,
-    appliedPriceCents: monthlySpecial?.specialPriceCents ?? treatment.priceCents,
+    comboId: combo?.id,
+    comboName: combo?.name,
+    comboMode: combo?.mode,
+    comboAudience: combo?.audience,
+    comboZones: combo?.zones.map((zone) => zone.name),
+    sessionCount: combo?.sessionCount,
+    validityDays: combo?.validityDays,
+    pricePerSessionCents: combo?.pricePerSessionCents,
+    savingsCents: combo?.savingsCents,
+    durationMinutes: combo?.durationMinutes ?? treatment.durationMinutes,
+    occupiedDurationMinutes: combo ? combo.durationMinutes + treatment.bufferMinutes : treatment.durationMinutes + treatment.bufferMinutes,
+    basePriceCents: combo?.referencePriceCents ?? treatment.priceCents,
+    appliedPriceCents: combo?.fixedPriceCents ?? monthlySpecial?.specialPriceCents ?? treatment.priceCents,
   };
+}
+
+export function getTreatmentCombo(
+  treatment: Treatment,
+  comboId: string | null | undefined,
+): TreatmentCombo | undefined {
+  if (!comboId || treatment.selectionMode !== "closed_combo") return undefined;
+  return treatment.combos.find((combo) => combo.id === comboId && combo.isActive);
 }

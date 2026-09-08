@@ -6,6 +6,7 @@ import {
 import type {
   MonthlySpecial,
   Treatment,
+  TreatmentCombo,
   TreatmentCategory,
 } from "@/domain/treatment";
 import { createSupabasePublicServerClient } from "./public-server";
@@ -79,6 +80,7 @@ interface TreatmentRow {
   duration_minutes: number;
   buffer_minutes: number;
   start_interval_minutes: 15 | 30 | 60;
+  selection_mode: "simple" | "closed_combo";
   price_cents: number;
   preparation: string | null;
   contraindications: string | null;
@@ -93,12 +95,39 @@ interface TreatmentRow {
   professional: { public_name: string | null; is_active: boolean }[] | null;
 }
 
+interface ComboRow {
+  id: string;
+  treatment_id: string;
+  name: string;
+  description: string;
+  audience: "women" | "men" | "shared";
+  mode: "single_session" | "package";
+  session_count: number;
+  fixed_price_cents: number;
+  validity_days: number | null;
+  is_active: boolean;
+  display_order: number;
+  zones: {
+    display_order: number;
+    zone: {
+      id: string;
+      name: string;
+      audience: "women" | "men" | "shared";
+      reference_price_cents: number;
+      duration_minutes: number;
+      is_active: boolean;
+      display_order: number;
+    }[] | null;
+  }[];
+}
+
 interface MonthlySpecialRow {
   id: string;
   treatment_id: string;
   title: string;
   short_description: string;
   detail: string;
+  pricing_mode: "special_price" | "combo_catalog";
   special_price_cents: number;
   reference_price_cents: number | null;
   starts_at: string;
@@ -138,22 +167,27 @@ export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot>
   }
 
   const supabase = createSupabasePublicServerClient();
-  const [categoriesResult, treatmentsResult, specialsResult] = await Promise.all([
+  const [categoriesResult, treatmentsResult, specialsResult, combosResult] = await Promise.all([
     supabase
       .from("treatment_categories")
       .select("id,name,slug,short_description,icon_name,display_order,is_active")
       .order("display_order"),
     supabase
       .from("treatments")
-      .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,professional:professionals(public_name,is_active)")
+      .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,professional:professionals(public_name,is_active)")
       .order("display_order"),
     supabase
       .from("monthly_specials")
-      .select("id,treatment_id,title,short_description,detail,special_price_cents,reference_price_cents,starts_at,ends_at,image_path,image_alt,image_focal_x,image_focal_y,terms,is_active,display_order,created_at,updated_at")
+      .select("id,treatment_id,title,short_description,detail,pricing_mode,special_price_cents,reference_price_cents,starts_at,ends_at,image_path,image_alt,image_focal_x,image_focal_y,terms,is_active,display_order,created_at,updated_at")
+      .order("display_order"),
+    supabase
+      .from("treatment_combos")
+      .select("id,treatment_id,name,description,audience,mode,session_count,fixed_price_cents,validity_days,is_active,display_order,zones:treatment_combo_zones(display_order,zone:depilation_zones(id,name,audience,reference_price_cents,duration_minutes,is_active,display_order))")
+      .eq("is_active", true)
       .order("display_order"),
   ]);
 
-  const firstError = categoriesResult.error ?? treatmentsResult.error ?? specialsResult.error;
+  const firstError = categoriesResult.error ?? treatmentsResult.error ?? specialsResult.error ?? combosResult.error;
   if (firstError) {
     throw new Error(`No se pudo cargar el catálogo público: ${firstError.message}`);
   }
@@ -167,6 +201,43 @@ export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot>
     displayOrder: row.display_order,
     isActive: row.is_active,
   }));
+
+  const combosByTreatment = new Map<string, TreatmentCombo[]>();
+  for (const row of (combosResult.data ?? []) as ComboRow[]) {
+    const zones = row.zones
+      .map((link) => Array.isArray(link.zone) ? link.zone[0] : link.zone)
+      .filter((zone): zone is NonNullable<typeof zone> => Boolean(zone?.is_active))
+      .map((zone) => ({
+        id: zone.id,
+        name: zone.name,
+        audience: zone.audience,
+        referencePriceCents: zone.reference_price_cents,
+        durationMinutes: zone.duration_minutes,
+        displayOrder: zone.display_order,
+        isActive: zone.is_active,
+      }));
+    if (zones.length === 0) continue;
+    const referencePriceCents = zones.reduce((total, zone) => total + zone.referencePriceCents, 0) * row.session_count;
+    const combo: TreatmentCombo = {
+      id: row.id,
+      treatmentId: row.treatment_id,
+      name: row.name,
+      description: row.description,
+      audience: row.audience,
+      mode: row.mode,
+      sessionCount: row.session_count,
+      fixedPriceCents: row.fixed_price_cents,
+      referencePriceCents,
+      pricePerSessionCents: Math.round(row.fixed_price_cents / row.session_count),
+      savingsCents: Math.max(0, referencePriceCents - row.fixed_price_cents),
+      durationMinutes: zones.reduce((total, zone) => total + zone.durationMinutes, 0),
+      validityDays: row.validity_days,
+      zones,
+      displayOrder: row.display_order,
+      isActive: row.is_active,
+    };
+    combosByTreatment.set(row.treatment_id, [...(combosByTreatment.get(row.treatment_id) ?? []), combo]);
+  }
 
   const treatments = (treatmentsResult.data as TreatmentRow[]).map((row) => {
     const professional = Array.isArray(row.professional) ? row.professional[0] : null;
@@ -184,6 +255,8 @@ export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot>
       durationMinutes: row.duration_minutes,
       bufferMinutes: row.buffer_minutes,
       startIntervalMinutes: row.start_interval_minutes,
+      selectionMode: row.selection_mode,
+      combos: combosByTreatment.get(row.id) ?? [],
       priceCents: row.price_cents,
       preparation: row.preparation,
       contraindications: row.contraindications,
@@ -211,6 +284,7 @@ export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot>
       title: row.title,
       shortDescription: row.short_description,
       detail: row.detail,
+      pricingMode: row.pricing_mode,
       specialPriceCents: row.special_price_cents,
       referencePriceCents: row.reference_price_cents,
       startsAt: row.starts_at,

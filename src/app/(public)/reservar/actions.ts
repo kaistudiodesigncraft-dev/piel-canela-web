@@ -8,12 +8,14 @@ import { createSupabasePublicServerClient } from "@/lib/supabase/public-server";
 
 const availabilitySchema = z.object({
   treatmentId: z.string().uuid(),
+  comboId: z.string().uuid().nullable().optional().default(null),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 
 const bookingSchema = z.object({
   treatmentId: z.string().uuid(),
   monthlySpecialId: z.string().uuid().nullable(),
+  comboId: z.string().uuid().nullable().optional().default(null),
   startsAt: z.string().datetime({ offset: true }),
   idempotencyKey: z.string().uuid(),
   website: z.string().max(0).optional().default(""),
@@ -49,10 +51,16 @@ export async function getAvailableSlots(input: unknown): Promise<AvailabilityRes
   if (!parsed.success) return { ok: false, reason: "invalid" };
 
   const supabase = createSupabasePublicServerClient();
-  const { data, error } = await supabase.rpc("get_available_slots", {
-    requested_treatment_id: parsed.data.treatmentId,
-    requested_date: parsed.data.date,
-  });
+  const { data, error } = parsed.data.comboId
+    ? await supabase.rpc("get_available_slots_for_selection", {
+        requested_treatment_id: parsed.data.treatmentId,
+        requested_combo_id: parsed.data.comboId,
+        requested_date: parsed.data.date,
+      })
+    : await supabase.rpc("get_available_slots", {
+        requested_treatment_id: parsed.data.treatmentId,
+        requested_date: parsed.data.date,
+      });
   if (error) return { ok: false, reason: "unavailable" };
 
   return {
@@ -80,8 +88,9 @@ export async function createPublicBooking(input: unknown): Promise<CreateBooking
   const guard = createBookingGuard({ secret: guardSecret, fingerprintSource });
 
   const supabase = createSupabasePublicServerClient();
-  const { data, error } = await supabase.rpc("create_booking", {
+  const { data, error } = await supabase.rpc("create_booking_for_selection", {
     requested_treatment_id: parsed.data.treatmentId,
+    requested_combo_id: parsed.data.comboId,
     requested_monthly_special_id: parsed.data.monthlySpecialId,
     requested_starts_at: parsed.data.startsAt,
     requested_idempotency_key: parsed.data.idempotencyKey,
@@ -98,6 +107,7 @@ export async function createPublicBooking(input: unknown): Promise<CreateBooking
     if (error.message.includes("slot_not_available")) return { ok: false, reason: "slot" };
     if (error.message.includes("treatment_not_available")) return { ok: false, reason: "treatment" };
     if (error.message.includes("monthly_special_not_available")) return { ok: false, reason: "special" };
+    if (error.message.includes("combo_") || error.message.includes("closed_combos")) return { ok: false, reason: "treatment" };
     if (error.message.includes("booking_rate_limited")) return { ok: false, reason: "rate_limited" };
     if (error.message.includes("booking_guard_")) return { ok: false, reason: "verification" };
     return { ok: false, reason: "server" };

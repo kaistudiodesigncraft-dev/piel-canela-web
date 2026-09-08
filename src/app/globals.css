@@ -5404,6 +5404,202 @@ svg {
   }
 }
 
+/* Closed depilation combos extend Materia Clara without introducing a store UI. */
+.combo-selector {
+  padding: clamp(2rem, 5vw, 4.5rem) clamp(1rem, 4vw, 4rem);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface, #fbfaf6);
+}
+
+.combo-selector__heading {
+  max-width: 48rem;
+  margin-bottom: 1.5rem;
+}
+
+.combo-selector__heading h2,
+.combo-selection-summary h3,
+.combo-option strong {
+  color: var(--color-text);
+}
+
+.combo-selector__heading > div > p:last-child,
+.combo-selection-summary__note,
+.combo-selection-summary__placeholder p,
+.combo-option small {
+  color: var(--color-text-muted);
+}
+
+.combo-selector__filters {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.2rem 0 1.25rem;
+  scrollbar-width: thin;
+}
+
+.combo-selector__filters .filter-chip {
+  flex: 0 0 auto;
+  min-height: 44px;
+}
+
+.combo-selector__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+  gap: clamp(1.25rem, 3vw, 3rem);
+  align-items: start;
+}
+
+.combo-selector__options {
+  display: grid;
+  border-top: 1px solid var(--color-border);
+}
+
+.combo-option {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.9rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background-color 180ms ease, padding 180ms ease;
+}
+
+.combo-option:hover,
+.combo-option:focus-within,
+.combo-option.is-selected {
+  padding-inline: 0.75rem;
+  background: var(--color-sky-soft, #eaf4f6);
+}
+
+.combo-option input {
+  position: absolute;
+  opacity: 0;
+}
+
+.combo-option__marker {
+  display: grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  place-items: center;
+  margin-top: 0.15rem;
+  border: 1px solid var(--color-action);
+  border-radius: 50%;
+  color: white;
+}
+
+.combo-option.is-selected .combo-option__marker { background: var(--color-action); }
+.combo-option__marker svg { width: 0.9rem; stroke-width: 2; }
+.combo-option:focus-within .combo-option__marker { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+
+.combo-option__body { display: grid; gap: 0.55rem; }
+.combo-option__top { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
+.combo-option__top > span { color: var(--color-action); font-size: 0.78rem; font-weight: 700; }
+.combo-option__zones { color: var(--color-text-secondary); line-height: 1.5; }
+.combo-option__facts { display: flex; flex-wrap: wrap; gap: 0.45rem 1rem; align-items: baseline; }
+.combo-option__facts span { color: var(--color-text-muted); font-size: 0.85rem; }
+.combo-option__facts strong { margin-left: auto; }
+
+.combo-selection-summary {
+  position: sticky;
+  top: 6rem;
+  display: grid;
+  gap: 1rem;
+  padding: 1.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large, 1.25rem);
+  background: var(--color-bone, #f5f2e9);
+  box-shadow: var(--shadow-soft);
+}
+
+.combo-selection-summary ul { display: grid; gap: 0.5rem; padding: 0; list-style: none; }
+.combo-selection-summary li { display: flex; gap: 0.5rem; align-items: center; }
+.combo-selection-summary li svg { width: 1rem; color: var(--color-leaf); }
+.combo-selection-summary dl { display: grid; gap: 0.65rem; padding-top: 0.5rem; border-top: 1px solid var(--color-border); }
+.combo-selection-summary dl > div { display: flex; justify-content: space-between; gap: 1rem; }
+.combo-selection-summary dt { display: flex; gap: 0.45rem; align-items: center; color: var(--color-text-muted); }
+.combo-selection-summary dt svg { width: 1rem; }
+.combo-selection-summary dd { margin: 0; font-weight: 700; text-align: right; }
+.combo-selection-summary__saving { color: var(--color-leaf-deep, #496553); }
+.combo-selection-summary__placeholder { min-height: 15rem; display: grid; place-content: center; gap: 0.75rem; text-align: center; }
+.combo-selection-summary__placeholder > svg { width: 2rem; margin: 0 auto; color: var(--color-action); }
+.combo-selection-summary__note { margin: 0; font-size: 0.78rem; line-height: 1.5; }
+.combo-selector--empty { text-align: center; }
+
+.admin-selection-mode,
+.depilation-feature-control,
+.package-admin-item > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  align-items: end;
+}
+
+.admin-selection-mode { margin-bottom: 1.25rem; }
+.admin-selection-mode label { flex: 1; }
+.admin-field-note--prominent { display: grid; gap: 0.25rem; margin-bottom: 1rem; padding: 1rem; border-left: 3px solid var(--color-leaf); background: var(--color-leaf-soft, #eef3ec); }
+.admin-field-note--prominent span { color: var(--color-text-muted); font-weight: 500; }
+.depilation-admin { display: grid; gap: 1.5rem; }
+.depilation-feature-control > div { max-width: 48rem; }
+.depilation-admin-list,
+.package-admin-list { display: grid; gap: 0.85rem; margin-top: 1rem; }
+.depilation-admin-list .admin-disclosure > summary { min-height: 64px; }
+.depilation-admin-list .admin-disclosure > summary > span:first-child { display: grid; gap: 0.2rem; }
+.depilation-admin-list .admin-disclosure > summary small { color: var(--color-text-muted); }
+.depilation-zone-form,
+.depilation-combo-form { margin-top: 1rem; }
+.depilation-zone-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+.depilation-zone-picker .admin-check { align-items: start; }
+.depilation-zone-picker .admin-check span { display: grid; gap: 0.15rem; }
+.depilation-zone-picker small { color: var(--color-text-muted); }
+.depilation-combo-price { display: grid; min-width: 10rem; text-align: right; }
+.depilation-reference-note { display: flex; gap: 0.75rem; align-items: start; padding: 1rem; background: var(--color-sky-soft, #eaf4f6); }
+.depilation-reference-note svg { width: 1.2rem; flex: 0 0 auto; color: var(--color-action); }
+.depilation-reference-note p { margin: 0; }
+
+.package-admin-item {
+  display: grid;
+  gap: 1.25rem;
+  padding: clamp(1rem, 3vw, 1.75rem);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large, 1.25rem);
+  background: white;
+}
+.package-admin-item > header { align-items: start; }
+.package-admin-item > header dl { display: flex; gap: 1.5rem; }
+.package-admin-item > header dl > div { display: grid; gap: 0.2rem; }
+.package-admin-item dt { color: var(--color-text-muted); font-size: 0.75rem; }
+.package-session-list { display: grid; gap: 0.5rem; }
+.package-session-row { display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding-block: 0.75rem; border-top: 1px solid var(--color-border); }
+.package-session-row > span:first-child { display: grid; gap: 0.2rem; }
+.package-session-row small { color: var(--color-text-muted); }
+.package-session-row form { display: flex; gap: 0.5rem; align-items: center; }
+.package-session-row input { min-height: 44px; }
+.package-consumption-decision { display: grid; gap: 0.5rem; justify-items: end; }
+.package-consumption-decision > p { color: var(--color-text-muted); font-size: 0.84rem; margin: 0; max-width: 32ch; text-align: right; }
+
+@media (max-width: 800px) {
+  .combo-selector__layout { grid-template-columns: 1fr; }
+  .combo-selection-summary { position: sticky; bottom: 0.5rem; top: auto; z-index: 4; max-height: 70vh; overflow: auto; }
+  .depilation-feature-control,
+  .package-admin-item > header,
+  .admin-selection-mode { align-items: stretch; flex-direction: column; }
+  .depilation-zone-picker { grid-template-columns: 1fr; }
+  .package-admin-item > header dl { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .package-session-row,
+  .package-session-row form { align-items: stretch; flex-direction: column; }
+  .package-consumption-decision { justify-items: stretch; }
+  .package-consumption-decision > p { max-width: none; text-align: left; }
+}
+
+@media (max-width: 420px) {
+  .combo-selector { padding-inline: 0.8rem; }
+  .combo-option__top { align-items: flex-start; flex-direction: column; gap: 0.3rem; }
+  .combo-option__facts strong { width: 100%; margin-left: 0; }
+  .combo-selection-summary { padding: 1rem; }
+  .package-admin-item > header dl { grid-template-columns: 1fr; }
+}
+
 .admin-route-nav-shell {
   position: sticky;
   z-index: 25;

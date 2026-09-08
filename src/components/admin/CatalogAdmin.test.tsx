@@ -15,7 +15,7 @@ function treatment(overrides: Partial<AdminTreatmentRow>): AdminTreatmentRow {
     id: "40000000-0000-4000-8000-000000000001", category_id: categoryId, specialty_id: specialtyId,
     professional_id: null, name: "Relajación profunda", slug: "relajacion-profunda",
     short_description: "Una sesión serena para acompañar el descanso.", description: "Una experiencia de bienestar con intensidad conversada.",
-    expectations: [], characteristics: [], duration_minutes: 60, buffer_minutes: 15, start_interval_minutes: 30,
+    expectations: [], characteristics: [], duration_minutes: 60, buffer_minutes: 15, start_interval_minutes: 30, selection_mode: "simple",
     price_cents: 6500000, preparation: null, contraindications: null, image_path: "/images/treatment-massage-concept.png",
     image_url: "/images/treatment-massage-concept.png", image_alt: "Sesión de masaje", image_focal_x: 0.5,
     image_focal_y: 0.5, is_active: true, display_order: 1, future_booking_count: 2, ...overrides,

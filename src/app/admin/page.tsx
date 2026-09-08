@@ -17,7 +17,7 @@ interface AdminPageProps {
   searchParams: Promise<Record<string, string | undefined>>;
 }
 
-const bookingSelect = "id,booking_code,status,starts_at,ends_at,duration_snapshot_minutes,applied_price_snapshot_cents,customer_notes,internal_notes,created_at,rescheduled_at,reschedule_count,status_reason,status_changed_at,deposit_confirmed_at,completed_at,no_show_at,customer:customers(full_name,phone,email),treatment:treatments(name)";
+const bookingSelect = "id,booking_code,status,starts_at,ends_at,duration_snapshot_minutes,applied_price_snapshot_cents,customer_notes,internal_notes,created_at,rescheduled_at,reschedule_count,status_reason,status_changed_at,deposit_confirmed_at,completed_at,no_show_at,combo_name_snapshot,package_charge_kind,customer_package_id,customer:customers(full_name,phone,email),treatment:treatments(name)";
 
 interface BookingHistoryRow {
   id: number;
@@ -63,6 +63,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     rulesResult,
     exceptionsResult,
     treatmentsResult,
+    combosResult,
     specialsResult,
     bookingsResult,
     todayCountResult,
@@ -72,8 +73,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     supabase.from("specialties").select("id,name,slug,description,display_order,is_active").order("display_order"),
     supabase.from("availability_rules").select("id,specialty_id,weekday,start_time,end_time").eq("is_active", true).order("weekday").order("start_time"),
     supabase.from("availability_exceptions").select("id,specialty_id,kind,starts_at,ends_at,public_reason,internal_reason").gte("ends_at", nowIso).order("starts_at").limit(40),
-    supabase.from("treatments").select("id,name,specialty_id,duration_minutes,buffer_minutes,start_interval_minutes,price_cents,is_active").eq("is_active", true).order("name"),
-    supabase.from("monthly_specials").select("id,treatment_id,title,short_description,detail,image_path,image_alt,special_price_cents,reference_price_cents,starts_at,ends_at,terms,is_active,display_order").order("display_order"),
+    supabase.from("treatments").select("id,name,specialty_id,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,price_cents,is_active").eq("is_active", true).order("name"),
+    supabase.from("treatment_combos").select("id,treatment_id,name,mode,session_count,fixed_price_cents,is_active").eq("is_active", true).order("display_order"),
+    supabase.from("monthly_specials").select("id,treatment_id,title,short_description,detail,image_path,image_alt,pricing_mode,special_price_cents,reference_price_cents,starts_at,ends_at,terms,is_active,display_order").order("display_order"),
     bookingsRequest,
     supabase.from("bookings").select("id", { count: "exact", head: true })
       .gte("starts_at", todayRange.startsAt as string)
@@ -89,6 +91,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     ?? rulesResult.error
     ?? exceptionsResult.error
     ?? treatmentsResult.error
+    ?? combosResult.error
     ?? specialsResult.error
     ?? bookingsResult.error
     ?? todayCountResult.error
@@ -141,6 +144,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       rules={rulesResult.data ?? []}
       exceptions={exceptionsResult.data ?? []}
       treatments={treatmentsResult.data ?? []}
+      treatmentCombos={combosResult.data ?? []}
       monthlySpecials={specials}
       bookings={bookings}
       agenda={{

@@ -1,4 +1,4 @@
-import { ArrowRight, Clock3, ImageIcon } from "lucide-react";
+import { ArrowRight, Clock3, ImageIcon, Layers3 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type { Treatment, TreatmentCategory } from "@/domain/treatment";
@@ -17,6 +17,8 @@ export function TreatmentEditorialCard({
   detailHref,
   onOpen,
 }: TreatmentEditorialCardProps) {
+  const activeCombos = treatment.combos.filter((combo) => combo.isActive);
+  const comboPrice = activeCombos.length > 0 ? Math.min(...activeCombos.map((combo) => combo.fixedPriceCents)) : null;
   return (
     <article className="treatment-editorial-card">
       <div className="treatment-editorial-card__top">
@@ -49,10 +51,10 @@ export function TreatmentEditorialCard({
       </div>
       <div className="treatment-editorial-card__footer numeric">
         <span className="treatment-editorial-card__duration">
-          <Clock3 aria-hidden="true" strokeWidth={1.75} />
-          {formatDuration(treatment.durationMinutes)}
+          {treatment.selectionMode === "closed_combo" ? <Layers3 aria-hidden="true" strokeWidth={1.75} /> : <Clock3 aria-hidden="true" strokeWidth={1.75} />}
+          {treatment.selectionMode === "closed_combo" ? `${activeCombos.length} ${activeCombos.length === 1 ? "combo" : "combos"}` : formatDuration(treatment.durationMinutes)}
         </span>
-        <strong>{formatPrice(treatment.priceCents)}</strong>
+        <strong>{treatment.selectionMode === "closed_combo" ? (comboPrice === null ? "En preparación" : `Desde ${formatPrice(comboPrice)}`) : formatPrice(treatment.priceCents)}</strong>
         <Link
           className="treatment-editorial-card__arrow"
           href={detailHref}

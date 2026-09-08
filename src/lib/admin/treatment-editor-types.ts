@@ -36,6 +36,7 @@ export interface AdminTreatmentRow {
   duration_minutes: number;
   buffer_minutes: number;
   start_interval_minutes: 15 | 30 | 60;
+  selection_mode: "simple" | "closed_combo";
   price_cents: number;
   preparation: string | null;
   contraindications: string | null;

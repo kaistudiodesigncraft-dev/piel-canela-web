@@ -24,6 +24,21 @@ La migración `20260823000920_owner_content_boundary.sql` extiende esa frontera 
 
 La migración `20260823000940_public_booking_window.sql` permite al público leer únicamente `maximum_advance_days`. El calendario puede así representar la ventana elegida por la administración mientras `get_available_slots` conserva la validación autoritativa.
 
+La migración `20260907001400_depilation_closed_combos.sql` agrega, sin transformar tratamientos existentes, el modo `closed_combo` para Depilación. Las zonas son reutilizables y los combos son opciones cerradas de una sesión o paquetes. Precio, duración, ahorro y vigencia se resuelven nuevamente en PostgreSQL; un especial mensual nunca modifica el precio de un combo. Solo la primera sesión se reserva online y confirmar su seña activa un paquete idempotente. Las sesiones posteriores quedan en cero y se registran como incluidas en el paquete.
+
+La función permanece detrás de `business_settings.depilation_combos_enabled`. El orden de liberación es obligatorio:
+
+1. Ejecutar `supabase/audits/production_inventory.sql` y conservar el resultado privado.
+2. Aplicar la migración aditiva y repetir el inventario.
+3. Confirmar que tratamientos, profesionales, especialidades, disponibilidades, reservas y objetos de Storage conservan sus IDs y conteos.
+4. Desplegar el código compatible desde un commit identificado.
+5. Crear o adaptar Depilación como borrador inactivo y cargar sus zonas y combos reales.
+6. Con la bandera apagada, aprobar la vista previa administrativa y confirmar que los tratamientos simples siguen reservándose igual.
+7. Habilitar la bandera, publicar Depilación y probar selector, disponibilidad, primera reserva, activación y consumo de paquete.
+8. Si la validación falla, desactivar primero Depilación y recién después volver a apagar la bandera.
+
+No se debe ejecutar `db reset`, seed productivo, truncate ni conversiones automáticas. Las RPC históricas delegan al contrato de selección y rechazan tratamientos configurables sin combo, evitando que integraciones antiguas salteen la nueva regla.
+
 ## Alta segura de una cuenta cliente
 
 1. Enviar la invitación desde Supabase Auth al correo confirmado por el cliente.

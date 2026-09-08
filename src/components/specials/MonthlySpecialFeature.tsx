@@ -1,4 +1,4 @@
-import { ArrowRight, Clock3 } from "lucide-react";
+import { ArrowRight, Clock3, Layers3 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type {
@@ -20,6 +20,7 @@ export function MonthlySpecialFeature({
   treatment,
   category,
 }: MonthlySpecialFeatureProps) {
+  const usesClosedCombos = treatment.selectionMode === "closed_combo";
   return (
     <article className="monthly-special-feature">
       <div className="monthly-special-feature__image">
@@ -36,18 +37,16 @@ export function MonthlySpecialFeature({
         <h3>{special.title}</h3>
         <p>{special.detail}</p>
         <div className="monthly-special-feature__meta numeric">
-          <span><Clock3 aria-hidden="true" strokeWidth={1.75} />{formatDuration(treatment.durationMinutes)}</span>
-          <span>{formatPrice(special.specialPriceCents)}</span>
+          {usesClosedCombos ? <span><Layers3 aria-hidden="true" strokeWidth={1.75} />{treatment.combos.length} {treatment.combos.length === 1 ? "combo disponible" : "combos disponibles"}</span> : <><span><Clock3 aria-hidden="true" strokeWidth={1.75} />{formatDuration(treatment.durationMinutes)}</span><span>{formatPrice(special.specialPriceCents)}</span></>}
         </div>
         <Link
           className="button button--primary"
-          href={buildCatalogHref(category.slug, treatment.slug, special.id)}
+          href={buildCatalogHref(category.slug, treatment.slug, usesClosedCombos ? undefined : special.id)}
         >
-          Ver especial
+          {usesClosedCombos ? "Ver combos" : "Ver especial"}
           <ArrowRight aria-hidden="true" strokeWidth={1.75} />
         </Link>
       </div>
     </article>
   );
 }
-

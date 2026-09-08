@@ -28,6 +28,7 @@ const treatmentSchema = z.object({
   durationMinutes: z.coerce.number().int().min(5).max(480),
   bufferMinutes: z.coerce.number().int().min(0).max(180),
   startIntervalMinutes: z.coerce.number().int().refine((value) => [15, 30, 60].includes(value)),
+  selectionMode: z.enum(["simple", "closed_combo"]),
   pricePesos: z.coerce.number().int().min(0),
   preparation: z.string().trim().max(1400).optional(),
   contraindications: z.string().trim().max(1400).optional(),
@@ -129,6 +130,7 @@ async function saveTreatmentImpl(
     durationMinutes: formData.get("durationMinutes"),
     bufferMinutes: formData.get("bufferMinutes"),
     startIntervalMinutes: formData.get("startIntervalMinutes"),
+    selectionMode: formData.get("selectionMode"),
     pricePesos: formData.get("pricePesos"),
     preparation: formData.get("preparation") || undefined,
     contraindications: formData.get("contraindications") || undefined,
@@ -178,12 +180,13 @@ async function saveTreatmentImpl(
     duration_minutes: number;
     buffer_minutes: number;
     start_interval_minutes: number;
+    selection_mode: "simple" | "closed_combo";
     is_active: boolean;
   } | null = null;
   let futureBookings = 0;
   if (!isNew) {
     const treatmentResult = await supabase.from("treatments")
-      .select("slug,image_path,specialty_id,duration_minutes,buffer_minutes,start_interval_minutes,is_active")
+      .select("slug,image_path,specialty_id,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,is_active")
       .eq("id", id).single();
     existing = treatmentResult.data;
     if (treatmentResult.error && treatmentResult.error.code !== "PGRST116") {
@@ -193,6 +196,7 @@ async function saveTreatmentImpl(
     const affectsAgenda = existing.duration_minutes !== parsed.data.durationMinutes
       || existing.buffer_minutes !== parsed.data.bufferMinutes
       || existing.start_interval_minutes !== parsed.data.startIntervalMinutes
+      || existing.selection_mode !== parsed.data.selectionMode
       || existing.specialty_id !== parsed.data.specialtyId
       || (existing.is_active && !isActive);
     if (affectsAgenda) {
@@ -230,7 +234,7 @@ async function saveTreatmentImpl(
     if (imagePath && (!parsed.data.imageAlt || parsed.data.imageAlt.length < 3)) {
       publicationErrors.imageAlt = ["Describí la imagen con al menos 3 caracteres."];
     }
-    if (parsed.data.pricePesos <= 0) publicationErrors.pricePesos = ["Ingresá un precio mayor que cero para publicar."];
+    if (parsed.data.selectionMode === "simple" && parsed.data.pricePesos <= 0) publicationErrors.pricePesos = ["Ingresá un precio mayor que cero para publicar."];
     if (Object.keys(publicationErrors).length > 0) return treatmentFailure("publishable", publicationErrors);
   }
 
@@ -247,6 +251,7 @@ async function saveTreatmentImpl(
     duration_minutes: parsed.data.durationMinutes,
     buffer_minutes: parsed.data.bufferMinutes,
     start_interval_minutes: parsed.data.startIntervalMinutes,
+    selection_mode: parsed.data.selectionMode,
     price_cents: pesosToCents(parsed.data.pricePesos),
     preparation: parsed.data.preparation || null,
     contraindications: parsed.data.contraindications || null,
@@ -265,6 +270,18 @@ async function saveTreatmentImpl(
     ? await supabase.from("treatments").insert({ id, ...payload })
     : await supabase.from("treatments").update(payload).eq("id", id);
   if (result.error) {
+    if (result.error.message.includes("published_treatment_requires_active_combo")) {
+      return treatmentFailure("publishable", { selectionMode: ["Publicá al menos un combo antes de publicar este tratamiento."] });
+    }
+    if (result.error.message.includes("published_combo_treatment_requires_feature_enabled")) {
+      return treatmentFailure("publishable", { selectionMode: ["Habilitá el selector público desde la configuración de combos antes de publicar."] });
+    }
+    if (result.error.message.includes("simple_treatment_cannot_keep_active_combos")) {
+      return treatmentFailure("publishable", { selectionMode: ["Pausá todos los combos publicados antes de volver al modo simple."] });
+    }
+    if (result.error.message.includes("simple_special_requires_price")) {
+      return treatmentFailure("publishable", { selectionMode: ["Actualizá o pausá la promoción de combos antes de volver al modo simple."] });
+    }
     if (isNew && result.error.code === "23505") {
       const { data: duplicateSubmission } = await supabase.from("treatments").select("id").eq("id", id).maybeSingle();
       if (duplicateSubmission) redirect(`/admin/catalogo/${id}?saved=1`);

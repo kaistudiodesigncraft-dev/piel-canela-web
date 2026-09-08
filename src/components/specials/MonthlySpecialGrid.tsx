@@ -1,4 +1,4 @@
-import { ArrowRight, Clock3 } from "lucide-react";
+import { ArrowRight, Clock3, Layers3 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type {
@@ -22,8 +22,9 @@ interface MonthlySpecialGridProps {
 export function MonthlySpecialGrid({ items }: MonthlySpecialGridProps) {
   return (
     <div className="monthly-special-grid">
-      {items.map(({ special, treatment, category }) => (
-        <article className="monthly-special-item" key={special.id}>
+      {items.map(({ special, treatment, category }) => {
+        const usesClosedCombos = treatment.selectionMode === "closed_combo";
+        return <article className="monthly-special-item" key={special.id}>
           <div className="monthly-special-item__image">
             <Image
               src={special.image.src}
@@ -38,20 +39,18 @@ export function MonthlySpecialGrid({ items }: MonthlySpecialGridProps) {
             <h3>{special.title}</h3>
             <p>{special.shortDescription}</p>
             <div className="monthly-special-item__meta numeric">
-              <span><Clock3 aria-hidden="true" strokeWidth={1.75} />{formatDuration(treatment.durationMinutes)}</span>
-              <strong>{formatPrice(special.specialPriceCents)}</strong>
+              {usesClosedCombos ? <span><Layers3 aria-hidden="true" strokeWidth={1.75} />{treatment.combos.length} {treatment.combos.length === 1 ? "combo" : "combos"}</span> : <><span><Clock3 aria-hidden="true" strokeWidth={1.75} />{formatDuration(treatment.durationMinutes)}</span><strong>{formatPrice(special.specialPriceCents)}</strong></>}
             </div>
             <Link
               className="text-link"
-              href={buildCatalogHref(category.slug, treatment.slug, special.id)}
+              href={buildCatalogHref(category.slug, treatment.slug, usesClosedCombos ? undefined : special.id)}
             >
-              Ver especial
+              {usesClosedCombos ? "Ver combos" : "Ver especial"}
               <ArrowRight aria-hidden="true" strokeWidth={1.75} />
             </Link>
           </div>
-        </article>
-      ))}
+        </article>;
+      })}
     </div>
   );
 }
-

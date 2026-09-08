@@ -8,6 +8,7 @@ import type {
 } from "@/domain/treatment";
 import { formatDuration, formatPrice } from "@/lib/format";
 import { buildBookingHref } from "@/lib/treatments";
+import { TreatmentComboSelector } from "./TreatmentComboSelector";
 
 interface TreatmentDetailContentProps {
   treatment: Treatment;
@@ -24,8 +25,9 @@ export function TreatmentDetailContent({
   compact = false,
   preview = false,
 }: TreatmentDetailContentProps) {
-  const price = monthlySpecial?.specialPriceCents ?? treatment.priceCents;
-  const image = monthlySpecial?.image ?? treatment.image;
+  const activeSpecial = treatment.selectionMode === "simple" ? monthlySpecial : undefined;
+  const price = activeSpecial?.specialPriceCents ?? treatment.priceCents;
+  const image = activeSpecial?.image ?? treatment.image;
 
   return (
     <article className={`treatment-detail${compact ? " treatment-detail--compact" : ""}`}>
@@ -48,12 +50,12 @@ export function TreatmentDetailContent({
           )}
         </div>
         <div className="treatment-detail__intro">
-          <p className="eyebrow">{monthlySpecial ? "Especial del mes" : category.name}</p>
-          <h1>{monthlySpecial?.title ?? treatment.name}</h1>
+          <p className="eyebrow">{activeSpecial ? "Especial del mes" : category.name}</p>
+          <h1>{activeSpecial?.title ?? treatment.name}</h1>
           <p className="treatment-detail__lead">
-            {monthlySpecial?.shortDescription ?? treatment.shortDescription}
+            {activeSpecial?.shortDescription ?? treatment.shortDescription}
           </p>
-          {monthlySpecial ? <p>{monthlySpecial.detail}</p> : null}
+          {activeSpecial ? <p>{activeSpecial.detail}</p> : null}
           <ul className="feature-list">
             {treatment.characteristics.slice(0, 3).map((characteristic) => (
               <li key={characteristic}>
@@ -98,15 +100,17 @@ export function TreatmentDetailContent({
         </div>
       </div>
 
-      <footer className="treatment-detail__booking numeric">
+      {treatment.selectionMode === "closed_combo" ? (
+        treatment.combos.length > 0 ? <TreatmentComboSelector treatment={treatment} /> : <section className="combo-selector combo-selector--empty"><h2>Combos en preparación</h2><p>Piel Canela está terminando de configurar las opciones disponibles. Volvé a consultar pronto.</p></section>
+      ) : <footer className="treatment-detail__booking numeric">
         <div>
           <span><Clock3 aria-hidden="true" strokeWidth={1.75} />Duración</span>
           <strong>{formatDuration(treatment.durationMinutes)}</strong>
         </div>
         <div>
-          <span>{monthlySpecial ? "Valor especial" : "Valor"}</span>
+          <span>{activeSpecial ? "Valor especial" : "Valor"}</span>
           <strong>{formatPrice(price)}</strong>
-          {monthlySpecial ? <del>{formatPrice(treatment.priceCents)}</del> : null}
+          {activeSpecial ? <del>{formatPrice(treatment.priceCents)}</del> : null}
         </div>
         {preview ? (
           <Link className="button button--light" href={`/admin/catalogo#treatment-${treatment.id}`}>
@@ -118,14 +122,14 @@ export function TreatmentDetailContent({
             className="button button--light"
             href={buildBookingHref({
               treatmentId: treatment.id,
-              monthlySpecialId: monthlySpecial?.id,
+              monthlySpecialId: activeSpecial?.id,
             })}
           >
             Iniciar reserva
             <ArrowRight aria-hidden="true" strokeWidth={1.75} />
           </Link>
         )}
-      </footer>
+      </footer>}
     </article>
   );
 }

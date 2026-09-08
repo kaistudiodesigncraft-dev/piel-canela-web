@@ -1,14 +1,15 @@
 "use client";
 
-import { ArrowRight, CalendarDays, ContactRound, FilePenLine, HandHeart, Settings, ShieldCheck, UsersRound } from "lucide-react";
+import { ArrowRight, CalendarDays, ContactRound, FilePenLine, HandHeart, PackageCheck, Settings, ShieldCheck, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-type AdminRoute = "operations" | "catalog" | "professionals" | "customers" | "settings" | "content" | "governance";
+type AdminRoute = "operations" | "catalog" | "packages" | "professionals" | "customers" | "settings" | "content" | "governance";
 
 const routes: readonly { id: AdminRoute; href: string; label: string; icon: typeof CalendarDays }[] = [
   { id: "operations", href: "/admin", label: "Operación", icon: CalendarDays },
   { id: "catalog", href: "/admin/catalogo", label: "Catálogo", icon: HandHeart },
+  { id: "packages", href: "/admin/paquetes", label: "Paquetes", icon: PackageCheck },
   { id: "professionals", href: "/admin/profesionales", label: "Profesionales", icon: UsersRound },
   { id: "customers", href: "/admin/clientes", label: "Clientes", icon: ContactRound },
   { id: "settings", href: "/admin/configuracion", label: "Configuración", icon: Settings },

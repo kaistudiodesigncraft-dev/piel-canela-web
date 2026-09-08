@@ -11,6 +11,7 @@ import {
 import { getSiteContent } from "@/lib/supabase/site-content";
 import {
   getMonthlySpecialForTreatment,
+  getTreatmentCombo,
   resolveBookingSelection,
 } from "@/lib/treatments";
 
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 interface BookingPageProps {
-  searchParams: Promise<{ treatmentId?: string; monthlySpecialId?: string }>;
+  searchParams: Promise<{ treatmentId?: string; monthlySpecialId?: string; comboId?: string }>;
 }
 
 export default async function BookingPage({ searchParams }: BookingPageProps) {
@@ -60,13 +61,18 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
     query.monthlySpecialId,
     treatment.id,
   );
+  const combo = getTreatmentCombo(treatment, query.comboId);
+
+  if (treatment.selectionMode === "closed_combo" && !combo) {
+    return <><BookingHeader content={content} image={headerImage} /><div className="site-container route-state"><StatePanel kind="empty" title="Elegí un combo antes de reservar" description="La duración, el precio y la cantidad de sesiones dependen de la opción elegida." actionHref={`/tratamientos/${treatment.slug}`} actionLabel="Ver combos" /></div></>;
+  }
 
   return (
     <>
       <BookingHeader content={content} image={headerImage} />
       <div className="site-container booking-demo-page">
         <LiveBookingFlow
-          selection={resolveBookingSelection(treatment, monthlySpecial)}
+          selection={resolveBookingSelection(treatment, treatment.selectionMode === "simple" ? monthlySpecial : undefined, combo)}
           dates={buildBookingDates(new Date(), settings.maximumAdvanceDays + 1)}
           whatsappNumber={settings.whatsappNumber}
         />

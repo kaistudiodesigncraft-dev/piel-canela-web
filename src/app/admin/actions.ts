@@ -33,6 +33,7 @@ const bookingStatusSchema = z.enum([
 const initialBookingStatusSchema = z.enum(["pending", "awaiting_deposit", "confirmed"]);
 const manualBookingSchema = z.object({
   treatmentId: z.string().uuid(),
+  comboId: z.string().uuid().optional(),
   monthlySpecialId: z.string().uuid().optional(),
   startsAt: z.string(),
   status: initialBookingStatusSchema,
@@ -57,7 +58,7 @@ const monthlySpecialSchema = z.object({
   shortDescription: z.string().trim().min(10).max(240),
   detail: z.string().trim().min(20).max(1400),
   imageAlt: z.string().trim().min(3).max(240),
-  specialPricePesos: z.coerce.number().int().positive(),
+  specialPricePesos: z.coerce.number().int().min(0),
   referencePricePesos: z.coerce.number().int().positive().optional(),
   startsAt: z.string(),
   endsAt: z.string(),
@@ -203,6 +204,7 @@ export async function createManualBooking(formData: FormData) {
   const { supabase } = await requireAdmin();
   const parsed = manualBookingSchema.safeParse({
     treatmentId: formData.get("treatmentId"),
+    comboId: formData.get("comboId") || undefined,
     monthlySpecialId: formData.get("monthlySpecialId") || undefined,
     startsAt: formData.get("startsAt"), status: formData.get("status"),
     fullName: formData.get("fullName"), phone: formData.get("phone"),
@@ -212,8 +214,9 @@ export async function createManualBooking(formData: FormData) {
   });
   const startsAt = parsed.success ? argentinaLocalDateTimeToIso(parsed.data.startsAt) : null;
   if (!parsed.success || !startsAt) redirect("/admin?manualBookingError=invalid#asignar");
-  const { error } = await supabase.rpc("create_admin_booking", {
+  const { error } = await supabase.rpc("create_admin_booking_for_selection", {
     requested_treatment_id: parsed.data.treatmentId,
+    requested_combo_id: parsed.data.comboId ?? null,
     requested_monthly_special_id: parsed.data.monthlySpecialId ?? null,
     requested_starts_at: startsAt,
     requested_status: parsed.data.status,
@@ -273,9 +276,13 @@ export async function saveMonthlySpecial(formData: FormData) {
   if (!parsed.success || !startsAt || !endsAt || startsAt >= endsAt) {
     redirect("/admin?specialError=invalid#especiales-mes");
   }
-  const specialPrice = pesosToCents(parsed.data.specialPricePesos);
-  const referencePrice = parsed.data.referencePricePesos ? pesosToCents(parsed.data.referencePricePesos) : null;
-  if (referencePrice !== null && referencePrice <= specialPrice) {
+  const { data: selectedTreatment } = await supabase.from("treatments")
+    .select("selection_mode").eq("id", parsed.data.treatmentId).single();
+  if (!selectedTreatment) redirect("/admin?specialError=treatment#especiales-mes");
+  const pricingMode = selectedTreatment.selection_mode === "closed_combo" ? "combo_catalog" : "special_price";
+  const specialPrice = pricingMode === "combo_catalog" ? 0 : pesosToCents(parsed.data.specialPricePesos);
+  const referencePrice = pricingMode === "combo_catalog" ? null : parsed.data.referencePricePesos ? pesosToCents(parsed.data.referencePricePesos) : null;
+  if ((pricingMode === "special_price" && specialPrice <= 0) || (referencePrice !== null && referencePrice <= specialPrice)) {
     redirect("/admin?specialError=price#especiales-mes");
   }
   let imagePath: string | null = null;
@@ -306,6 +313,7 @@ export async function saveMonthlySpecial(formData: FormData) {
     detail: parsed.data.detail,
     image_path: imagePath,
     image_alt: parsed.data.imageAlt,
+    pricing_mode: pricingMode,
     special_price_cents: specialPrice,
     reference_price_cents: referencePrice,
     starts_at: startsAt,

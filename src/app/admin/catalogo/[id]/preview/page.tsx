@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TreatmentDetailContent } from "@/components/treatments/TreatmentDetailContent";
-import type { Treatment, TreatmentCategory } from "@/domain/treatment";
+import type { Treatment, TreatmentCategory, TreatmentCombo } from "@/domain/treatment";
 import { requireAdmin } from "@/lib/admin/require-admin";
 
 export const metadata: Metadata = {
@@ -13,7 +13,7 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
   const { id } = await params;
   const { supabase } = await requireAdmin();
   const { data: row } = await supabase.from("treatments")
-    .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,category:treatment_categories(id,name,slug,short_description,icon_name,display_order,is_active),professional:professionals(public_name,full_name,is_active)")
+    .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,category:treatment_categories(id,name,slug,short_description,icon_name,display_order,is_active),professional:professionals(public_name,full_name,is_active)")
     .eq("id", id).single();
   if (!row) notFound();
   const categoryRaw = Array.isArray(row.category) ? row.category[0] : row.category;
@@ -33,6 +33,48 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
     displayOrder: categoryRaw.display_order,
     isActive: categoryRaw.is_active,
   };
+  let combos: TreatmentCombo[] = [];
+  if (row.selection_mode === "closed_combo") {
+    const { data: comboRows, error: combosError } = await supabase.from("treatment_combos")
+      .select("id,treatment_id,name,description,audience,mode,session_count,fixed_price_cents,validity_days,is_active,display_order,zones:treatment_combo_zones(display_order,zone:depilation_zones(id,name,audience,reference_price_cents,duration_minutes,is_active,display_order))")
+      .eq("treatment_id", id)
+      .order("display_order");
+    if (combosError) throw new Error(`No se pudo preparar la vista previa de combos: ${combosError.code ?? "query"}`);
+    combos = (comboRows ?? []).flatMap((combo) => {
+      const zones = (combo.zones ?? []).flatMap((link) => {
+        const zone = Array.isArray(link.zone) ? link.zone[0] : link.zone;
+        return zone ? [{
+          id: zone.id,
+          name: zone.name,
+          audience: zone.audience,
+          referencePriceCents: zone.reference_price_cents,
+          durationMinutes: zone.duration_minutes,
+          displayOrder: zone.display_order,
+          isActive: zone.is_active,
+        }] : [];
+      });
+      if (zones.length === 0) return [];
+      const referencePriceCents = zones.reduce((total, zone) => total + zone.referencePriceCents, 0) * combo.session_count;
+      return [{
+        id: combo.id,
+        treatmentId: combo.treatment_id,
+        name: combo.name,
+        description: combo.description,
+        audience: combo.audience,
+        mode: combo.mode,
+        sessionCount: combo.session_count,
+        fixedPriceCents: combo.fixed_price_cents,
+        referencePriceCents,
+        pricePerSessionCents: Math.round(combo.fixed_price_cents / combo.session_count),
+        savingsCents: Math.max(0, referencePriceCents - combo.fixed_price_cents),
+        durationMinutes: zones.reduce((total, zone) => total + zone.durationMinutes, 0),
+        validityDays: combo.validity_days,
+        zones,
+        displayOrder: combo.display_order,
+        isActive: true,
+      } satisfies TreatmentCombo];
+    });
+  }
   const treatment: Treatment = {
     id: row.id,
     categoryId: row.category_id,
@@ -47,6 +89,8 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
     durationMinutes: row.duration_minutes,
     bufferMinutes: row.buffer_minutes,
     startIntervalMinutes: row.start_interval_minutes,
+    selectionMode: row.selection_mode,
+    combos,
     priceCents: row.price_cents,
     preparation: row.preparation,
     contraindications: row.contraindications,

@@ -38,6 +38,40 @@ export interface TreatmentImage {
   height: number;
 }
 
+export type TreatmentSelectionMode = "simple" | "closed_combo";
+export type DepilationAudience = "women" | "men" | "shared";
+export type ComboMode = "single_session" | "package";
+export type MonthlySpecialPricingMode = "special_price" | "combo_catalog";
+
+export interface DepilationZone {
+  id: string;
+  name: string;
+  audience: DepilationAudience;
+  referencePriceCents: number;
+  durationMinutes: number;
+  displayOrder: number;
+  isActive: boolean;
+}
+
+export interface TreatmentCombo {
+  id: string;
+  treatmentId: string;
+  name: string;
+  description: string;
+  audience: DepilationAudience;
+  mode: ComboMode;
+  sessionCount: number;
+  fixedPriceCents: number;
+  referencePriceCents: number;
+  pricePerSessionCents: number;
+  savingsCents: number;
+  durationMinutes: number;
+  validityDays: number | null;
+  zones: readonly DepilationZone[];
+  displayOrder: number;
+  isActive: boolean;
+}
+
 export interface Treatment {
   id: string;
   categoryId: string;
@@ -52,6 +86,8 @@ export interface Treatment {
   durationMinutes: number;
   bufferMinutes: number;
   startIntervalMinutes: 15 | 30 | 60;
+  selectionMode: TreatmentSelectionMode;
+  combos: readonly TreatmentCombo[];
   priceCents: number;
   preparation: string | null;
   contraindications: string | null;
@@ -69,6 +105,7 @@ export interface MonthlySpecial {
   title: string;
   shortDescription: string;
   detail: string;
+  pricingMode: MonthlySpecialPricingMode;
   specialPriceCents: number;
   referencePriceCents: number | null;
   startsAt: string;
@@ -85,12 +122,23 @@ export interface MonthlySpecial {
 export interface BookingInitialSelection {
   treatmentId: string;
   monthlySpecialId?: string;
+  comboId?: string;
 }
 
 export interface ResolvedBookingSelection extends BookingInitialSelection {
   treatmentName: string;
   monthlySpecialTitle?: string;
+  comboId?: string;
+  comboName?: string;
+  comboMode?: ComboMode;
+  comboAudience?: DepilationAudience;
+  comboZones?: readonly string[];
+  sessionCount?: number;
+  validityDays?: number | null;
+  pricePerSessionCents?: number;
+  savingsCents?: number;
   durationMinutes: number;
+  occupiedDurationMinutes?: number;
   basePriceCents: number;
   appliedPriceCents: number;
 }
