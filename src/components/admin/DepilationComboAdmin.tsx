@@ -1,6 +1,7 @@
 import { Boxes, CircleDollarSign, Plus, Trash2 } from "lucide-react";
 import { deleteDepilationZone, deleteTreatmentCombo, saveDepilationZone, saveTreatmentCombo, toggleDepilationFeature } from "@/app/admin/catalogo/[id]/combos/actions";
 import { AdminSubmitButton } from "@/components/admin/AdminSubmitButton";
+import { ComboSessionFields } from "@/components/admin/ComboSessionFields";
 import { formatDuration, formatPrice } from "@/lib/format";
 
 type Audience = "women" | "men" | "shared";
@@ -47,11 +48,7 @@ function ComboForm({ treatmentId, zones, combo }: { treatmentId: string; zones: 
       <label>Orden<input name="displayOrder" type="number" min="0" max="999" defaultValue={combo?.display_order ?? 0} required /></label>
     </div>
     <label>Descripción breve<textarea name="description" defaultValue={combo?.description ?? ""} rows={2} maxLength={500} /></label>
-    <div className="admin-form-grid admin-form-grid--3">
-      <label>Modalidad<select name="mode" defaultValue={combo?.mode ?? "single_session"}><option value="single_session">Una sesión</option><option value="package">Paquete de sesiones</option></select></label>
-      <label>Cantidad de sesiones<input name="sessionCount" type="number" min="2" max="48" defaultValue={combo?.mode === "package" ? combo.session_count : 2} /></label>
-      <label>Vigencia en días<input name="validityDays" type="number" min="1" max="730" defaultValue={combo?.validity_days ?? 90} /></label>
-    </div>
+    <ComboSessionFields initialMode={combo?.mode ?? "single_session"} sessionCount={combo?.session_count ?? 1} validityDays={combo?.validity_days ?? null} />
     <label>Precio total fijo<input name="fixedPricePesos" type="number" min="1" step="1" defaultValue={combo ? combo.fixed_price_cents / 100 : ""} required /></label>
     <fieldset className="depilation-zone-picker"><legend>Zonas incluidas</legend>{zones.filter((zone) => zone.is_active || combo?.zone_ids.includes(zone.id)).map((zone) => <label className="admin-check" key={zone.id}><input type="checkbox" name="zoneIds" value={zone.id} defaultChecked={combo?.zone_ids.includes(zone.id)} /><span><strong>{zone.name}</strong><small>{audienceLabels[zone.audience]} · {formatDuration(zone.duration_minutes)} · {formatPrice(zone.reference_price_cents)}</small></span></label>)}</fieldset>
     <label className="admin-check"><input name="isActive" type="checkbox" defaultChecked={combo?.is_active ?? false} /><span>Publicar este combo</span></label>
@@ -61,6 +58,8 @@ function ComboForm({ treatmentId, zones, combo }: { treatmentId: string; zones: 
 
 export function DepilationComboAdmin({ treatmentId, treatmentName, treatmentBufferMinutes, startIntervalMinutes, featureEnabled, zones, combos, feedback }: { treatmentId: string; treatmentName: string; treatmentBufferMinutes: number; startIntervalMinutes: number; featureEnabled: boolean; zones: ZoneRow[]; combos: ComboRow[]; feedback: Record<string, string | undefined> }) {
   return <div className="depilation-admin">
+    {combos.some((combo) => combo.booking_count < 0 || combo.package_count < 0) ? <p className="form-message form-message--error" role="alert">No pudimos verificar todo el historial. Podés editar los combos, pero su eliminación queda bloqueada hasta volver a consultar la página.</p> : null}
+    <p className="admin-field-note">Las zonas se comparten entre combos. Cambiar su precio o duración afecta los cálculos de próximas reservas; no modifica los paquetes ni los turnos ya contratados.</p>
     <section className="live-admin__section depilation-feature-control">
       <div><p className="eyebrow">Publicación controlada</p><h2>Combos de {treatmentName}</h2><p>Podés preparar zonas y combos sin mostrarlos. Cada turno suma {treatmentBufferMinutes} min de preparación y puede comenzar cada {startIntervalMinutes} min.</p></div>
       <form action={toggleDepilationFeature}><input type="hidden" name="treatmentId" value={treatmentId} /><input type="hidden" name="enabled" value={String(!featureEnabled)} /><AdminSubmitButton className={`button ${featureEnabled ? "button--quiet" : "button--primary"}`} pendingLabel="Aplicando…">{featureEnabled ? "Pausar selector público" : "Habilitar selector público"}</AdminSubmitButton></form>

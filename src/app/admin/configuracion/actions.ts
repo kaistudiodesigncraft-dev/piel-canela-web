@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/admin/require-admin";
+import { parsePublicBusinessDetails, publicBusinessDetailsPatch, PUBLIC_BUSINESS_DETAILS_COLUMNS } from "@/lib/admin/public-business-details";
 
 const settingsSchema = z.object({
   businessName: z.string().trim().min(2).max(100),
@@ -33,7 +34,16 @@ export async function saveBusinessSettings(formData: FormData) {
     cancellationPolicy: formData.get("cancellationPolicy") || undefined,
   });
   if (!parsed.success) redirect("/admin/configuracion?settingsError=invalid#ajustes");
+  const details = parsePublicBusinessDetails(formData);
+  if (!details.success) redirect("/admin/configuracion?settingsError=invalid#ajustes");
+  const detailsPatch = publicBusinessDetailsPatch(formData, details.data);
+  if (Object.keys(detailsPatch).length) {
+    // Capability comes from the authenticated database query, never a hidden input.
+    const result = await supabase.from("business_settings").select(PUBLIC_BUSINESS_DETAILS_COLUMNS).eq("singleton", true).single();
+    if (result.error || !result.data) redirect("/admin/configuracion?settingsError=unavailable#ajustes");
+  }
   const { error } = await supabase.from("business_settings").update({
+    ...detailsPatch,
     business_name: parsed.data.businessName,
     whatsapp_number: parsed.data.whatsappNumber || null,
     address: parsed.data.address || null,
@@ -47,7 +57,7 @@ export async function saveBusinessSettings(formData: FormData) {
     updated_by: userId,
   }).eq("singleton", true);
   if (error) redirect("/admin/configuracion?settingsError=save#ajustes");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   revalidatePath("/reservar");
   revalidatePath("/privacidad");
   revalidatePath("/condiciones-de-reserva");

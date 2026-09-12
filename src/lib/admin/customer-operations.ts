@@ -1,4 +1,6 @@
 import type { BookingStatus } from "@/domain/treatment";
+import type { MessageEvent, MessageTemplates } from "@/domain/whatsapp";
+import { resolveWhatsAppMessage } from "@/lib/whatsapp/templates";
 
 export const RESCHEDULABLE_BOOKING_STATUSES: readonly BookingStatus[] = [
   "pending",
@@ -30,12 +32,25 @@ export function buildAdminWhatsAppMessage(input: {
   bookingCode: string;
   treatmentName: string;
   startsAtLabel: string;
+  startsAt?: string;
+  messageTemplates?: MessageTemplates;
+  event?: MessageEvent;
+  comboName?: string;
+  durationMinutes?: number;
+  address?: string;
+  depositText?: string;
 }) {
-  return [
-    `Hola ${input.customerName}, te escribimos de Piel Canela.`,
-    "",
-    `Reserva: ${input.bookingCode}`,
-    `Tratamiento: ${input.treatmentName}`,
-    `Fecha: ${input.startsAtLabel}`,
-  ].join("\n");
+  const instant = input.startsAt ? new Date(input.startsAt) : null;
+  const validInstant = instant && Number.isFinite(instant.getTime());
+  return resolveWhatsAppMessage(input.event ?? "preparation", input.messageTemplates ?? {}, {
+    nombre: input.customerName,
+    tratamiento: input.treatmentName,
+    combo: input.comboName ?? "No aplica",
+    fecha: validInstant ? new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Cordoba", dateStyle: "long" }).format(instant) : input.startsAtLabel,
+    hora: validInstant ? new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Cordoba", timeStyle: "short" }).format(instant) : "(ver fecha)",
+    duracion: input.durationMinutes ? `${input.durationMinutes} min` : "",
+    codigo: input.bookingCode,
+    direccion: input.address ?? "",
+    sena: input.depositText ?? "",
+  });
 }

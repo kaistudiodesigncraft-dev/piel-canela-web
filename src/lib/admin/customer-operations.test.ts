@@ -26,7 +26,7 @@ describe("customer operations", () => {
       treatmentName: "Masaje",
       startsAtLabel: "viernes 21, 15:30",
     });
-    expect(message).toContain("Reserva: PC-AB12");
+    expect(message).toContain("PC-AB12");
     expect(message).not.toContain("confirmada");
   });
 });

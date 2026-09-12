@@ -1,7 +1,8 @@
 import { CalendarRange, MessageCircle, ShieldCheck } from "lucide-react";
 import { saveBusinessSettings } from "@/app/admin/configuracion/actions";
+import type { PublicBusinessDetails } from "@/lib/admin/public-business-details";
 
-export interface BusinessSettingsRow {
+export interface BusinessSettingsRow extends Partial<PublicBusinessDetails> {
   singleton: boolean;
   business_name: string;
   timezone: string;
@@ -17,18 +18,20 @@ export interface BusinessSettingsRow {
   updated_at: string;
 }
 
-export function BusinessSettingsAdmin({ settings, feedback }: { settings: BusinessSettingsRow; feedback: Record<string, string | undefined> }) {
+export function BusinessSettingsAdmin({ settings, feedback, publicDetailsAvailable = false }: { settings: BusinessSettingsRow; feedback: Record<string, string | undefined>; publicDetailsAvailable?: boolean }) {
   return (
     <section className="live-admin__section admin-settings" id="ajustes" aria-labelledby="settings-title">
       <div className="admin-section-heading"><div><h2 id="settings-title">Configuración general</h2><p>Los datos públicos aparecen en la web. Las reglas de agenda se validan en servidor antes de ofrecer o guardar un horario.</p></div><ShieldCheck aria-hidden="true" strokeWidth={1.75} /></div>
       {feedback.settingsSaved === "1" ? <p className="form-message" role="status">Configuración actualizada.</p> : null}
       {feedback.settingsError ? <p className="form-message form-message--error" role="alert">Revisá los valores e intentá nuevamente.</p> : null}
+      {!publicDetailsAvailable ? <p className="form-message" role="status">Los campos adicionales de contacto y condiciones no están disponibles todavía. Podés guardar los demás ajustes; los datos existentes se conservan.</p> : null}
       <form action={saveBusinessSettings} className="admin-form admin-form--settings">
         <fieldset>
           <legend>Identidad y contacto público</legend>
           <div className="admin-form-grid admin-form-grid--3"><label>Nombre comercial<input name="businessName" minLength={2} maxLength={100} defaultValue={settings.business_name} required /></label><label>WhatsApp<small>Con código de país, solo un número operativo.</small><input name="whatsappNumber" type="tel" maxLength={30} defaultValue={settings.whatsapp_number ?? ""} /></label><label>Correo público<input name="publicEmail" type="email" maxLength={180} defaultValue={settings.public_email ?? ""} /></label></div>
           <label>Dirección o referencia del local<input name="address" maxLength={240} defaultValue={settings.address ?? ""} /></label>
           <label>Instagram<small>URL completa, por ejemplo https://instagram.com/pielcanela</small><input name="instagramUrl" type="url" maxLength={500} defaultValue={settings.instagram_url ?? ""} /></label>
+          <label>Horario de recepción<small>Horario en el que el equipo responde consultas. No cambia la disponibilidad de turnos.</small><textarea name="receptionHours" rows={3} maxLength={500} defaultValue={settings.reception_hours ?? ""} disabled={!publicDetailsAvailable} /></label>
         </fieldset>
         <fieldset>
           <legend>Reglas del calendario</legend>
@@ -40,6 +43,14 @@ export function BusinessSettingsAdmin({ settings, feedback }: { settings: Busine
           <div className="admin-settings-context"><MessageCircle aria-hidden="true" strokeWidth={1.75} /><p>La transferencia sigue coordinándose por WhatsApp. No se publican alias ni datos bancarios sensibles en el catálogo.</p></div>
           <label>Instrucción de seña<textarea name="depositText" rows={4} maxLength={1000} defaultValue={settings.deposit_text ?? ""} /></label>
           <label>Política de cancelación<textarea name="cancellationPolicy" rows={5} maxLength={2000} defaultValue={settings.cancellation_policy ?? ""} /></label>
+          <label>Política de ausencias<small>Indicá qué ocurre si la persona no asiste. Este texto informa; no descuenta sesiones automáticamente.</small><textarea name="noShowPolicy" rows={4} maxLength={2000} defaultValue={settings.no_show_policy ?? ""} disabled={!publicDetailsAvailable} /></label>
+          <label>Condiciones generales de paquetes<small>Explicá cómo se coordinan las sesiones. La vigencia y cantidad contratadas se configuran en cada combo.</small><textarea name="packagePolicy" rows={4} maxLength={2000} defaultValue={settings.package_policy ?? ""} disabled={!publicDetailsAvailable} /></label>
+        </fieldset>
+        <fieldset disabled={!publicDetailsAvailable}>
+          <legend>Contacto para privacidad</legend>
+          <p>La agencia debe completar estos datos reales antes del lanzamiento. Se publican en la política de privacidad. Escribí solo texto, sin código ni HTML.</p>
+          <label>Responsable de los datos<small>Nombre o razón social que responde por el tratamiento de datos personales.</small><input name="privacyResponsible" maxLength={200} defaultValue={settings.privacy_responsible ?? ""} /></label>
+          <label>Correo para solicitudes de privacidad<input name="privacyContactEmail" type="email" maxLength={180} defaultValue={settings.privacy_contact_email ?? ""} /></label>
         </fieldset>
         <div className="admin-form-footer"><p>Última actualización: {new Intl.DateTimeFormat("es-AR", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Argentina/Cordoba" }).format(new Date(settings.updated_at))}</p><button className="button button--primary" type="submit">Guardar configuración</button></div>
       </form>

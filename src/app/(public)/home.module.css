@@ -1,0 +1,17 @@
+.home :global(.eyebrow) {
+  color: var(--color-deep-green);
+  font-size: 1rem;
+  font-weight: 550;
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.home h2 { text-wrap: balance; overflow-wrap: anywhere; }
+.home :global(.section-heading) > p { text-wrap: pretty; }
+.home :global(.approach-grid__copy) p { max-width: 65ch; text-wrap: pretty; }
+.home :global(.faq-list) summary { min-height: 44px; }
+
+@media (max-width: 479px) {
+  .home :global(.section) { padding-block: 3.75rem; }
+}

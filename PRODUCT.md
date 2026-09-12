@@ -30,7 +30,7 @@ Clara, cálida y profesional. La experiencia pública debe transmitir cuidado y 
 - Plantillas genéricas de spa, wellness o generadores de landing pages.
 - AgendaPro o Ágora usados como modelos visuales o como excusa para ampliar el alcance.
 - Beige, rosa empolvado, dorado, serif ornamental, lotos, flores, piedras, velas y stock aspiracional como identidad automática.
-- Carruseles automáticos o infinitos, glassmorphism, parallax y títulos tratados como índices numerados.
+- Carruseles automáticos o infinitos, glassmorphism y títulos tratados como índices numerados.
 - Cards repetitivas de icono, título y descripción cuando el contenido requiere una pieza editorial o una herramienta operativa.
 - Un panel administrativo expuesto en la navegación pública, envuelto por el header/footer institucional o presentado como demostración.
 
@@ -41,6 +41,10 @@ Clara, cálida y profesional. La experiencia pública debe transmitir cuidado y 
 3. Catálogo antes que contacto: WhatsApp cierra y resuelve excepciones, pero no reemplaza la información ni la disponibilidad.
 4. Producto pequeño, operación sólida: evitar un ERP sin sacrificar seguridad, estados, trazabilidad ni consistencia.
 5. Identidad reconocible sin clichés: Materia Clara utiliza la marca existente con criterio funcional y mantiene una interfaz propia.
+
+## Excepción visual aprobada (sprint 5)
+
+El pedido posterior autoriza parallax de recorrido corto, velo de humo y hojas finas exclusivamente como acompañamiento de la portada pública. No invade textos ni controles, no altera el scroll nativo y queda estático con reducción de movimiento o en móvil. No se aplica a administración ni turnero, ni implica reemplazar fotografías o contenido del cliente. Mantener el sistema cromático y tipográfico vigente.
 
 ## Accessibility & Inclusion
 

@@ -313,8 +313,9 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
               <small>{selectionMode === "closed_combo" ? "La persona deberá elegir un combo publicado antes de reservar." : "La duración y el precio de esta ficha se aplican directamente."}</small>
               <FieldError id={`${formId}-selectionMode-error`} messages={fieldError("selectionMode")} />
             </label>
-            {selectionMode === "closed_combo" && !isNew ? <Link className="button button--quiet" href={`/admin/catalogo/${treatmentId}/combos`}>Configurar zonas y combos</Link> : null}
-            {selectionMode === "closed_combo" && isNew ? <p className="admin-field-note">Guardá primero el borrador para poder crear sus zonas y combos.</p> : null}
+            {selectionMode === "closed_combo" && treatment?.selection_mode === "closed_combo" ? <Link className="button button--quiet" href={`/admin/catalogo/${treatmentId}/combos`}>Configurar zonas y combos</Link> : null}
+            {selectionMode === "closed_combo" && (isNew || treatment?.selection_mode !== "closed_combo") ? <p className="admin-field-note">Guardá primero el tratamiento con esta forma de reserva para poder configurar sus zonas y combos.</p> : null}
+            {!isNew ? <Link className="button button--quiet" href={`/admin/mensajes?treatmentId=${treatmentId}`}>Personalizar mensajes de WhatsApp</Link> : null}
           </div>
           <div className={`admin-form-grid ${selectionMode === "simple" ? "admin-form-grid--3" : ""}`}>
             <label htmlFor={`${formId}-specialtyId`}>Especialidad<select id={`${formId}-specialtyId`} name="specialtyId" value={selectedSpecialty} onChange={(event) => { setSelectedSpecialty(event.target.value); setSelectedProfessional(""); }} required aria-invalid={Boolean(fieldError("specialtyId")) || undefined} aria-describedby={fieldError("specialtyId") ? `${formId}-specialtyId-error` : undefined}><option value="">Seleccionar</option>{activeSpecialties.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select><FieldError id={`${formId}-specialtyId-error`} messages={fieldError("specialtyId")} /></label>

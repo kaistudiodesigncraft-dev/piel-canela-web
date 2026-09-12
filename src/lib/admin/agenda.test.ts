@@ -7,6 +7,13 @@ import {
 } from "./agenda";
 
 describe("admin agenda query", () => {
+  it("preserves bounded global search across pagination", () => {
+    const parsed = parseAdminAgendaQuery({ agendaSearch: "  Pérez  " });
+    expect(parsed.search).toBe("Pérez");
+    expect(adminAgendaHref(parsed, { page: 2 })).toContain("agendaSearch=P%C3%A9rez");
+    expect(adminAgendaHref(parsed, { page: 2 })).toContain("module=agenda");
+    expect(parseAdminAgendaQuery({ agendaSearch: "a".repeat(120) }).search).toHaveLength(100);
+  });
   it("defaults to the current Cordoba day", () => {
     expect(parseAdminAgendaQuery({}, new Date("2026-08-24T01:30:00Z"))).toEqual({
       view: "day",

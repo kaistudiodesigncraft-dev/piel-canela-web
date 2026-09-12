@@ -1,6 +1,5 @@
-import { ArrowRight, Check, MessageCircleMore } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
+import { HomeHero } from "@/components/home/HomeHero";
+import { HomeMotion } from "@/components/home/HomeMotion";
 import { CategoryEntryCard } from "@/components/treatments/CategoryEntryCard";
 import { MonthlySpecialsSection } from "@/components/specials/MonthlySpecialsSection";
 import { EditableSectionMedia, editableSurfaceClassName } from "@/components/content/EditableSectionMedia";
@@ -8,6 +7,7 @@ import { getPublicMonthlySpecials } from "@/lib/treatments";
 import { getPublicCatalogSnapshot } from "@/lib/supabase/public-catalog";
 import { getSiteContent } from "@/lib/supabase/site-content";
 import { siteContentMap } from "@/domain/site-content";
+import styles from "./home.module.css";
 
 export const revalidate = 3600;
 
@@ -31,45 +31,14 @@ export default async function HomePage() {
   const publicSpecials = getPublicMonthlySpecials(monthlySpecials);
 
   return (
-    <>
-      <section className="home-hero">
-        <div className="site-container home-hero__grid">
-          <div className="home-hero__content">
-            <p className="eyebrow">{text("hero_eyebrow")}</p>
-            <h1>{text("hero_title")}</h1>
-            <p className="home-hero__lead">
-              {text("hero_lead")}
-            </p>
-            <div className="button-row">
-              <Link className="button button--primary" href="/tratamientos">
-                Explorar tratamientos
-                <ArrowRight aria-hidden="true" strokeWidth={1.75} />
-              </Link>
-              <Link className="button button--quiet" href="/#contacto">
-                <MessageCircleMore aria-hidden="true" strokeWidth={1.75} />
-                Consultar
-              </Link>
-            </div>
-            <ul className="hero-assurances" aria-label="Información importante">
-              <li><Check aria-hidden="true" strokeWidth={1.75} />Precios y duración visibles</li>
-              <li><Check aria-hidden="true" strokeWidth={1.75} />Pre-reserva sin crear una cuenta</li>
-            </ul>
-          </div>
-          <div className="home-hero__visual">
-            <div className="home-hero__image-frame">
-              <Image
-                src={heroImage?.value || "/images/treatment-massage-concept.png"}
-                alt={heroImage?.imageAlt ?? "Imagen principal de Piel Canela"}
-                fill
-                priority
-                sizes="(max-width: 767px) 92vw, 48vw"
-                style={{ objectPosition: `${heroImage?.settings.focalX ?? 38}% ${heroImage?.settings.focalY ?? 50}%` }}
-              />
-            </div>
-            <p className="home-hero__caption">{text("hero_image_caption")}</p>
-          </div>
-        </div>
-      </section>
+    <HomeMotion className={styles.home}>
+      <HomeHero
+        eyebrow={text("hero_eyebrow")}
+        title={text("hero_title")}
+        lead={text("hero_lead")}
+        caption={text("hero_image_caption")}
+        image={heroImage}
+      />
 
       <section className={editableSurfaceClassName("section section--categories", categoriesBackground)} aria-labelledby="categories-title">
         <EditableSectionMedia field={categoriesBackground} />
@@ -156,6 +125,6 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-    </>
+    </HomeMotion>
   );
 }

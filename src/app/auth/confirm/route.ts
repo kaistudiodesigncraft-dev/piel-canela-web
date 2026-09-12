@@ -15,11 +15,12 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
     if (!error) {
       redirectUrl.pathname = "/auth/set-password";
+      redirectUrl.searchParams.set("flow", type);
       return NextResponse.redirect(redirectUrl);
     }
   }
 
   redirectUrl.pathname = "/admin/login";
-  redirectUrl.searchParams.set("error", "invite");
+  redirectUrl.searchParams.set("error", type === "recovery" ? "recovery" : "invite");
   return NextResponse.redirect(redirectUrl);
 }

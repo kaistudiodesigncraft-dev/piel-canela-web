@@ -1,3 +1,4 @@
+import { cache } from "react";
 import {
   monthlySpecials as fixtureMonthlySpecials,
   treatmentCategories as fixtureCategories,
@@ -19,8 +20,17 @@ export interface PublicCatalogSnapshot {
   source: "fixtures" | "supabase";
 }
 
+const emptyBusinessDetails = {
+  receptionHours: null as string | null,
+  privacyResponsible: null as string | null,
+  privacyContactEmail: null as string | null,
+  noShowPolicy: null as string | null,
+  packagePolicy: null as string | null,
+};
+
 export async function getPublicBookingSettings() {
   if (!usesSupabaseDataSource()) return {
+    ...emptyBusinessDetails,
     whatsappNumber: null,
     address: null,
     publicEmail: null,
@@ -30,12 +40,23 @@ export async function getPublicBookingSettings() {
     maximumAdvanceDays: 13,
   };
   const supabase = createSupabasePublicServerClient();
+  // Optional additive fields must not suppress existing contact data before migration.
+  const details = await supabase.from("business_settings")
+    .select("reception_hours,privacy_responsible,privacy_contact_email,no_show_policy,package_policy")
+    .eq("singleton", true).maybeSingle();
+  const businessDetails = details.error || !details.data ? emptyBusinessDetails : {
+    receptionHours: details.data.reception_hours as string | null,
+    privacyResponsible: details.data.privacy_responsible as string | null,
+    privacyContactEmail: details.data.privacy_contact_email as string | null,
+    noShowPolicy: details.data.no_show_policy as string | null,
+    packagePolicy: details.data.package_policy as string | null,
+  };
   const { data, error } = await supabase
     .from("business_settings")
     .select("whatsapp_number,address,public_email,instagram_url,deposit_text,cancellation_policy,maximum_advance_days")
     .eq("singleton", true)
     .maybeSingle();
-  if (error) return { whatsappNumber: null, address: null, publicEmail: null, instagramUrl: null, depositText: null, cancellationPolicy: null, maximumAdvanceDays: 13 };
+  if (error) return { ...emptyBusinessDetails, whatsappNumber: null, address: null, publicEmail: null, instagramUrl: null, depositText: null, cancellationPolicy: null, maximumAdvanceDays: 13 };
   const row = data as {
     whatsapp_number: string | null;
     address: string | null;
@@ -46,6 +67,7 @@ export async function getPublicBookingSettings() {
     maximum_advance_days: number;
   } | null;
   return {
+    ...businessDetails,
     whatsappNumber: row?.whatsapp_number ?? null,
     address: row?.address ?? null,
     publicEmail: row?.public_email ?? null,
@@ -156,7 +178,7 @@ function publicImageUrl(
   return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 }
 
-export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot> {
+export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot> {
   if (!usesSupabaseDataSource()) {
     return {
       categories: fixtureCategories,
@@ -306,4 +328,4 @@ export async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot>
   });
 
   return { categories, treatments, monthlySpecials, source: "supabase" };
-}
+});

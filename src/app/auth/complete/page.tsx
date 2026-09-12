@@ -2,18 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function CompleteAuthPage() {
   const router = useRouter();
   const [hasError, setHasError] = useState(false);
+  const exchange = useRef<Promise<string> | null>(null);
 
   useEffect(() => {
     let active = true;
 
     async function completeAuthentication() {
-      try {
         const supabase = createSupabaseBrowserClient();
         const query = new URLSearchParams(window.location.search);
         const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ""));
@@ -21,11 +21,11 @@ export default function CompleteAuthPage() {
         const accessToken = fragment.get("access_token");
         const refreshToken = fragment.get("refresh_token");
         const authorizationCode = query.get("code");
+        const flow = fragment.get("type") === "recovery" || query.get("flow") === "recovery" ? "recovery" : "invite";
 
         window.history.replaceState(null, "", "/auth/complete");
         if (callbackError) {
-          setHasError(true);
-          return;
+          throw new Error("invalid_link");
         }
 
         if (accessToken && refreshToken) {
@@ -41,20 +41,19 @@ export default function CompleteAuthPage() {
 
         const { data, error } = await supabase.auth.getSession();
 
-        if (!active) return;
         if (error || !data.session) {
-          setHasError(true);
-          return;
+          throw new Error("missing_session");
         }
-
-        router.replace("/auth/set-password");
-        router.refresh();
-      } catch {
-        if (active) setHasError(true);
-      }
+        return `/auth/set-password?flow=${flow}`;
     }
-
-    void completeAuthentication();
+    // A PKCE code is single-use. Reuse the exchange across Strict Mode effect replay.
+    exchange.current ??= completeAuthentication();
+    void exchange.current.then((destination) => {
+      if (active) {
+        router.replace(destination);
+        router.refresh();
+      }
+    }).catch(() => { if (active) setHasError(true); });
     return () => {
       active = false;
     };
@@ -64,10 +63,11 @@ export default function CompleteAuthPage() {
     <section className="admin-login-section" aria-live="polite">
       <div className="admin-login-panel">
         <p className="eyebrow">Acceso administrativo</p>
-        <h1>{hasError ? "No pudimos validar la invitación" : "Validando tu invitación"}</h1>
+        <h1>{hasError ? "No pudimos validar el enlace" : "Validando tu acceso"}</h1>
         {hasError ? (
           <>
             <p>El enlace puede haber vencido o ya haber sido utilizado.</p>
+            <Link className="button button--primary" href="/auth/recuperar">Solicitar un nuevo enlace</Link>
             <Link className="button button--primary" href="/admin/login">
               Volver al ingreso
             </Link>

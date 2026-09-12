@@ -7,6 +7,7 @@ import {
   parseAdminAgendaQuery,
 } from "@/lib/admin/agenda";
 import { requireAdmin } from "@/lib/admin/require-admin";
+import { MESSAGE_EVENTS, type MessageEvent, type MessageTemplates } from "@/domain/whatsapp";
 
 export const metadata: Metadata = {
   title: "Panel administrativo",
@@ -17,7 +18,7 @@ interface AdminPageProps {
   searchParams: Promise<Record<string, string | undefined>>;
 }
 
-const bookingSelect = "id,booking_code,status,starts_at,ends_at,duration_snapshot_minutes,applied_price_snapshot_cents,customer_notes,internal_notes,created_at,rescheduled_at,reschedule_count,status_reason,status_changed_at,deposit_confirmed_at,completed_at,no_show_at,combo_name_snapshot,package_charge_kind,customer_package_id,customer:customers(full_name,phone,email),treatment:treatments(name)";
+const bookingSelect = "id,treatment_id,booking_code,status,starts_at,ends_at,duration_snapshot_minutes,applied_price_snapshot_cents,customer_notes,internal_notes,created_at,rescheduled_at,reschedule_count,status_reason,status_changed_at,deposit_confirmed_at,completed_at,no_show_at,combo_name_snapshot,package_charge_kind,customer_package_id,customer:customers(full_name,phone,email),treatment:treatments(name)";
 
 interface BookingHistoryRow {
   id: number;
@@ -44,6 +45,22 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     page: 1,
   });
 
+  let searchedIds: string[] | null = null;
+  let searchTotal: number | null = null;
+  let searchError: { code: string } | null = null;
+  if (agendaQuery.search) {
+    const result = await supabase.rpc("search_admin_booking_ids", {
+      p_query: agendaQuery.search, p_starts_at: agendaRange.startsAt,
+      p_ends_at: agendaRange.endsAt, p_status: agendaQuery.status,
+      p_page: agendaQuery.page, p_page_size: ADMIN_AGENDA_PAGE_SIZE,
+      p_ascending: agendaQuery.view !== "all",
+    });
+    const payload = result.data as { ids?: unknown; total?: unknown } | null;
+    if (result.error || !Array.isArray(payload?.ids) || !payload.ids.every((id) => typeof id === "string") || typeof payload.total !== "number") {
+      searchError = { code: result.error?.code ?? "invalid_search_response" };
+      searchedIds = [];
+    } else { searchedIds = payload.ids; searchTotal = payload.total; }
+  }
   let bookingsRequest = supabase.from("bookings")
     .select(bookingSelect, { count: "exact" });
   if (agendaRange.startsAt && agendaRange.endsAt) {
@@ -54,9 +71,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   if (agendaQuery.status !== "all") {
     bookingsRequest = bookingsRequest.eq("status", agendaQuery.status);
   }
-  bookingsRequest = bookingsRequest
-    .order("starts_at", { ascending: agendaQuery.view !== "all" })
-    .range(from, to);
+  bookingsRequest = bookingsRequest.order("starts_at", { ascending: agendaQuery.view !== "all" }).order("id");
+  if (searchedIds !== null) bookingsRequest = bookingsRequest.in("id", searchedIds);
+  else bookingsRequest = bookingsRequest.range(from, to);
 
   const [
     specialtiesResult,
@@ -87,20 +104,37 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       .gte("starts_at", nowIso),
   ]);
 
-  const firstError = specialtiesResult.error
-    ?? rulesResult.error
-    ?? exceptionsResult.error
-    ?? treatmentsResult.error
-    ?? combosResult.error
-    ?? specialsResult.error
-    ?? bookingsResult.error
-    ?? todayCountResult.error
-    ?? attentionCountResult.error
-    ?? confirmedCountResult.error;
-  if (firstError) throw new Error(`No se pudo cargar la operación: ${firstError.message}`);
+  const failures = [
+    ["Especialidades", specialtiesResult.error], ["Horarios", rulesResult.error],
+    ["Excepciones", exceptionsResult.error], ["Tratamientos", treatmentsResult.error],
+    ["Combos", combosResult.error], ["Especiales", specialsResult.error],
+    ["Reservas", bookingsResult.error ?? searchError], ["Resumen de hoy", todayCountResult.error],
+    ["Pendientes", attentionCountResult.error], ["Confirmadas", confirmedCountResult.error],
+  ] as const;
+  const warnings: string[] = [];
+  const correlationId = crypto.randomUUID();
+  for (const [stage, error] of failures) {
+    if (!error) continue;
+    console.error(JSON.stringify({ event: "admin_module_failed", stage, code: error.code, correlationId }));
+    warnings.push(`${stage} no pudo cargarse.`);
+  }
 
   const bookingRows = bookingsResult.data ?? [];
   const bookingIds = bookingRows.map((booking) => booking.id);
+  const templatesByTreatment = new Map<string, MessageTemplates>();
+  if (bookingRows.length > 0) {
+    const templatesResult = await supabase.from("treatment_message_templates").select("treatment_id,event,body").in("treatment_id", [...new Set(bookingRows.map((booking) => booking.treatment_id))]);
+    if (templatesResult.error) {
+      console.error(JSON.stringify({ event: "admin_module_failed", stage: "message_templates", code: templatesResult.error.code, correlationId }));
+      warnings.push("Los mensajes personalizados no están disponibles; se usará el texto estándar.");
+    }
+    for (const template of templatesResult.data ?? []) {
+      if (!(MESSAGE_EVENTS as readonly string[]).includes(template.event)) continue;
+      const current = templatesByTreatment.get(template.treatment_id) ?? {};
+      current[template.event as MessageEvent] = template.body;
+      templatesByTreatment.set(template.treatment_id, current);
+    }
+  }
   let bookingHistoryRows: BookingHistoryRow[] = [];
   if (bookingIds.length > 0) {
     const bookingHistoryResult = await supabase.from("booking_status_history")
@@ -108,7 +142,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       .in("booking_id", bookingIds)
       .order("created_at", { ascending: false });
     if (bookingHistoryResult.error) {
-      throw new Error(`No se pudo cargar el historial de reservas: ${bookingHistoryResult.error.message}`);
+      console.error(JSON.stringify({ event: "admin_module_failed", stage: "history", code: bookingHistoryResult.error.code, correlationId }));
+      warnings.push("El historial de cambios no está disponible; las reservas siguen operativas.");
     }
     bookingHistoryRows = (bookingHistoryResult.data ?? []) as BookingHistoryRow[];
   }
@@ -121,6 +156,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   }
   const bookings = bookingRows.map((booking) => ({
     ...booking,
+    messageTemplates: templatesByTreatment.get(booking.treatment_id) ?? {},
     customer: Array.isArray(booking.customer) ? (booking.customer[0] ?? null) : booking.customer,
     treatment: Array.isArray(booking.treatment) ? (booking.treatment[0] ?? null) : booking.treatment,
     history: (historyByBooking.get(booking.id) ?? []).map((history) => ({
@@ -150,7 +186,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       agenda={{
         query: agendaQuery,
         range: agendaRange,
-        total: bookingsResult.count ?? 0,
+        total: searchTotal ?? bookingsResult.count ?? 0,
         pageSize: ADMIN_AGENDA_PAGE_SIZE,
         summary: {
           today: todayCountResult.count ?? 0,
@@ -159,6 +195,17 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         },
       }}
       feedback={query}
+      warnings={warnings}
+      supportCode={warnings.length ? correlationId : undefined}
+      unavailable={{
+        bookings: Boolean(bookingsResult.error || searchError),
+        manual: Boolean(treatmentsResult.error || specialtiesResult.error || combosResult.error || specialsResult.error),
+        availability: Boolean(specialtiesResult.error || rulesResult.error || treatmentsResult.error),
+        exceptions: Boolean(specialtiesResult.error || exceptionsResult.error),
+        specialties: Boolean(specialtiesResult.error),
+        specials: Boolean(treatmentsResult.error || specialsResult.error),
+        summary: Boolean(todayCountResult.error || attentionCountResult.error || confirmedCountResult.error || specialsResult.error),
+      }}
     />
   );
 }

@@ -25,6 +25,8 @@ import {
   type BookingDateOption,
 } from "@/lib/booking";
 import { formatDuration, formatPrice } from "@/lib/format";
+import type { MessageTemplates } from "@/domain/whatsapp";
+import { normalizeWhatsAppPhone, resolveWhatsAppMessage } from "@/lib/whatsapp/templates";
 
 type BookingStep = "schedule" | "details" | "review" | "success";
 
@@ -39,6 +41,10 @@ interface LiveBookingFlowProps {
   selection: ResolvedBookingSelection;
   dates: readonly BookingDateOption[];
   whatsappNumber: string | null;
+  messageTemplates?: MessageTemplates;
+  address?: string;
+  depositText?: string;
+  whatsappAutomationEnabled?: boolean;
 }
 
 const initialCustomer: CustomerForm = { fullName: "", phone: "", email: "", notes: "" };
@@ -46,7 +52,7 @@ const stepOrder: BookingStep[] = ["schedule", "details", "review", "success"];
 const INITIAL_VISIBLE_SLOTS = 12;
 const INITIAL_VISIBLE_DATES = 14;
 
-export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookingFlowProps) {
+export function LiveBookingFlow({ selection, dates, whatsappNumber, messageTemplates = {}, address = "", depositText = "", whatsappAutomationEnabled = false }: LiveBookingFlowProps) {
   const [step, setStep] = useState<BookingStep>("schedule");
   const [date, setDate] = useState(dates[0]?.value ?? "");
   const [slots, setSlots] = useState<{ startsAt: string; endsAt: string }[]>([]);
@@ -59,9 +65,12 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
   const [showAllSlots, setShowAllSlots] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submissionUncertain, setSubmissionUncertain] = useState(false);
   const [booking, setBooking] = useState<{ id: string; code: string } | null>(null);
   const [website, setWebsite] = useState("");
+  const [whatsappOptIn, setWhatsappOptIn] = useState(false);
   const idempotencyKey = useRef<string | null>(null);
+  const submissionInFlight = useRef(false);
   const initialStepRender = useRef(true);
 
   const selectedDate = dates.find((item) => item.value === date);
@@ -71,7 +80,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
   const hiddenSlotCount = Math.max(0, slots.length - visibleSlots.length);
   const visibleDates = dates.slice(0, visibleDateCount);
   const hiddenDateCount = Math.max(0, dates.length - visibleDates.length);
-  const canContinueByWhatsApp = Boolean(whatsappNumber?.replace(/\D/g, ""));
+  const canContinueByWhatsApp = Boolean(whatsappNumber && normalizeWhatsAppPhone(whatsappNumber));
 
   useEffect(() => {
     if (initialStepRender.current) {
@@ -112,6 +121,12 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
         setSlotsError(true);
       }
       setIsLoadingSlots(false);
+    }).catch(() => {
+      if (!active) return;
+      setSlots([]);
+      setSlotsError(true);
+    }).finally(() => {
+      if (active) setIsLoadingSlots(false);
     });
 
     return () => {
@@ -121,16 +136,18 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
 
   const whatsappMessage = useMemo(() => {
     if (!booking || !selectedDate || !selectedTime) return "";
-    return [
-      "Hola, quiero confirmar mi pre-reserva en Piel Canela.",
-      `Tratamiento: ${selection.monthlySpecialTitle ?? selection.treatmentName}`,
-      ...(selection.comboName ? [`Combo: ${selection.comboName}`, `Sesiones: ${selection.sessionCount ?? 1}`] : []),
-      `Fecha: ${selectedDate.longLabel}`,
-      `Horario: ${selectedTime}`,
-      `Nombre: ${customer.fullName}`,
-      `Código: ${booking.code}`,
-    ].join("\n");
-  }, [booking, customer.fullName, selectedDate, selectedTime, selection]);
+    return resolveWhatsAppMessage("pre_reservation", messageTemplates, {
+      nombre: customer.fullName,
+      tratamiento: selection.monthlySpecialTitle ?? selection.treatmentName,
+      combo: selection.comboName ? `${selection.comboName} (${selection.sessionCount ?? 1} sesiones)` : "No aplica",
+      fecha: selectedDate.longLabel,
+      hora: selectedTime,
+      duracion: formatDuration(selection.occupiedDurationMinutes ?? selection.durationMinutes),
+      codigo: booking.code,
+      direccion: address,
+      sena: depositText,
+    });
+  }, [booking, customer.fullName, selectedDate, selectedTime, selection, messageTemplates, address, depositText]);
 
   function updateCustomer(field: keyof CustomerForm, value: string) {
     setCustomer((current) => ({ ...current, [field]: value }));
@@ -138,15 +155,22 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
 
   function continueFromDetails(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (whatsappOptIn && !normalizeWhatsAppPhone(customer.phone)) {
+      setSubmitError("Para recibir mensajes automáticos, ingresá WhatsApp con código de país, por ejemplo +54 9 351 555 0000.");
+      return;
+    }
     if (customer.fullName.trim().length >= 2 && customer.phone.trim().length >= 8) {
+      setSubmitError(null);
       setStep("review");
     }
   }
 
   async function submitBooking() {
-    if (!selectedSlot) return;
+    if (!selectedSlot || submissionInFlight.current) return;
+    submissionInFlight.current = true;
     setIsSubmitting(true);
     setSubmitError(null);
+    try {
     idempotencyKey.current ??= globalThis.crypto.randomUUID();
 
     const result = await createPublicBooking({
@@ -156,6 +180,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
       startsAt: selectedSlot,
       idempotencyKey: idempotencyKey.current,
       website,
+      whatsappOptIn: whatsappAutomationEnabled && whatsappOptIn,
       ...customer,
     });
 
@@ -167,6 +192,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
     }
 
     if (result.reason === "slot") {
+      setSubmissionUncertain(false);
       setSubmitError("Ese horario acaba de ocuparse. Elegí otra opción disponible.");
       setStep("schedule");
       setIsLoadingSlots(true);
@@ -188,6 +214,13 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
       return;
     }
     setSubmitError("No pudimos crear la pre-reserva. Tus datos siguen en pantalla para que puedas intentarlo nuevamente.");
+    } catch {
+      setSubmissionUncertain(true);
+      setSubmitError("Se interrumpió la conexión. Conservamos tus datos: reintentá para consultar o completar la misma pre-reserva.");
+    } finally {
+      submissionInFlight.current = false;
+      setIsSubmitting(false);
+    }
   }
 
   if (step === "success" && booking && selectedDate && selectedTime) {
@@ -281,6 +314,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
                       type="button"
                       aria-pressed={date === item.value}
                       onClick={() => {
+                        if (date === item.value) return;
                         setDate(item.value);
                         setIsLoadingSlots(true);
                         setSlotsError(false);
@@ -310,9 +344,16 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
                     <LoaderCircle className="is-spinning" aria-hidden="true" strokeWidth={1.75} /> Consultando horarios…
                   </p>
                 ) : slotsError ? (
-                  <p className="booking-inline-state booking-inline-state--error" role="alert">
-                    No pudimos consultar la agenda. Intentá nuevamente en unos minutos.
-                  </p>
+                  <div>
+                    <p className="booking-inline-state booking-inline-state--error" role="alert">
+                      No pudimos consultar la agenda. Tus datos siguen en pantalla.
+                    </p>
+                    <button type="button" className="button button--quiet" onClick={() => {
+                      setIsLoadingSlots(true);
+                      setSlotsError(false);
+                      setSlotRefresh((current) => current + 1);
+                    }}>Reintentar horarios</button>
+                  </div>
                 ) : slots.length === 0 ? (
                   <p className="booking-inline-state">No quedan horarios para este día. Probá con otra fecha.</p>
                 ) : (
@@ -392,6 +433,10 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
                 <ShieldCheck aria-hidden="true" strokeWidth={1.75} />
                 <span>Usamos estos datos únicamente para identificar y coordinar tu solicitud. Consultá nuestra <Link href="/privacidad">política de privacidad</Link>.</span>
               </p>
+              {whatsappAutomationEnabled ? <label className="admin-check">
+                <input type="checkbox" name="whatsappOptIn" checked={whatsappOptIn} onChange={(event) => setWhatsappOptIn(event.target.checked)} />
+                <span>Acepto recibir por WhatsApp confirmaciones e indicaciones de esta reserva. Es opcional y no incluye promociones. Usá un número con código de país.</span>
+              </label> : null}
               <div className="booking-step-actions">
                 <button className="button button--quiet" type="button" onClick={() => setStep("schedule")}><ArrowLeft aria-hidden="true" strokeWidth={1.75} />Volver</button>
                 <button className="button button--primary" type="submit">Revisar reserva<ArrowRight aria-hidden="true" strokeWidth={1.75} /></button>
@@ -412,7 +457,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
                 <div><strong>Esto crea una pre-reserva, no un turno confirmado.</strong><p>La confirmación final ocurre cuando Piel Canela verifica la seña.</p></div>
               </div>
               <div className="booking-step-actions">
-                <button className="button button--quiet" type="button" disabled={isSubmitting} onClick={() => setStep("details")}><ArrowLeft aria-hidden="true" strokeWidth={1.75} />Corregir datos</button>
+                <button className="button button--quiet" type="button" disabled={isSubmitting || submissionUncertain} onClick={() => setStep("details")}><ArrowLeft aria-hidden="true" strokeWidth={1.75} />Corregir datos</button>
                 <button className="button button--primary" type="button" disabled={isSubmitting} onClick={submitBooking}>
                   {isSubmitting ? <><LoaderCircle className="is-spinning" aria-hidden="true" strokeWidth={1.75} />Creando…</> : <>Crear pre-reserva<Check aria-hidden="true" strokeWidth={1.75} /></>}
                 </button>

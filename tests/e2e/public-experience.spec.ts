@@ -43,7 +43,18 @@ test("public routes have no serious automated accessibility violations", async (
 });
 
 test("administrative routes remain protected without a session", async ({ page }) => {
-  await page.goto("/admin/catalogo");
-  await expect(page).toHaveURL(/\/admin\/login/);
-  await expect(page.getByRole("heading", { name: /panel/i })).toBeVisible();
+  for (const route of ["/admin/catalogo", "/admin/mensajes", "/admin/mi-cuenta"]) {
+    await page.goto(route);
+    await expect(page).toHaveURL(/\/admin\/login/);
+    await expect(page.getByRole("heading", { name: /panel/i })).toBeVisible();
+  }
+});
+
+test("recovery entry remains accessible at 320px without sending email", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  // Fixture mode deliberately omits the email action and its login shortcut.
+  await page.goto("/auth/recuperar");
+  await expect(page.getByRole("heading", { name: "Recuperá tu acceso" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await expect(page.getByRole("link", { name: "Volver al ingreso" })).toBeVisible();
 });

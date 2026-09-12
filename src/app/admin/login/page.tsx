@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signInAdmin } from "../actions";
 import { usesSupabaseDataSource } from "@/lib/supabase/env";
@@ -44,7 +45,7 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
           </p>
         ) : error ? (
           <p className="form-message form-message--error" role="alert">
-            No pudimos iniciar sesión. Revisá los datos e intentá nuevamente.
+            {error === "invite" || error === "recovery" ? "El enlace venció o ya fue utilizado. Solicitá uno nuevo desde Olvidé mi contraseña." : error === "session" ? "Tu sesión venció. Ingresá nuevamente o solicitá un enlace para recuperar tu contraseña." : "No pudimos iniciar sesión. Revisá los datos e intentá nuevamente."}
           </p>
         ) : null}
         {isConfigured ? <form action={signInAdmin} className="admin-login-form">
@@ -66,6 +67,7 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
             Ingresar
           </button>
         </form> : null}
+        {isConfigured && <Link href="/auth/recuperar">Olvidé mi contraseña</Link>}
       </div>
     </section>
   );

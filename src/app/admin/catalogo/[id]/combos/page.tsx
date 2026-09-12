@@ -20,9 +20,9 @@ export default async function TreatmentCombosPage({ params, searchParams }: { pa
     supabase.from("customer_packages").select("combo_id").eq("treatment_id", id),
     supabase.from("business_settings").select("depilation_combos_enabled").eq("singleton", true).maybeSingle(),
   ]);
-  if (!treatmentResult.data) notFound();
-  const error = zonesResult.error ?? combosResult.error ?? linksResult.error ?? bookingsResult.error ?? packagesResult.error ?? settingsResult.error;
+  const error = treatmentResult.error ?? zonesResult.error ?? combosResult.error ?? linksResult.error ?? settingsResult.error;
   if (error) throw new Error(`No se pudo cargar la configuración de combos: ${error.code ?? "query"}`);
+  if (!treatmentResult.data) notFound();
   if (treatmentResult.data.selection_mode !== "closed_combo") notFound();
   const linksByCombo = new Map<string, string[]>();
   const linkCountsByZone = new Map<string, number>();
@@ -34,7 +34,8 @@ export default async function TreatmentCombosPage({ params, searchParams }: { pa
   for (const row of bookingsResult.data ?? []) if (row.treatment_combo_id) bookingCounts.set(row.treatment_combo_id, (bookingCounts.get(row.treatment_combo_id) ?? 0) + 1);
   const packageCounts = new Map<string, number>();
   for (const row of packagesResult.data ?? []) packageCounts.set(row.combo_id, (packageCounts.get(row.combo_id) ?? 0) + 1);
-  const combos = (combosResult.data ?? []).map((combo) => ({ ...combo, zone_ids: linksByCombo.get(combo.id) ?? [], booking_count: bookingCounts.get(combo.id) ?? 0, package_count: packageCounts.get(combo.id) ?? 0 }));
+  // A failed history query is unknown, never an empty history authorizing deletion.
+  const combos = (combosResult.data ?? []).map((combo) => ({ ...combo, zone_ids: linksByCombo.get(combo.id) ?? [], booking_count: bookingsResult.error ? -1 : bookingCounts.get(combo.id) ?? 0, package_count: packagesResult.error ? -1 : packageCounts.get(combo.id) ?? 0 }));
   const zones = (zonesResult.data ?? []).map((zone) => ({ ...zone, link_count: linkCountsByZone.get(zone.id) ?? 0 }));
   return <div className="live-admin site-container"><header className="live-admin__header admin-editor-page-header"><div><Link className="admin-back-link" href={`/admin/catalogo/${id}`}><ArrowLeft aria-hidden="true" />Editar tratamiento</Link><p className="eyebrow">Configuración comercial</p><h1>Combos de {treatmentResult.data.name}</h1><p>Prepará opciones cerradas, paquetes y precios sin modificar las reservas históricas.</p></div><div className="live-admin__actions"><Link className="button button--quiet" href={`/admin/catalogo/${id}/preview`} target="_blank" rel="noreferrer"><ExternalLink aria-hidden="true" />Vista previa</Link></div></header><AdminRouteNav current="catalog" canManageAccess={profile.role === "admin"} /><DepilationComboAdmin treatmentId={id} treatmentName={treatmentResult.data.name} treatmentBufferMinutes={treatmentResult.data.buffer_minutes} startIntervalMinutes={treatmentResult.data.start_interval_minutes} featureEnabled={settingsResult.data?.depilation_combos_enabled ?? false} zones={zones} combos={combos} feedback={await searchParams} /></div>;
 }

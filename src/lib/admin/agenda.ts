@@ -11,6 +11,7 @@ export interface AdminAgendaQuery {
   date: string;
   status: AdminAgendaStatus;
   page: number;
+  search?: string;
 }
 
 export interface AdminAgendaRange {
@@ -84,6 +85,7 @@ export function parseAdminAgendaQuery(
     date: isDateKey(input.agendaDate) ? input.agendaDate : cordobaDateKey(now),
     status,
     page: Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1,
+    ...(input.agendaSearch?.trim() ? { search: input.agendaSearch.trim().slice(0, 100) } : {}),
   };
 }
 
@@ -138,5 +140,7 @@ export function adminAgendaHref(
     agendaStatus: next.status,
     agendaPage: String(next.page),
   });
+  if (next.search) params.set("agendaSearch", next.search);
+  if (next.search) params.set("module", "agenda");
   return `/admin?${params.toString()}#reservas`;
 }

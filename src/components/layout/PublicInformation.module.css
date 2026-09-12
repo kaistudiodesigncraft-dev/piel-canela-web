@@ -1,0 +1,12 @@
+.footer { overflow-wrap: anywhere; }
+.address { font-style: normal; white-space: pre-line; }
+.document { overflow-wrap: anywhere; }
+.document h1 { font-size: clamp(2rem, 6vw, 4rem); letter-spacing: -0.03em; }
+.document section { scroll-margin-top: 7rem; }
+.document a { min-height: 44px; display: inline-flex; align-items: center; }
+.notice { padding: 1rem; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-white); }
+.error { min-height: 70svh; display: grid; align-content: center; gap: 1.25rem; padding-block: 4rem; max-width: 56rem; }
+.error h1 { max-width: 18ch; font-size: clamp(2.25rem, 6vw, 4rem); letter-spacing: -0.03em; text-wrap: balance; }
+.error p { max-width: 54ch; color: var(--color-text-secondary); }
+.errorCode { color: var(--color-petrol); font-family: var(--font-body); font-size: 1rem; }
+.errorActions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem; }

@@ -5,6 +5,7 @@ import { signOutAdmin } from "@/app/admin/actions";
 import { AdminRouteNav } from "@/components/admin/AdminRouteNav";
 import { BusinessSettingsAdmin, type BusinessSettingsRow } from "@/components/admin/BusinessSettingsAdmin";
 import { requireAdmin } from "@/lib/admin/require-admin";
+import { PUBLIC_BUSINESS_DETAILS_COLUMNS } from "@/lib/admin/public-business-details";
 
 export const metadata: Metadata = {
   title: "Configuración",
@@ -18,6 +19,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     .eq("singleton", true)
     .single();
   if (error || !data) throw new Error(`No se pudo cargar la configuración: ${error?.message ?? "missing_settings"}`);
+  const detailsResult = await supabase.from("business_settings").select(PUBLIC_BUSINESS_DETAILS_COLUMNS).eq("singleton", true).single();
+  const publicDetailsAvailable = !detailsResult.error && Boolean(detailsResult.data);
+  const settings = { ...data, ...(publicDetailsAvailable ? detailsResult.data : {}) } as BusinessSettingsRow;
   return (
     <div className="live-admin site-container">
       <header className="live-admin__header">
@@ -25,7 +29,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <div className="live-admin__actions"><Link className="button button--quiet" href="/" target="_blank" rel="noreferrer"><ExternalLink aria-hidden="true" strokeWidth={1.75} />Ver sitio</Link><form action={signOutAdmin}><button className="button button--quiet" type="submit"><LogOut aria-hidden="true" strokeWidth={1.75} />Cerrar sesión</button></form></div>
       </header>
       <AdminRouteNav current="settings" canManageAccess={profile.role === "admin"} />
-      <BusinessSettingsAdmin settings={data as BusinessSettingsRow} feedback={await searchParams} />
+      <BusinessSettingsAdmin settings={settings} publicDetailsAvailable={publicDetailsAvailable} feedback={await searchParams} />
     </div>
   );
 }

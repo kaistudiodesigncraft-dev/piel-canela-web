@@ -46,9 +46,36 @@ describe("LiveBookingFlow", () => {
     });
   });
 
+  it("recovers a rejected availability request and ignores clicks on the current date", async () => {
+    const user = userEvent.setup();
+    getAvailableSlotsMock.mockRejectedValueOnce(new Error("offline"));
+    render(<LiveBookingFlow selection={selection} dates={dates} whatsappNumber={null} />);
+    await user.click(await screen.findByRole("button", { name: "Reintentar horarios" }));
+    expect(await screen.findByRole("button", { name: "12:30" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: /Lun 17 Ago/i }));
+    expect(screen.queryByText("Consultando horarios…")).not.toBeInTheDocument();
+    expect(getAvailableSlotsMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("retries an uncertain submission with the same idempotency key and preserved data", async () => {
+    const user = userEvent.setup();
+    createPublicBookingMock.mockRejectedValueOnce(new Error("offline"));
+    render(<LiveBookingFlow selection={selection} dates={dates} whatsappNumber={null} />);
+    await user.click(await screen.findByRole("button", { name: "12:30" }));
+    await user.click(screen.getAllByRole("button", { name: /continuar/i })[0]!);
+    fireEvent.change(screen.getByLabelText("Nombre y apellido"), { target: { value: "Laura Gómez" } });
+    fireEvent.change(screen.getByLabelText("WhatsApp"), { target: { value: "3515550000" } });
+    await user.click(screen.getByRole("button", { name: /revisar reserva/i }));
+    await user.click(screen.getByRole("button", { name: /crear pre-reserva/i }));
+    expect(await screen.findByText(/Se interrumpió la conexión/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /crear pre-reserva/i }));
+    expect(await screen.findByText("PC-ABC12345")).toBeInTheDocument();
+    expect(createPublicBookingMock.mock.calls[0]?.[0]).toEqual(createPublicBookingMock.mock.calls[1]?.[0]);
+  });
+
   it("loads availability and creates a real pre-booking", async () => {
     const user = userEvent.setup();
-    render(<LiveBookingFlow selection={selection} dates={dates} whatsappNumber="5493515550000" />);
+    render(<LiveBookingFlow selection={selection} dates={dates} whatsappNumber="5493515550000" messageTemplates={{ pre_reservation: "Mi consulta personalizada: {{tratamiento}}. Código {{codigo}}" }} />);
 
     const slot = await screen.findByRole("button", { name: "12:30" });
     await user.click(slot);
@@ -67,6 +94,9 @@ describe("LiveBookingFlow", () => {
       "href",
       expect.stringContaining("https://wa.me/5493515550000"),
     );
+    const messageUrl = new URL(screen.getByRole("link", { name: /continuar por whatsapp/i }).getAttribute("href")!);
+    expect(messageUrl.searchParams.get("text")).toBe("Mi consulta personalizada: Relajación profunda. Código PC-ABC12345");
+    expect(createPublicBookingMock).toHaveBeenCalledWith(expect.objectContaining({ whatsappOptIn: false }));
   });
 
   it("keeps the confirmation usable when the business WhatsApp is not configured", async () => {
