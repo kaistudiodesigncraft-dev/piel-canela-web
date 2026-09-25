@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 interface BookingPageProps {
-  searchParams: Promise<{ treatmentId?: string; monthlySpecialId?: string; comboId?: string }>;
+  searchParams: Promise<{ treatmentId?: string; monthlySpecialId?: string; comboId?: string; extraId?: string | string[] }>;
 }
 
 export default async function BookingPage({ searchParams }: BookingPageProps) {
@@ -63,9 +63,11 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
     treatment.id,
   );
   const combo = getTreatmentCombo(treatment, query.comboId);
+  const requestedExtraIds = Array.isArray(query.extraId) ? query.extraId : query.extraId ? [query.extraId] : [];
+  const selectedExtras = combo?.extras.filter((extra) => requestedExtraIds.includes(extra.id) && extra.isActive) ?? [];
   const messageTemplates = catalog.source === "supabase" ? await getTreatmentMessageTemplates(treatment.id) : {};
 
-  if (treatment.selectionMode === "closed_combo" && !combo) {
+  if (treatment.selectionMode !== "simple" && !combo) {
     return <><BookingHeader content={content} image={headerImage} /><div className="site-container route-state"><StatePanel kind="empty" title="Elegí un combo antes de reservar" description="La duración, el precio y la cantidad de sesiones dependen de la opción elegida." actionHref={`/tratamientos/${treatment.slug}`} actionLabel="Ver combos" /></div></>;
   }
 
@@ -74,7 +76,7 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
       <BookingHeader content={content} image={headerImage} />
       <div className="site-container booking-demo-page">
         <LiveBookingFlow
-          selection={resolveBookingSelection(treatment, treatment.selectionMode === "simple" ? monthlySpecial : undefined, combo)}
+          selection={resolveBookingSelection(treatment, treatment.selectionMode === "simple" ? monthlySpecial : undefined, combo, selectedExtras)}
           dates={buildBookingDates(new Date(), settings.maximumAdvanceDays + 1)}
           whatsappNumber={settings.whatsappNumber}
           messageTemplates={messageTemplates}

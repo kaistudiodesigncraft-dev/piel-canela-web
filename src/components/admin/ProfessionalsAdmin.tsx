@@ -10,9 +10,12 @@ interface SpecialtyRow {
 interface ProfessionalRow {
   id: string;
   specialty_id: string;
+  specialty_ids: string[];
   full_name: string;
   public_name: string | null;
+  phone: string | null;
   bio: string | null;
+  internal_notes: string | null;
   is_active: boolean;
   display_order: number;
   assigned_treatment_count: number;
@@ -42,7 +45,7 @@ export function ProfessionalsAdmin({ specialties, professionals, feedback }: { s
             <details className="admin-professional-item" key={professional.id}>
               <summary>
                 <span className="admin-professional-avatar" aria-hidden="true">{(professional.public_name || professional.full_name).slice(0, 1).toLocaleUpperCase("es-AR")}</span>
-                <span><strong>{professional.public_name || professional.full_name}</strong><small>{specialtyName.get(professional.specialty_id)} · {professional.assigned_treatment_count} tratamientos</small></span>
+                <span><strong>{professional.public_name || professional.full_name}</strong><small>{(professional.specialty_ids ?? [professional.specialty_id]).map((id) => specialtyName.get(id)).filter(Boolean).join(" · ")} · {professional.assigned_treatment_count} tratamientos</small></span>
                 <span className={`status-badge ${professional.is_active ? "status-confirmed" : "status-expired"}`}>{professional.is_active ? "Activo" : "Inactivo"}</span>
                 <ChevronDown aria-hidden="true" strokeWidth={1.75} />
               </summary>
@@ -59,12 +62,14 @@ function ProfessionalForm({ specialties, professional }: { specialties: Specialt
   return (
     <form action={saveProfessional} className="admin-form admin-form--professional">
       {professional ? <input type="hidden" name="professionalId" value={professional.id} /> : null}
-      <div className="admin-form-grid admin-form-grid--3"><label>Nombre interno<input name="fullName" defaultValue={professional?.full_name ?? ""} minLength={2} maxLength={100} required /></label><label>Nombre público opcional<input name="publicName" defaultValue={professional?.public_name ?? ""} maxLength={100} /></label><label>Especialidad<select name="specialtyId" defaultValue={professional?.specialty_id ?? ""} required><option value="">Seleccionar</option>{specialties.filter((item) => item.is_active || item.id === professional?.specialty_id).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label></div>
+      <div className="admin-form-grid admin-form-grid--3"><label>Nombre interno<input name="fullName" defaultValue={professional?.full_name ?? ""} minLength={2} maxLength={100} required /></label><label>Nombre público opcional<input name="publicName" defaultValue={professional?.public_name ?? ""} maxLength={100} /></label><label>Teléfono interno opcional<input name="phone" defaultValue={professional?.phone ?? ""} maxLength={40} /></label></div>
+      <label>Especialidad principal<select name="specialtyId" defaultValue={professional?.specialty_id ?? ""} required><option value="">Seleccionar</option>{specialties.filter((item) => item.is_active || item.id === professional?.specialty_id).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+      <fieldset className="depilation-zone-picker"><legend>También puede atender</legend>{specialties.filter((item) => item.is_active || professional?.specialty_ids?.includes(item.id)).map((item) => <label className="admin-check" key={item.id}><input type="checkbox" name="specialtyIds" value={item.id} defaultChecked={professional?.specialty_ids?.includes(item.id) ?? false} /><span>{item.name}</span></label>)}</fieldset>
       <label>Presentación opcional<textarea name="bio" defaultValue={professional?.bio ?? ""} rows={4} maxLength={1400} /></label>
+      <label>Notas internas<textarea name="internalNotes" defaultValue={professional?.internal_notes ?? ""} rows={3} maxLength={1400} /></label>
       <div className="admin-form-grid"><label>Orden<input name="displayOrder" type="number" min="0" max="999" defaultValue={professional?.display_order ?? 0} required /></label><label className="admin-check"><input name="isActive" type="checkbox" defaultChecked={professional?.is_active ?? true} /><span>Disponible para asignar y mostrar</span></label></div>
       {professional && professional.assigned_treatment_count > 0 ? <label className="admin-impact-check"><input type="checkbox" name="confirmImpact" /><span><strong>{professional.assigned_treatment_count} tratamientos asignados.</strong> Confirmo que, si lo desactivo, el nombre dejará de mostrarse públicamente.</span></label> : null}
       <div className="admin-form-footer"><p>El nombre interno organiza el panel; el nombre público es el que verá la persona.</p><button className="button button--primary" type="submit">Guardar profesional</button></div>
     </form>
   );
 }
-

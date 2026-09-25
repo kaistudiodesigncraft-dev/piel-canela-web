@@ -112,7 +112,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, messageTempl
   useEffect(() => {
     let active = true;
 
-    void getAvailableSlots({ treatmentId: selection.treatmentId, comboId: selection.comboId ?? null, date }).then((result) => {
+    void getAvailableSlots({ treatmentId: selection.treatmentId, comboId: selection.comboId ?? null, extraIds: [...(selection.extraIds ?? [])], date }).then((result) => {
       if (!active) return;
       if (result.ok) {
         setSlots(result.slots);
@@ -132,7 +132,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, messageTempl
     return () => {
       active = false;
     };
-  }, [date, selection.comboId, selection.treatmentId, slotRefresh]);
+  }, [date, selection.comboId, selection.extraIds, selection.treatmentId, slotRefresh]);
 
   const whatsappMessage = useMemo(() => {
     if (!booking || !selectedDate || !selectedTime) return "";
@@ -177,6 +177,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, messageTempl
       treatmentId: selection.treatmentId,
       monthlySpecialId: selection.monthlySpecialId ?? null,
       comboId: selection.comboId ?? null,
+      extraIds: [...(selection.extraIds ?? [])],
       startsAt: selectedSlot,
       idempotencyKey: idempotencyKey.current,
       website,
@@ -239,6 +240,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, messageTempl
           <div><dt>Código</dt><dd>{booking.code}</dd></div>
           <div><dt>Tratamiento</dt><dd>{selection.monthlySpecialTitle ?? selection.treatmentName}</dd></div>
           {selection.comboName ? <div><dt>Combo</dt><dd>{selection.comboName} · {selection.sessionCount} {selection.sessionCount === 1 ? "sesión" : "sesiones"}</dd></div> : null}
+          {selection.comboExtras?.length ? <div><dt>Extras</dt><dd>{selection.comboExtras.join(" · ")}</dd></div> : null}
           <div><dt>Cuándo</dt><dd>{selectedDate.longLabel}, {selectedTime}</dd></div>
           <div><dt>Valor</dt><dd>{formatPrice(selection.appliedPriceCents)}</dd></div>
         </dl>

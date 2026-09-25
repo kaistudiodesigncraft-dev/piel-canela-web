@@ -22,13 +22,15 @@ const treatmentSchema = z.object({
   categoryId: z.string().uuid(),
   specialtyId: z.string().uuid(),
   professionalId: z.string().uuid().optional(),
+  professionalIds: z.array(z.string().uuid()).default([]),
+  requiresProfessionalAssignment: z.coerce.boolean().default(true),
   name: z.string().trim().min(2).max(120),
   shortDescription: z.string().trim().max(240),
   description: z.string().trim().max(3000),
   durationMinutes: z.coerce.number().int().min(5).max(480),
   bufferMinutes: z.coerce.number().int().min(0).max(180),
   startIntervalMinutes: z.coerce.number().int().refine((value) => [15, 30, 60].includes(value)),
-  selectionMode: z.enum(["simple", "closed_combo"]),
+  selectionMode: z.enum(["simple", "closed_combo", "combo_with_extras"]),
   pricePesos: z.coerce.number().int().min(0),
   preparation: z.string().trim().max(1400).optional(),
   contraindications: z.string().trim().max(1400).optional(),
@@ -124,6 +126,8 @@ async function saveTreatmentImpl(
     categoryId: formData.get("categoryId"),
     specialtyId: formData.get("specialtyId"),
     professionalId: formData.get("professionalId") || undefined,
+    professionalIds: formData.getAll("professionalIds"),
+    requiresProfessionalAssignment: formData.get("requiresProfessionalAssignment") !== "false",
     name: formData.get("name"),
     shortDescription: formData.get("shortDescription"),
     description: formData.get("description"),
@@ -165,12 +169,21 @@ async function saveTreatmentImpl(
     });
   }
 
-  if (parsed.data.professionalId) {
-    const { data: professional } = await supabase.from("professionals")
-      .select("id,specialty_id,is_active").eq("id", parsed.data.professionalId).single();
-    if (!professional || professional.specialty_id !== parsed.data.specialtyId || (isActive && !professional.is_active)) {
-      return treatmentFailure("professional", { professionalId: ["Elegí un profesional activo de esta especialidad."] });
+  const selectedProfessionalIds = [...new Set([
+    ...parsed.data.professionalIds,
+    ...(parsed.data.professionalId ? [parsed.data.professionalId] : []),
+  ])];
+  if (selectedProfessionalIds.length > 0) {
+    const { data: professionals } = await supabase.from("professionals")
+      .select("id,is_active")
+      .in("id", selectedProfessionalIds);
+    const activeIds = new Set((professionals ?? []).filter((item) => item.is_active || !isActive).map((item) => item.id));
+    if (activeIds.size !== selectedProfessionalIds.length) {
+      return treatmentFailure("professional", { professionalIds: ["Elegí profesionales activos para publicar."] });
     }
+  }
+  if (isActive && parsed.data.requiresProfessionalAssignment && selectedProfessionalIds.length === 0) {
+    return treatmentFailure("professional", { professionalIds: ["Asigná al menos un profesional para evitar turnos pisados."] });
   }
 
   let existing: {
@@ -241,7 +254,8 @@ async function saveTreatmentImpl(
   const payload = {
     category_id: parsed.data.categoryId,
     specialty_id: parsed.data.specialtyId,
-    professional_id: parsed.data.professionalId ?? null,
+    professional_id: selectedProfessionalIds[0] ?? null,
+    requires_professional_assignment: parsed.data.requiresProfessionalAssignment,
     name: parsed.data.name,
     slug: existing?.slug ?? slugifySpecialty(parsed.data.name),
     short_description: parsed.data.shortDescription,
@@ -290,6 +304,12 @@ async function saveTreatmentImpl(
     if (reason === "save") return operationalFailure("save", result.error.code);
     return treatmentFailure(reason, { name: ["Ya existe un tratamiento con esta URL."] });
   }
+
+  const { error: professionalsError } = await supabase.rpc("save_treatment_professional_assignments", {
+    requested_treatment_id: id,
+    requested_professional_ids: selectedProfessionalIds,
+  });
+  if (professionalsError) return operationalFailure("save_professionals", professionalsError.code);
 
   revalidatePath("/");
   revalidatePath("/tratamientos");

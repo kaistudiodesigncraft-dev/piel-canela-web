@@ -128,11 +128,11 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
   const formId = `treatment-${treatmentId}`;
   const [actionState, formAction] = useActionState(saveTreatment, initialSaveTreatmentState);
   const [selectedSpecialty, setSelectedSpecialty] = useState(treatment?.specialty_id ?? "");
-  const [selectedProfessional, setSelectedProfessional] = useState(treatment?.professional_id ?? "");
+  const [selectedProfessionals, setSelectedProfessionals] = useState<string[]>(treatment?.professional_ids ?? (treatment?.professional_id ? [treatment.professional_id] : []));
   const [durationMinutes, setDurationMinutes] = useState(treatment?.duration_minutes ?? 60);
   const [bufferMinutes, setBufferMinutes] = useState(treatment?.buffer_minutes ?? 15);
   const [startIntervalMinutes, setStartIntervalMinutes] = useState<15 | 30 | 60>(treatment?.start_interval_minutes ?? 30);
-  const [selectionMode, setSelectionMode] = useState<"simple" | "closed_combo">(treatment?.selection_mode ?? "simple");
+  const [selectionMode, setSelectionMode] = useState<"simple" | "closed_combo" | "combo_with_extras">(treatment?.selection_mode ?? "simple");
   const [focalX, setFocalX] = useState(focalPointToPercentage(treatment?.image_focal_x ?? 0.5));
   const [focalY, setFocalY] = useState(focalPointToPercentage(treatment?.image_focal_y ?? 0.5));
   const [imagePath, setImagePath] = useState(treatment?.image_path ?? "");
@@ -145,8 +145,8 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
   const uploadSequence = useRef(0);
   const activeSpecialties = specialties.filter((item) => item.is_active || item.id === treatment?.specialty_id);
   const availableProfessionals = useMemo(() => professionals.filter((item) =>
-    item.specialty_id === selectedSpecialty && (item.is_active || item.id === treatment?.professional_id),
-  ), [professionals, selectedSpecialty, treatment?.professional_id]);
+    item.is_active || selectedProfessionals.includes(item.id),
+  ), [professionals, selectedProfessionals]);
   const mediaBusy = mediaStage === "preparing" || mediaStage === "uploading" || mediaStage === "processing";
   const fieldError = (name: string) => actionState.fieldErrors?.[name];
 
@@ -306,22 +306,28 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
           <legend>Operación y precio</legend>
           <div className="admin-selection-mode">
             <label htmlFor={`${formId}-selectionMode`}>Forma de reserva
-              <select id={`${formId}-selectionMode`} name="selectionMode" value={selectionMode} onChange={(event) => setSelectionMode(event.target.value as "simple" | "closed_combo")} aria-invalid={Boolean(fieldError("selectionMode")) || undefined}>
+              <select id={`${formId}-selectionMode`} name="selectionMode" value={selectionMode} onChange={(event) => setSelectionMode(event.target.value as "simple" | "closed_combo" | "combo_with_extras")} aria-invalid={Boolean(fieldError("selectionMode")) || undefined}>
                 <option value="simple">Tratamiento simple</option>
                 <option value="closed_combo">Usa combos cerrados</option>
+                <option value="combo_with_extras">Combos con extras opcionales</option>
               </select>
-              <small>{selectionMode === "closed_combo" ? "La persona deberá elegir un combo publicado antes de reservar." : "La duración y el precio de esta ficha se aplican directamente."}</small>
+              <small>{selectionMode !== "simple" ? "La persona deberá elegir un combo publicado antes de reservar." : "La duración y el precio de esta ficha se aplican directamente."}</small>
               <FieldError id={`${formId}-selectionMode-error`} messages={fieldError("selectionMode")} />
             </label>
-            {selectionMode === "closed_combo" && treatment?.selection_mode === "closed_combo" ? <Link className="button button--quiet" href={`/admin/catalogo/${treatmentId}/combos`}>Configurar zonas y combos</Link> : null}
-            {selectionMode === "closed_combo" && (isNew || treatment?.selection_mode !== "closed_combo") ? <p className="admin-field-note">Guardá primero el tratamiento con esta forma de reserva para poder configurar sus zonas y combos.</p> : null}
+            {selectionMode !== "simple" && treatment?.selection_mode !== "simple" ? <Link className="button button--quiet" href={`/admin/catalogo/${treatmentId}/combos`}>Configurar zonas, combos y extras</Link> : null}
+            {selectionMode !== "simple" && (isNew || treatment?.selection_mode === "simple") ? <p className="admin-field-note">Guardá primero el tratamiento con esta forma de reserva para poder configurar sus zonas, combos y extras.</p> : null}
             {!isNew ? <Link className="button button--quiet" href={`/admin/mensajes?treatmentId=${treatmentId}`}>Personalizar mensajes de WhatsApp</Link> : null}
           </div>
           <div className={`admin-form-grid ${selectionMode === "simple" ? "admin-form-grid--3" : ""}`}>
-            <label htmlFor={`${formId}-specialtyId`}>Especialidad<select id={`${formId}-specialtyId`} name="specialtyId" value={selectedSpecialty} onChange={(event) => { setSelectedSpecialty(event.target.value); setSelectedProfessional(""); }} required aria-invalid={Boolean(fieldError("specialtyId")) || undefined} aria-describedby={fieldError("specialtyId") ? `${formId}-specialtyId-error` : undefined}><option value="">Seleccionar</option>{activeSpecialties.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select><FieldError id={`${formId}-specialtyId-error`} messages={fieldError("specialtyId")} /></label>
-            <label htmlFor={`${formId}-professionalId`}>Profesional opcional<select id={`${formId}-professionalId`} name="professionalId" value={selectedProfessional} onChange={(event) => setSelectedProfessional(event.target.value)} aria-invalid={Boolean(fieldError("professionalId")) || undefined}><option value="">Sin asignación fija</option>{availableProfessionals.map((item) => <option key={item.id} value={item.id}>{item.public_name || item.full_name}</option>)}</select><FieldError id={`${formId}-professionalId-error`} messages={fieldError("professionalId")} /></label>
+            <label htmlFor={`${formId}-specialtyId`}>Especialidad<select id={`${formId}-specialtyId`} name="specialtyId" value={selectedSpecialty} onChange={(event) => { setSelectedSpecialty(event.target.value); }} required aria-invalid={Boolean(fieldError("specialtyId")) || undefined} aria-describedby={fieldError("specialtyId") ? `${formId}-specialtyId-error` : undefined}><option value="">Seleccionar</option>{activeSpecialties.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select><FieldError id={`${formId}-specialtyId-error`} messages={fieldError("specialtyId")} /></label>
             {selectionMode === "simple" ? <label htmlFor={`${formId}-pricePesos`}>Precio en pesos<input id={`${formId}-pricePesos`} name="pricePesos" type="number" min="0" step="1" defaultValue={treatment ? treatment.price_cents / 100 : ""} aria-invalid={Boolean(fieldError("pricePesos")) || undefined} aria-describedby={fieldError("pricePesos") ? `${formId}-pricePesos-error` : undefined} /><FieldError id={`${formId}-pricePesos-error`} messages={fieldError("pricePesos")} /></label> : <input type="hidden" name="pricePesos" value="0" />}
           </div>
+          <input type="hidden" name="requiresProfessionalAssignment" value="true" />
+          <fieldset className="depilation-zone-picker" aria-describedby={`${formId}-professionalIds-error`}>
+            <legend>Profesionales que pueden atenderlo</legend>
+            {availableProfessionals.length === 0 ? <p className="admin-field-note">Primero cargá profesionales activos. El tratamiento no debería publicarse sin al menos una persona asignada.</p> : availableProfessionals.map((item) => <label className="admin-check" key={item.id}><input type="checkbox" name="professionalIds" value={item.id} checked={selectedProfessionals.includes(item.id)} onChange={(event) => setSelectedProfessionals((current) => event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id))} /><span><strong>{item.public_name || item.full_name}</strong><small>{item.is_active ? "Activo" : "Inactivo"}</small></span></label>)}
+            <FieldError id={`${formId}-professionalIds-error`} messages={fieldError("professionalIds")} />
+          </fieldset>
           {selectionMode === "closed_combo" ? <div className="admin-field-note admin-field-note--prominent"><strong>Precio y duración se definen en cada combo.</strong><span>La duración real será la suma de sus zonas más un único margen de preparación. La frecuencia continúa siendo común a este tratamiento.</span><input type="hidden" name="durationMinutes" value={durationMinutes} /></div> : null}
           <div className={`admin-form-grid ${selectionMode === "simple" ? "admin-form-grid--3" : ""}`}>
             {selectionMode === "simple" ? <label htmlFor={`${formId}-durationMinutes`}>Duración<input id={`${formId}-durationMinutes`} name="durationMinutes" type="number" min="5" max="480" step="5" value={durationMinutes} onChange={(event) => setDurationMinutes(Number(event.target.value))} required /></label> : null}

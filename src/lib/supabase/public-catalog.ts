@@ -102,7 +102,8 @@ interface TreatmentRow {
   duration_minutes: number;
   buffer_minutes: number;
   start_interval_minutes: 15 | 30 | 60;
-  selection_mode: "simple" | "closed_combo";
+  selection_mode: "simple" | "closed_combo" | "combo_with_extras";
+  requires_professional_assignment?: boolean;
   price_cents: number;
   preparation: string | null;
   contraindications: string | null;
@@ -125,6 +126,11 @@ interface ComboRow {
   audience: "women" | "men" | "shared";
   mode: "single_session" | "package";
   session_count: number;
+  pricing_mode?: "fixed_price" | "percentage_discount" | "tiered_discount";
+  discount_percent?: number | string | null;
+  tier_min_items?: number | null;
+  tier_discount_percent?: number | string | null;
+  allow_public_extras?: boolean;
   fixed_price_cents: number;
   validity_days: number | null;
   is_active: boolean;
@@ -141,6 +147,29 @@ interface ComboRow {
       display_order: number;
     }[] | null;
   }[];
+}
+
+interface TreatmentProfessionalRow {
+  treatment_id: string;
+  professional_id: string;
+  is_active: boolean;
+}
+
+interface ComboExtraRow {
+  id: string;
+  treatment_id: string;
+  name: string;
+  description: string;
+  audience: "women" | "men" | "shared";
+  price_cents: number;
+  duration_minutes: number;
+  is_active: boolean;
+  display_order: number;
+}
+
+interface ComboAllowedExtraRow {
+  combo_id: string;
+  extra_id: string;
 }
 
 interface MonthlySpecialRow {
@@ -165,6 +194,15 @@ interface MonthlySpecialRow {
   updated_at: string;
 }
 
+interface CatalogQueryResult {
+  data: unknown;
+  error: { code?: string; message: string } | null;
+  count?: number | null;
+  status?: number;
+  statusText?: string;
+  success?: boolean;
+}
+
 function focalPoint(x: number | string, y: number | string) {
   return `${Math.round(Number(x) * 100)}% ${Math.round(Number(y) * 100)}%` as const;
 }
@@ -178,6 +216,12 @@ function publicImageUrl(
   return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 }
 
+function isPendingCatalogSchemaError(error: { code?: string; message?: string } | null | undefined) {
+  if (!error) return false;
+  return ["42703", "42P01", "PGRST200", "PGRST204"].includes(error.code ?? "")
+    || /does not exist|schema cache|relationship|Could not find/i.test(error.message ?? "");
+}
+
 export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSnapshot(): Promise<PublicCatalogSnapshot> {
   if (!usesSupabaseDataSource()) {
     return {
@@ -189,14 +233,14 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
   }
 
   const supabase = createSupabasePublicServerClient();
-  const [categoriesResult, treatmentsResult, specialsResult, combosResult] = await Promise.all([
+  let [categoriesResult, treatmentsResult, specialsResult, combosResult, treatmentProfessionalsResult, extrasResult, allowedExtrasResult] = await Promise.all([
     supabase
       .from("treatment_categories")
       .select("id,name,slug,short_description,icon_name,display_order,is_active")
       .order("display_order"),
     supabase
       .from("treatments")
-      .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,professional:professionals(public_name,is_active)")
+      .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,requires_professional_assignment,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,professional:professionals!treatments_professional_id_fkey(public_name,is_active)")
       .order("display_order"),
     supabase
       .from("monthly_specials")
@@ -204,12 +248,62 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
       .order("display_order"),
     supabase
       .from("treatment_combos")
-      .select("id,treatment_id,name,description,audience,mode,session_count,fixed_price_cents,validity_days,is_active,display_order,zones:treatment_combo_zones(display_order,zone:depilation_zones(id,name,audience,reference_price_cents,duration_minutes,is_active,display_order))")
+      .select("id,treatment_id,name,description,audience,mode,session_count,pricing_mode,discount_percent,tier_min_items,tier_discount_percent,allow_public_extras,fixed_price_cents,validity_days,is_active,display_order,zones:treatment_combo_zones(display_order,zone:depilation_zones(id,name,audience,reference_price_cents,duration_minutes,is_active,display_order))")
       .eq("is_active", true)
       .order("display_order"),
-  ]);
+    supabase
+      .from("treatment_professionals")
+      .select("treatment_id,professional_id,is_active")
+      .eq("is_active", true),
+    supabase
+      .from("treatment_combo_extras")
+      .select("id,treatment_id,name,description,audience,price_cents,duration_minutes,is_active,display_order")
+      .eq("is_active", true)
+      .order("display_order"),
+    supabase
+      .from("treatment_combo_allowed_extras")
+      .select("combo_id,extra_id"),
+  ]) as [
+    CatalogQueryResult,
+    CatalogQueryResult,
+    CatalogQueryResult,
+    CatalogQueryResult,
+    CatalogQueryResult,
+    CatalogQueryResult,
+    CatalogQueryResult,
+  ];
 
-  const firstError = categoriesResult.error ?? treatmentsResult.error ?? specialsResult.error ?? combosResult.error;
+  let firstError = categoriesResult.error ?? treatmentsResult.error ?? specialsResult.error ?? combosResult.error ?? treatmentProfessionalsResult.error ?? extrasResult.error ?? allowedExtrasResult.error;
+  if (isPendingCatalogSchemaError(firstError)) {
+    [categoriesResult, treatmentsResult, specialsResult, combosResult] = await Promise.all([
+      supabase
+        .from("treatment_categories")
+        .select("id,name,slug,short_description,icon_name,display_order,is_active")
+        .order("display_order"),
+      supabase
+        .from("treatments")
+        .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,professional:professionals!treatments_professional_id_fkey(public_name,is_active)")
+        .order("display_order"),
+      supabase
+        .from("monthly_specials")
+        .select("id,treatment_id,title,short_description,detail,pricing_mode,special_price_cents,reference_price_cents,starts_at,ends_at,image_path,image_alt,image_focal_x,image_focal_y,terms,is_active,display_order,created_at,updated_at")
+        .order("display_order"),
+      supabase
+        .from("treatment_combos")
+        .select("id,treatment_id,name,description,audience,mode,session_count,fixed_price_cents,validity_days,is_active,display_order,zones:treatment_combo_zones(display_order,zone:depilation_zones(id,name,audience,reference_price_cents,duration_minutes,is_active,display_order))")
+        .eq("is_active", true)
+        .order("display_order"),
+    ]) as [
+      CatalogQueryResult,
+      CatalogQueryResult,
+      CatalogQueryResult,
+      CatalogQueryResult,
+    ];
+    treatmentProfessionalsResult = { data: [], error: null, count: null, status: 200, statusText: "OK", success: true };
+    extrasResult = { data: [], error: null, count: null, status: 200, statusText: "OK", success: true };
+    allowedExtrasResult = { data: [], error: null, count: null, status: 200, statusText: "OK", success: true };
+    firstError = categoriesResult.error ?? treatmentsResult.error ?? specialsResult.error ?? combosResult.error;
+  }
   if (firstError) {
     throw new Error(`No se pudo cargar el catálogo público: ${firstError.message}`);
   }
@@ -223,6 +317,18 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
     displayOrder: row.display_order,
     isActive: row.is_active,
   }));
+
+  const professionalIdsByTreatment = new Map<string, string[]>();
+  for (const row of (treatmentProfessionalsResult.data ?? []) as TreatmentProfessionalRow[]) {
+    professionalIdsByTreatment.set(row.treatment_id, [...(professionalIdsByTreatment.get(row.treatment_id) ?? []), row.professional_id]);
+  }
+
+  const extrasById = new Map<string, ComboExtraRow>();
+  for (const extra of (extrasResult.data ?? []) as ComboExtraRow[]) extrasById.set(extra.id, extra);
+  const extraIdsByCombo = new Map<string, string[]>();
+  for (const row of (allowedExtrasResult.data ?? []) as ComboAllowedExtraRow[]) {
+    extraIdsByCombo.set(row.combo_id, [...(extraIdsByCombo.get(row.combo_id) ?? []), row.extra_id]);
+  }
 
   const combosByTreatment = new Map<string, TreatmentCombo[]>();
   for (const row of (combosResult.data ?? []) as ComboRow[]) {
@@ -240,6 +346,20 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
       }));
     if (zones.length === 0) continue;
     const referencePriceCents = zones.reduce((total, zone) => total + zone.referencePriceCents, 0) * row.session_count;
+    const extras = (extraIdsByCombo.get(row.id) ?? [])
+      .map((id) => extrasById.get(id))
+      .filter((extra): extra is ComboExtraRow => Boolean(extra))
+      .map((extra) => ({
+        id: extra.id,
+        treatmentId: extra.treatment_id,
+        name: extra.name,
+        description: extra.description,
+        audience: extra.audience,
+        priceCents: extra.price_cents,
+        durationMinutes: extra.duration_minutes,
+        displayOrder: extra.display_order,
+        isActive: extra.is_active,
+      }));
     const combo: TreatmentCombo = {
       id: row.id,
       treatmentId: row.treatment_id,
@@ -248,6 +368,11 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
       audience: row.audience,
       mode: row.mode,
       sessionCount: row.session_count,
+      pricingMode: row.pricing_mode ?? "fixed_price",
+      discountPercent: row.discount_percent == null ? null : Number(row.discount_percent),
+      tierMinItems: row.tier_min_items ?? null,
+      tierDiscountPercent: row.tier_discount_percent == null ? null : Number(row.tier_discount_percent),
+      allowPublicExtras: Boolean(row.allow_public_extras),
       fixedPriceCents: row.fixed_price_cents,
       referencePriceCents,
       pricePerSessionCents: Math.round(row.fixed_price_cents / row.session_count),
@@ -255,6 +380,7 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
       durationMinutes: zones.reduce((total, zone) => total + zone.durationMinutes, 0),
       validityDays: row.validity_days,
       zones,
+      extras,
       displayOrder: row.display_order,
       isActive: row.is_active,
     };
@@ -268,6 +394,8 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
       categoryId: row.category_id,
       specialtyId: row.specialty_id,
       professionalId: row.professional_id,
+      professionalIds: professionalIdsByTreatment.get(row.id) ?? (row.professional_id ? [row.professional_id] : []),
+      requiresProfessionalAssignment: row.requires_professional_assignment ?? true,
       name: row.name,
       slug: row.slug,
       shortDescription: row.short_description,

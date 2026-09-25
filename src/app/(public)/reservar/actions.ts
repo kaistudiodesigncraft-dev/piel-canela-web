@@ -10,6 +10,7 @@ import { normalizeWhatsAppPhone } from "@/lib/whatsapp/templates";
 const availabilitySchema = z.object({
   treatmentId: z.string().uuid(),
   comboId: z.string().uuid().nullable().optional().default(null),
+  extraIds: z.array(z.string().uuid()).optional().default([]),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 
@@ -17,6 +18,7 @@ const bookingSchema = z.object({
   treatmentId: z.string().uuid(),
   monthlySpecialId: z.string().uuid().nullable(),
   comboId: z.string().uuid().nullable().optional().default(null),
+  extraIds: z.array(z.string().uuid()).optional().default([]),
   startsAt: z.string().datetime({ offset: true }),
   idempotencyKey: z.string().uuid(),
   website: z.string().max(0).optional().default(""),
@@ -54,10 +56,11 @@ export async function getAvailableSlots(input: unknown): Promise<AvailabilityRes
 
   const supabase = createSupabasePublicServerClient();
   const { data, error } = parsed.data.comboId
-    ? await supabase.rpc("get_available_slots_for_selection", {
+    ? await supabase.rpc("get_available_slots_for_selection_v2", {
         requested_treatment_id: parsed.data.treatmentId,
         requested_combo_id: parsed.data.comboId,
         requested_date: parsed.data.date,
+        requested_extra_ids: parsed.data.extraIds,
       })
     : await supabase.rpc("get_available_slots", {
         requested_treatment_id: parsed.data.treatmentId,
@@ -94,7 +97,7 @@ export async function createPublicBooking(input: unknown): Promise<CreateBooking
   const guard = createBookingGuard({ secret: guardSecret, fingerprintSource });
 
   const supabase = createSupabasePublicServerClient();
-  const { data, error } = await supabase.rpc(communicationEnabled ? "create_booking_with_communication" : "create_booking_for_selection", {
+  const { data, error } = await supabase.rpc(communicationEnabled ? "create_booking_with_communication_v2" : "create_booking_for_selection_v2", {
     requested_treatment_id: parsed.data.treatmentId,
     requested_combo_id: parsed.data.comboId,
     requested_monthly_special_id: parsed.data.monthlySpecialId,
@@ -107,6 +110,7 @@ export async function createPublicBooking(input: unknown): Promise<CreateBooking
     request_guard_nonce: guard.nonce,
     request_guard_fingerprint: guard.fingerprint,
     request_guard_secret: guardSecret,
+    requested_extra_ids: parsed.data.extraIds,
     ...(communicationEnabled ? { requested_whatsapp_opt_in: parsed.data.whatsappOptIn } : {}),
   });
 

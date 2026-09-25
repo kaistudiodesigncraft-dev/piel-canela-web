@@ -53,6 +53,8 @@ export const treatments: readonly Treatment[] = [
     categoryId: "category-estetica",
     specialtyId: "specialty-estetica",
     professionalId: null,
+    professionalIds: [],
+    requiresProfessionalAssignment: true,
     name: "Limpieza facial profunda",
     slug: "limpieza-facial-profunda",
     shortDescription:
@@ -86,6 +88,8 @@ export const treatments: readonly Treatment[] = [
     categoryId: "category-estetica",
     specialtyId: "specialty-estetica",
     professionalId: null,
+    professionalIds: [],
+    requiresProfessionalAssignment: true,
     name: "Drenaje corporal",
     slug: "drenaje-corporal",
     shortDescription:
@@ -114,6 +118,8 @@ export const treatments: readonly Treatment[] = [
     categoryId: "category-bienestar",
     specialtyId: "specialty-masoterapia",
     professionalId: null,
+    professionalIds: [],
+    requiresProfessionalAssignment: true,
     name: "Relajación profunda",
     slug: "relajacion-profunda",
     shortDescription:
@@ -142,6 +148,8 @@ export const treatments: readonly Treatment[] = [
     categoryId: "category-bienestar",
     specialtyId: "specialty-masoterapia",
     professionalId: null,
+    professionalIds: [],
+    requiresProfessionalAssignment: true,
     name: "Masaje descontracturante",
     slug: "masaje-descontracturante",
     shortDescription:
@@ -170,6 +178,8 @@ export const treatments: readonly Treatment[] = [
     categoryId: "category-recuperacion",
     specialtyId: "specialty-kinesiologia",
     professionalId: null,
+    professionalIds: [],
+    requiresProfessionalAssignment: true,
     name: "Evaluación kinésica",
     slug: "evaluacion-kinesica",
     shortDescription:
@@ -198,6 +208,8 @@ export const treatments: readonly Treatment[] = [
     categoryId: "category-recuperacion",
     specialtyId: "specialty-kinesiologia",
     professionalId: null,
+    professionalIds: [],
+    requiresProfessionalAssignment: true,
     name: "Recuperación muscular",
     slug: "recuperacion-muscular",
     shortDescription:
@@ -226,6 +238,8 @@ export const treatments: readonly Treatment[] = [
     categoryId: "category-bienestar",
     specialtyId: "specialty-masoterapia",
     professionalId: null,
+    professionalIds: [],
+    requiresProfessionalAssignment: true,
     name: "Ritual corporal en revisión",
     slug: "ritual-corporal-en-revision",
     shortDescription: "Tratamiento temporalmente no disponible.",

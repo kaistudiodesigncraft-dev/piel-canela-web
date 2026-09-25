@@ -4,6 +4,7 @@ import type {
   ResolvedBookingSelection,
   Treatment,
   TreatmentCombo,
+  TreatmentComboExtra,
   TreatmentCategorySlug,
 } from "@/domain/treatment";
 
@@ -85,6 +86,7 @@ export function buildBookingHref(selection: BookingInitialSelection): string {
     params.set("monthlySpecialId", selection.monthlySpecialId);
   }
   if (selection.comboId) params.set("comboId", selection.comboId);
+  for (const extraId of selection.extraIds ?? []) params.append("extraId", extraId);
   return `/reservar?${params.toString()}`;
 }
 
@@ -92,10 +94,15 @@ export function resolveBookingSelection(
   treatment: Treatment,
   monthlySpecial?: MonthlySpecial,
   combo?: TreatmentCombo,
+  extras: readonly TreatmentComboExtra[] = [],
 ): ResolvedBookingSelection {
   if (combo && monthlySpecial) {
     throw new Error("Los combos cerrados no acumulan especiales del mes.");
   }
+  const extraPrice = extras.reduce((total, extra) => total + extra.priceCents, 0) * (combo?.sessionCount ?? 1);
+  const extraDuration = extras.reduce((total, extra) => total + extra.durationMinutes, 0);
+  const basePrice = (combo?.referencePriceCents ?? treatment.priceCents) + extraPrice;
+  const appliedPrice = (combo?.fixedPriceCents ?? monthlySpecial?.specialPriceCents ?? treatment.priceCents) + extraPrice;
   return {
     treatmentId: treatment.id,
     treatmentName: treatment.name,
@@ -106,14 +113,18 @@ export function resolveBookingSelection(
     comboMode: combo?.mode,
     comboAudience: combo?.audience,
     comboZones: combo?.zones.map((zone) => zone.name),
+    comboExtras: extras.map((extra) => extra.name),
+    extraIds: extras.map((extra) => extra.id),
+    pricingMode: combo?.pricingMode,
+    discountSummary: combo?.pricingMode === "fixed_price" ? undefined : "Descuento calculado por Piel Canela",
     sessionCount: combo?.sessionCount,
     validityDays: combo?.validityDays,
     pricePerSessionCents: combo?.pricePerSessionCents,
     savingsCents: combo?.savingsCents,
-    durationMinutes: combo?.durationMinutes ?? treatment.durationMinutes,
-    occupiedDurationMinutes: combo ? combo.durationMinutes + treatment.bufferMinutes : treatment.durationMinutes + treatment.bufferMinutes,
-    basePriceCents: combo?.referencePriceCents ?? treatment.priceCents,
-    appliedPriceCents: combo?.fixedPriceCents ?? monthlySpecial?.specialPriceCents ?? treatment.priceCents,
+    durationMinutes: (combo?.durationMinutes ?? treatment.durationMinutes) + extraDuration,
+    occupiedDurationMinutes: combo ? combo.durationMinutes + extraDuration + treatment.bufferMinutes : treatment.durationMinutes + treatment.bufferMinutes,
+    basePriceCents: basePrice,
+    appliedPriceCents: appliedPrice,
   };
 }
 
@@ -121,6 +132,6 @@ export function getTreatmentCombo(
   treatment: Treatment,
   comboId: string | null | undefined,
 ): TreatmentCombo | undefined {
-  if (!comboId || treatment.selectionMode !== "closed_combo") return undefined;
+  if (!comboId || treatment.selectionMode === "simple") return undefined;
   return treatment.combos.find((combo) => combo.id === comboId && combo.isActive);
 }

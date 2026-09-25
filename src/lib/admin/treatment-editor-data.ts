@@ -9,7 +9,7 @@ import type { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
-const treatmentSelect = "id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order";
+const treatmentSelect = "id,category_id,specialty_id,professional_id,requires_professional_assignment,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order";
 
 export async function loadTreatmentEditorTaxonomies(supabase: SupabaseServerClient) {
   const [categoriesResult, specialtiesResult, professionalsResult] = await Promise.all([
@@ -27,12 +27,13 @@ export async function loadTreatmentEditorTaxonomies(supabase: SupabaseServerClie
 }
 
 export async function loadTreatmentForEditor(supabase: SupabaseServerClient, treatmentId: string) {
-  const [treatmentResult, bookingsResult] = await Promise.all([
+  const [treatmentResult, bookingsResult, treatmentProfessionalsResult] = await Promise.all([
     supabase.from("treatments").select(treatmentSelect).eq("id", treatmentId).single(),
     supabase.from("bookings").select("id", { count: "exact", head: true })
       .eq("treatment_id", treatmentId)
       .in("status", [...OCCUPYING_BOOKING_STATUSES])
       .gte("starts_at", new Date().toISOString()),
+    supabase.from("treatment_professionals").select("professional_id").eq("treatment_id", treatmentId).eq("is_active", true),
   ]);
   if (treatmentResult.error || !treatmentResult.data) return null;
   const row = treatmentResult.data;
@@ -43,6 +44,9 @@ export async function loadTreatmentForEditor(supabase: SupabaseServerClient, tre
     : null;
   return {
     ...row,
+    professional_ids: (treatmentProfessionalsResult.data ?? []).map((item) => item.professional_id).concat(
+      row.professional_id && !(treatmentProfessionalsResult.data ?? []).some((item) => item.professional_id === row.professional_id) ? [row.professional_id] : [],
+    ),
     image_url: imageUrl,
     future_booking_count: bookingsResult.count ?? 0,
     future_booking_count_available: !bookingsResult.error,

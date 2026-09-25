@@ -38,10 +38,11 @@ export interface TreatmentImage {
   height: number;
 }
 
-export type TreatmentSelectionMode = "simple" | "closed_combo";
+export type TreatmentSelectionMode = "simple" | "closed_combo" | "combo_with_extras";
 export type DepilationAudience = "women" | "men" | "shared";
 export type ComboMode = "single_session" | "package";
 export type MonthlySpecialPricingMode = "special_price" | "combo_catalog";
+export type ComboPricingMode = "fixed_price" | "percentage_discount" | "tiered_discount";
 
 export interface DepilationZone {
   id: string;
@@ -61,6 +62,11 @@ export interface TreatmentCombo {
   audience: DepilationAudience;
   mode: ComboMode;
   sessionCount: number;
+  pricingMode: ComboPricingMode;
+  discountPercent: number | null;
+  tierMinItems: number | null;
+  tierDiscountPercent: number | null;
+  allowPublicExtras: boolean;
   fixedPriceCents: number;
   referencePriceCents: number;
   pricePerSessionCents: number;
@@ -68,6 +74,19 @@ export interface TreatmentCombo {
   durationMinutes: number;
   validityDays: number | null;
   zones: readonly DepilationZone[];
+  extras: readonly TreatmentComboExtra[];
+  displayOrder: number;
+  isActive: boolean;
+}
+
+export interface TreatmentComboExtra {
+  id: string;
+  treatmentId: string;
+  name: string;
+  description: string;
+  audience: DepilationAudience;
+  priceCents: number;
+  durationMinutes: number;
   displayOrder: number;
   isActive: boolean;
 }
@@ -77,6 +96,8 @@ export interface Treatment {
   categoryId: string;
   specialtyId: string;
   professionalId: string | null;
+  professionalIds: readonly string[];
+  requiresProfessionalAssignment: boolean;
   name: string;
   slug: string;
   shortDescription: string;
@@ -123,6 +144,7 @@ export interface BookingInitialSelection {
   treatmentId: string;
   monthlySpecialId?: string;
   comboId?: string;
+  extraIds?: readonly string[];
 }
 
 export interface ResolvedBookingSelection extends BookingInitialSelection {
@@ -133,6 +155,10 @@ export interface ResolvedBookingSelection extends BookingInitialSelection {
   comboMode?: ComboMode;
   comboAudience?: DepilationAudience;
   comboZones?: readonly string[];
+  comboExtras?: readonly string[];
+  extraIds?: readonly string[];
+  pricingMode?: ComboPricingMode;
+  discountSummary?: string;
   sessionCount?: number;
   validityDays?: number | null;
   pricePerSessionCents?: number;

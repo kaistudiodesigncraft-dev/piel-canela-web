@@ -27,6 +27,8 @@ export interface AdminTreatmentRow {
   category_id: string;
   specialty_id: string;
   professional_id: string | null;
+  professional_ids: string[];
+  requires_professional_assignment: boolean;
   name: string;
   slug: string;
   short_description: string;
@@ -36,7 +38,7 @@ export interface AdminTreatmentRow {
   duration_minutes: number;
   buffer_minutes: number;
   start_interval_minutes: 15 | 30 | 60;
-  selection_mode: "simple" | "closed_combo";
+  selection_mode: "simple" | "closed_combo" | "combo_with_extras";
   price_cents: number;
   preparation: string | null;
   contraindications: string | null;

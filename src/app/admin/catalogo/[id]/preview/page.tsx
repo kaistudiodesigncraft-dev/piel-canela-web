@@ -13,7 +13,7 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
   const { id } = await params;
   const { supabase } = await requireAdmin();
   const { data: row } = await supabase.from("treatments")
-    .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,category:treatment_categories(id,name,slug,short_description,icon_name,display_order,is_active),professional:professionals(public_name,full_name,is_active)")
+    .select("id,category_id,specialty_id,professional_id,requires_professional_assignment,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,category:treatment_categories(id,name,slug,short_description,icon_name,display_order,is_active),professional:professionals!treatments_professional_id_fkey(public_name,full_name,is_active)")
     .eq("id", id).single();
   if (!row) notFound();
   const categoryRaw = Array.isArray(row.category) ? row.category[0] : row.category;
@@ -34,9 +34,9 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
     isActive: categoryRaw.is_active,
   };
   let combos: TreatmentCombo[] = [];
-  if (row.selection_mode === "closed_combo") {
+  if (row.selection_mode !== "simple") {
     const { data: comboRows, error: combosError } = await supabase.from("treatment_combos")
-      .select("id,treatment_id,name,description,audience,mode,session_count,fixed_price_cents,validity_days,is_active,display_order,zones:treatment_combo_zones(display_order,zone:depilation_zones(id,name,audience,reference_price_cents,duration_minutes,is_active,display_order))")
+      .select("id,treatment_id,name,description,audience,mode,session_count,pricing_mode,discount_percent,tier_min_items,tier_discount_percent,allow_public_extras,fixed_price_cents,validity_days,is_active,display_order,zones:treatment_combo_zones(display_order,zone:depilation_zones(id,name,audience,reference_price_cents,duration_minutes,is_active,display_order))")
       .eq("treatment_id", id)
       .order("display_order");
     if (combosError) throw new Error(`No se pudo preparar la vista previa de combos: ${combosError.code ?? "query"}`);
@@ -63,6 +63,11 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
         audience: combo.audience,
         mode: combo.mode,
         sessionCount: combo.session_count,
+        pricingMode: combo.pricing_mode,
+        discountPercent: combo.discount_percent === null ? null : Number(combo.discount_percent),
+        tierMinItems: combo.tier_min_items,
+        tierDiscountPercent: combo.tier_discount_percent === null ? null : Number(combo.tier_discount_percent),
+        allowPublicExtras: combo.allow_public_extras,
         fixedPriceCents: combo.fixed_price_cents,
         referencePriceCents,
         pricePerSessionCents: Math.round(combo.fixed_price_cents / combo.session_count),
@@ -70,6 +75,7 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
         durationMinutes: zones.reduce((total, zone) => total + zone.durationMinutes, 0),
         validityDays: combo.validity_days,
         zones,
+        extras: [],
         displayOrder: combo.display_order,
         isActive: true,
       } satisfies TreatmentCombo];
@@ -80,6 +86,8 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
     categoryId: row.category_id,
     specialtyId: row.specialty_id,
     professionalId: row.professional_id,
+    professionalIds: row.professional_id ? [row.professional_id] : [],
+    requiresProfessionalAssignment: row.requires_professional_assignment,
     name: row.name,
     slug: row.slug,
     shortDescription: row.short_description,
