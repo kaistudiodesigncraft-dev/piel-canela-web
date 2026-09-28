@@ -158,6 +158,11 @@ async function saveTreatmentImpl(
   const isActive = submitIntent === "publish";
   const isNew = formData.get("isNew") === "true";
   const id = parsed.data.treatmentId;
+  if (!isNew && parsed.data.displayOrder <= 0) {
+    return treatmentFailure("invalid", {
+      displayOrder: ["Usá un número mayor que cero para ordenar un tratamiento existente."],
+    });
+  }
   const [{ data: category }, { data: specialty }] = await Promise.all([
     supabase.from("treatment_categories").select("id,is_active").eq("id", parsed.data.categoryId).single(),
     supabase.from("specialties").select("id,is_active").eq("id", parsed.data.specialtyId).single(),

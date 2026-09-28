@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ConsentManagedInsights } from "@/components/layout/ConsentManagedInsights";
 import "./globals.css";
 
 const monaSans = localFont({
@@ -56,7 +55,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" className={`${monaSans.variable} ${atkinson.variable}`}>
-      <body>{children}<Analytics /><SpeedInsights /></body>
+      <body>{children}<ConsentManagedInsights /></body>
     </html>
   );
 }

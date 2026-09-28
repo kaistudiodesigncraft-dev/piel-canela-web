@@ -51,7 +51,7 @@ export function SiteFooter({ settings, hasMonthlySpecials = false }: SiteFooterP
       </div>
       <div className="site-container site-footer__legal">
         <span>© {new Date().getFullYear()} Piel Canela</span>
-        <span className="site-footer__legal-links"><Link href="/privacidad">Privacidad</Link><Link href="/condiciones-de-reserva">Condiciones de reserva</Link></span>
+        <span className="site-footer__legal-links"><Link href="/privacidad">Privacidad</Link><Link href="/cookies">Cookies</Link><Link href="/condiciones-de-reserva">Condiciones de reserva</Link></span>
         <span>Diseño y producto por Kai Studio</span>
       </div>
     </footer>

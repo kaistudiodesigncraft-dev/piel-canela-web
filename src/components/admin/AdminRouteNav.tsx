@@ -1,11 +1,11 @@
 "use client";
-import { CalendarDays, ContactRound, FilePenLine, HandHeart, PackageCheck, Settings, ShieldCheck, UsersRound, PanelLeftClose, PanelLeftOpen, Menu, X, Clock3, Sparkles, UserRound, MessageCircle } from "lucide-react";
+import { BookOpenText, CalendarDays, ContactRound, FilePenLine, HandHeart, History, PackageCheck, Settings, ShieldCheck, UsersRound, PanelLeftClose, PanelLeftOpen, Menu, X, Clock3, Sparkles, UserRound, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import styles from "./AdminShell.module.css";
 
-type AdminRoute = "operations" | "agenda" | "availability" | "specials" | "catalog" | "packages" | "professionals" | "customers" | "settings" | "content" | "governance" | "account" | "messages";
+type AdminRoute = "operations" | "agenda" | "availability" | "specials" | "catalog" | "packages" | "professionals" | "customers" | "settings" | "content" | "history" | "manual" | "governance" | "account" | "messages";
 const routes: readonly { id: AdminRoute; href: string; label: string; icon: typeof CalendarDays }[] = [
   { id: "operations", href: "/admin?module=today", label: "Hoy", icon: CalendarDays },
   { id: "agenda", href: "/admin?module=agenda", label: "Agenda", icon: CalendarDays },
@@ -17,6 +17,8 @@ const routes: readonly { id: AdminRoute; href: string; label: string; icon: type
   { id: "availability", href: "/admin?module=availability", label: "Disponibilidad", icon: Clock3 },
   { id: "content", href: "/admin/contenido", label: "Contenido", icon: FilePenLine },
   { id: "messages", href: "/admin/mensajes", label: "Mensajes", icon: MessageCircle },
+  { id: "history", href: "/admin/historial", label: "Historial", icon: History },
+  { id: "manual", href: "/admin/manual", label: "Manual", icon: BookOpenText },
   { id: "settings", href: "/admin/configuracion", label: "Configuración", icon: Settings },
   { id: "account", href: "/admin/mi-cuenta", label: "Mi cuenta", icon: UserRound },
   { id: "governance", href: "/admin/seguridad", label: "Accesos y actividad", icon: ShieldCheck },
