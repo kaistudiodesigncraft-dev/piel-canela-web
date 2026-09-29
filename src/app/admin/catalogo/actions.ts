@@ -77,6 +77,55 @@ function operationalFailure(stage: string, code?: string): SaveTreatmentState {
   return { status: "failed", error: "save", incidentId };
 }
 
+function treatmentConstraintFailure(message: string): SaveTreatmentState | null {
+  if (message.includes("published_treatment_requires_active_professional")) {
+    return treatmentFailure("professional", { professionalIds: ["Asigná al menos un profesional activo antes de publicar."] });
+  }
+  if (message.includes("published_treatment_requires_active_combo")) {
+    return treatmentFailure("publishable", { selectionMode: ["Guardá este tratamiento como borrador, cargá y publicá al menos un combo, y después publicá el tratamiento."] });
+  }
+  if (message.includes("published_combo_treatment_requires_feature_enabled")) {
+    return treatmentFailure("publishable", { selectionMode: ["Habilitá el selector público desde la configuración de combos antes de publicar."] });
+  }
+  if (message.includes("simple_treatment_cannot_keep_active_combos")) {
+    return treatmentFailure("publishable", { selectionMode: ["Pausá todos los combos publicados antes de volver al modo simple."] });
+  }
+  if (message.includes("simple_special_requires_price")) {
+    return treatmentFailure("publishable", { selectionMode: ["Actualizá o pausá la promoción de combos antes de volver al modo simple."] });
+  }
+  if (message.includes("closed_combo_special_requires_marketing_mode")) {
+    return treatmentFailure("publishable", { selectionMode: ["Los tratamientos con combos solo pueden usar especiales informativos de combos, sin descuento acumulado."] });
+  }
+  if (message.includes("published_treatment_requires_positive_price")) {
+    return treatmentFailure("publishable", { pricePesos: ["Ingresá un precio mayor que cero para publicar tratamientos simples."] });
+  }
+  if (message.includes("treatment_image_requires_accessible_description")) {
+    return treatmentFailure("image", { imageAlt: ["Describí la imagen con al menos 3 caracteres."] });
+  }
+  if (message.includes("published_treatment_requires_active_category")) {
+    return treatmentFailure("taxonomy", { categoryId: ["Elegí una categoría activa."] });
+  }
+  if (message.includes("published_treatment_requires_active_specialty")) {
+    return treatmentFailure("taxonomy", { specialtyId: ["Elegí una especialidad activa."] });
+  }
+  return null;
+}
+
+async function treatmentMutationFailure(
+  resultError: { code?: string; message: string },
+  options: { isNew?: boolean; id?: string; supabase?: Awaited<ReturnType<typeof requireAdmin>>["supabase"] } = {},
+): Promise<SaveTreatmentState> {
+  const known = treatmentConstraintFailure(resultError.message);
+  if (known) return known;
+  if (options.isNew && resultError.code === "23505" && options.supabase && options.id) {
+    const { data: duplicateSubmission } = await options.supabase.from("treatments").select("id").eq("id", options.id).maybeSingle();
+    if (duplicateSubmission) redirect(`/admin/catalogo/${options.id}?saved=1`);
+  }
+  const reason = resultError.code === "23505" ? "duplicate" : "save";
+  if (reason === "save") return operationalFailure("save", resultError.code);
+  return treatmentFailure(reason, { name: ["Ya existe un tratamiento con esta URL."] });
+}
+
 function schemaFieldErrors(error: z.ZodError) {
   const fields: Record<string, string[]> = {};
   for (const issue of error.issues) {
@@ -285,36 +334,23 @@ async function saveTreatmentImpl(
     return treatmentFailure("invalid", { name: ["El nombre debe contener letras o números para crear la URL."] });
   }
 
+  const shouldStageActivation = isActive && (isNew || !existing?.is_active);
+  const writePayload = shouldStageActivation ? { ...payload, is_active: false } : payload;
   const result = isNew
-    ? await supabase.from("treatments").insert({ id, ...payload })
-    : await supabase.from("treatments").update(payload).eq("id", id);
-  if (result.error) {
-    if (result.error.message.includes("published_treatment_requires_active_combo")) {
-      return treatmentFailure("publishable", { selectionMode: ["Publicá al menos un combo antes de publicar este tratamiento."] });
-    }
-    if (result.error.message.includes("published_combo_treatment_requires_feature_enabled")) {
-      return treatmentFailure("publishable", { selectionMode: ["Habilitá el selector público desde la configuración de combos antes de publicar."] });
-    }
-    if (result.error.message.includes("simple_treatment_cannot_keep_active_combos")) {
-      return treatmentFailure("publishable", { selectionMode: ["Pausá todos los combos publicados antes de volver al modo simple."] });
-    }
-    if (result.error.message.includes("simple_special_requires_price")) {
-      return treatmentFailure("publishable", { selectionMode: ["Actualizá o pausá la promoción de combos antes de volver al modo simple."] });
-    }
-    if (isNew && result.error.code === "23505") {
-      const { data: duplicateSubmission } = await supabase.from("treatments").select("id").eq("id", id).maybeSingle();
-      if (duplicateSubmission) redirect(`/admin/catalogo/${id}?saved=1`);
-    }
-    const reason = result.error.code === "23505" ? "duplicate" : "save";
-    if (reason === "save") return operationalFailure("save", result.error.code);
-    return treatmentFailure(reason, { name: ["Ya existe un tratamiento con esta URL."] });
-  }
+    ? await supabase.from("treatments").insert({ id, ...writePayload })
+    : await supabase.from("treatments").update(writePayload).eq("id", id);
+  if (result.error) return treatmentMutationFailure(result.error, { isNew, id, supabase });
 
   const { error: professionalsError } = await supabase.rpc("save_treatment_professional_assignments", {
     requested_treatment_id: id,
     requested_professional_ids: selectedProfessionalIds,
   });
   if (professionalsError) return operationalFailure("save_professionals", professionalsError.code);
+
+  if (shouldStageActivation) {
+    const activationResult = await supabase.from("treatments").update({ is_active: true }).eq("id", id);
+    if (activationResult.error) return treatmentMutationFailure(activationResult.error);
+  }
 
   revalidatePath("/");
   revalidatePath("/tratamientos");
