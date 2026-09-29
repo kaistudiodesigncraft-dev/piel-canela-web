@@ -1,7 +1,8 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LiveAdminDashboard } from "./LiveAdminDashboard";
-vi.mock("@/app/admin/actions", () => ({ createAvailabilityException: vi.fn(), createManualBooking: vi.fn(), createSpecialty: vi.fn(), deleteAvailabilityException: vi.fn(), saveMonthlySpecial: vi.fn(), signOutAdmin: vi.fn(), toggleSpecialty: vi.fn() }));
+const { getManualBookingSlotsMock } = vi.hoisted(() => ({ getManualBookingSlotsMock: vi.fn() }));
+vi.mock("@/app/admin/actions", () => ({ createAvailabilityException: vi.fn(), createManualBooking: vi.fn(), createSpecialty: vi.fn(), deleteAvailabilityException: vi.fn(), getManualBookingSlots: getManualBookingSlotsMock, saveMonthlySpecial: vi.fn(), signOutAdmin: vi.fn(), toggleSpecialty: vi.fn() }));
 vi.mock("@/app/admin/reservas/actions", () => ({ rescheduleBooking: vi.fn(), saveBookingNotes: vi.fn() }));
 vi.mock("@/components/admin/WeeklyAvailabilityEditor", () => ({ WeeklyAvailabilityEditor: () => <div>Editor semanal</div> }));
 vi.mock("@/components/admin/BookingStatusTransitionForm", () => ({ BookingStatusTransitionForm: () => null }));
@@ -11,6 +12,10 @@ const props = {
   agenda: { query: { view: "day" as const, date: "2026-09-10", status: "all" as const, page: 1 }, range: { startsAt: null, endsAt: null, previousDate: "2026-09-09", nextDate: "2026-09-11", label: "Hoy" }, total: 0, pageSize: 25, summary: { today: 0, attention: 0, confirmed: 0 } },
 };
 describe("Reception modules", () => {
+  beforeEach(() => {
+    getManualBookingSlotsMock.mockReturnValue(new Promise(() => undefined));
+  });
+
   it("separates availability from commercial and reservation forms", () => {
     render(<LiveAdminDashboard {...props} feedback={{ module: "availability" }} />);
     expect(screen.getByText("Editor semanal")).toBeInTheDocument();

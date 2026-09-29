@@ -44,6 +44,12 @@ const manualBookingSchema = z.object({
   customerNotes: z.string().trim().max(240).optional(),
   internalNotes: z.string().trim().max(1000).optional(),
 });
+const manualBookingAvailabilitySchema = z.object({
+  treatmentId: z.string().uuid(),
+  comboId: z.string().uuid().optional(),
+  professionalId: z.string().uuid().optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
 const availabilityExceptionSchema = z.object({
   specialtyId: z.string().uuid(),
   kind: z.enum(["open", "blocked"]),
@@ -241,6 +247,41 @@ export async function createManualBooking(formData: FormData) {
   }
   revalidatePath("/admin");
   redirect("/admin?manualBookingSaved=1#asignar");
+}
+
+export type ManualBookingSlotsResult =
+  | { ok: true; slots: { startsAt: string; endsAt: string }[] }
+  | { ok: false; reason: "invalid" | "unavailable" | "server" };
+
+export async function getManualBookingSlots(input: unknown): Promise<ManualBookingSlotsResult> {
+  const { supabase } = await requireAdmin();
+  const parsed = manualBookingAvailabilitySchema.safeParse(input);
+  if (!parsed.success) return { ok: false, reason: "invalid" };
+  const payload = {
+    requested_treatment_id: parsed.data.treatmentId,
+    requested_combo_id: parsed.data.comboId ?? null,
+    requested_date: parsed.data.date,
+    requested_extra_ids: [],
+    requested_professional_id: parsed.data.professionalId ?? null,
+  };
+  let { data, error } = await supabase.rpc("get_admin_available_slots_for_selection", payload);
+  if (error && !parsed.data.professionalId && (error.code === "PGRST202" || error.message.includes("requested_professional_id"))) {
+    const fallbackPayload = {
+      requested_treatment_id: parsed.data.treatmentId,
+      requested_combo_id: parsed.data.comboId ?? null,
+      requested_date: parsed.data.date,
+      requested_extra_ids: [],
+    };
+    ({ data, error } = await supabase.rpc("get_available_slots_for_selection_v2", fallbackPayload));
+  }
+  if (error) return { ok: false, reason: error.message.includes("not_available") ? "unavailable" : "server" };
+  return {
+    ok: true,
+    slots: ((data ?? []) as { starts_at: string; ends_at: string }[]).map((slot) => ({
+      startsAt: slot.starts_at,
+      endsAt: slot.ends_at,
+    })),
+  };
 }
 
 export async function updateBookingStatus(formData: FormData) {

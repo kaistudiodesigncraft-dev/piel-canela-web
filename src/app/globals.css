@@ -3974,6 +3974,67 @@ svg {
   flex: 0 0 auto;
 }
 
+.admin-slot-picker {
+  display: grid;
+  gap: 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--color-white) 70%, transparent);
+  padding: 1rem;
+}
+
+.admin-slot-picker__heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-slot-picker__heading span,
+.admin-slot-picker__message {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.86rem;
+}
+
+.admin-slot-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(5.25rem, 1fr));
+  gap: 0.6rem;
+}
+
+.admin-slot-option {
+  display: flex;
+  min-height: 2.8rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--color-border) 92%, transparent);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 720;
+  transition: border-color 180ms ease, background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.admin-slot-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.admin-slot-option:has(input:focus-visible) {
+  outline: 3px solid color-mix(in srgb, var(--color-action) 24%, transparent);
+  outline-offset: 3px;
+}
+
+.admin-slot-option:is(:hover, .is-selected) {
+  border-color: var(--color-action);
+  background: var(--color-action);
+  color: var(--color-action-contrast);
+  transform: translateY(-1px);
+}
+
 .admin-check {
   display: flex !important;
   min-height: 2.9rem;

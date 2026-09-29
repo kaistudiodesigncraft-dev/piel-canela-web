@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AdminRouteNav } from "@/components/admin/AdminRouteNav";
 import { BookingStatusTransitionForm } from "@/components/admin/BookingStatusTransitionForm";
 import { WeeklyAvailabilityEditor } from "@/components/admin/WeeklyAvailabilityEditor";
@@ -31,6 +31,7 @@ import {
   createManualBooking,
   createSpecialty,
   deleteAvailabilityException,
+  getManualBookingSlots,
   saveMonthlySpecial,
   signOutAdmin,
   toggleSpecialty,
@@ -203,6 +204,15 @@ function bookingDate(value: string) {
   }).format(new Date(value));
 }
 
+function bookingTime(value: string) {
+  return new Intl.DateTimeFormat("es-AR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "America/Argentina/Cordoba",
+  }).format(new Date(value));
+}
+
 function Feedback({ show, error, success, errorText }: { show: boolean; error?: string; success: string; errorText: string }) {
   if (show) return <p className="form-message" role="status">{success}</p>;
   if (error) return <p className="form-message form-message--error" role="alert">{errorText}</p>;
@@ -232,11 +242,19 @@ export function LiveAdminDashboard({
       : Object.keys(feedback).some((key) => /^(rule|exception|specialty|availability)/.test(key)) ? "availability" : "today";
   const activeModule = ["today", "agenda", "availability", "specials"].includes(feedback.module ?? "") ? feedback.module : feedbackModule;
   const show = (section: "today" | "agenda" | "availability" | "specials") => activeModule === section;
+  const referenceTimestamp = new Date(referenceTime).getTime();
+  const defaultStart = toArgentinaDateTimeInput(new Date(referenceTimestamp + 60 * 60 * 1000).toISOString());
+  const defaultEnd = toArgentinaDateTimeInput(new Date(referenceTimestamp + 2 * 60 * 60 * 1000).toISOString());
   const [manualTreatmentId, setManualTreatmentId] = useState(treatments[0]?.id ?? "");
   const [manualComboId, setManualComboId] = useState("");
+  const [manualProfessionalId, setManualProfessionalId] = useState("");
+  const [manualDate, setManualDate] = useState(defaultStart.slice(0, 10));
+  const [manualStartsAt, setManualStartsAt] = useState("");
+  const [manualSlots, setManualSlots] = useState<{ startsAt: string; endsAt: string }[]>([]);
+  const [manualSlotsLoading, setManualSlotsLoading] = useState(false);
+  const [manualSlotsError, setManualSlotsError] = useState(false);
   const specialtyName = useMemo(() => new Map(specialties.map((item) => [item.id, item.name])), [specialties]);
   const treatmentName = useMemo(() => new Map(treatments.map((item) => [item.id, item.name])), [treatments]);
-  const referenceTimestamp = new Date(referenceTime).getTime();
   const filteredBookings = bookings;
   const activeSpecials = monthlySpecials.filter((special) => special.is_active);
   const manualSpecials = activeSpecials.filter((special) => special.treatment_id === manualTreatmentId);
@@ -252,8 +270,43 @@ export function LiveAdminDashboard({
       ),
     )
     : [];
-  const defaultStart = toArgentinaDateTimeInput(new Date(referenceTimestamp + 60 * 60 * 1000).toISOString());
-  const defaultEnd = toArgentinaDateTimeInput(new Date(referenceTimestamp + 2 * 60 * 60 * 1000).toISOString());
+  const clearManualSlotSelection = () => {
+    setManualStartsAt("");
+    setManualSlots([]);
+    setManualSlotsError(false);
+    setManualSlotsLoading(false);
+  };
+  useEffect(() => {
+    let isActive = true;
+    if (!manualTreatmentId || !manualDate || (manualTreatment?.selection_mode !== "simple" && !manualComboId)) {
+      return () => { isActive = false; };
+    }
+    void (async () => {
+      setManualSlotsLoading(true);
+      setManualSlotsError(false);
+      setManualSlots([]);
+      const result = await getManualBookingSlots({
+        treatmentId: manualTreatmentId,
+        comboId: manualComboId || undefined,
+        professionalId: manualProfessionalId || undefined,
+        date: manualDate,
+      });
+      if (isActive) {
+        if (result.ok) {
+          setManualSlots(result.slots);
+        } else {
+          setManualSlotsError(true);
+        }
+        setManualSlotsLoading(false);
+      }
+    })().catch(() => {
+      if (isActive) {
+        setManualSlotsError(true);
+        setManualSlotsLoading(false);
+      }
+    });
+    return () => { isActive = false; };
+  }, [manualComboId, manualDate, manualProfessionalId, manualTreatment?.selection_mode, manualTreatmentId]);
   const totalPages = Math.max(1, Math.ceil(agenda.total / agenda.pageSize));
 
   return (
@@ -351,14 +404,26 @@ export function LiveAdminDashboard({
         <Feedback show={feedback.manualBookingSaved === "1"} error={feedback.manualBookingError} success="Turno manual creado y agregado a la agenda." errorText={feedback.manualBookingError === "conflict" ? "No hay un profesional disponible en ese horario para la especialidad seleccionada." : "No se pudo crear el turno manual."} />
         <form action={createManualBooking} className="admin-form admin-form--wide">
           <div className="admin-form-grid admin-form-grid--3">
-            <label>Tratamiento<select name="treatmentId" required value={manualTreatmentId} onChange={(event) => { setManualTreatmentId(event.target.value); setManualComboId(""); }}>{treatments.map((treatment) => <option key={treatment.id} value={treatment.id}>{treatment.name} · {specialtyName.get(treatment.specialty_id)}</option>)}</select></label>
-            {manualTreatment && manualTreatment.selection_mode !== "simple" ? <label>Combo<select name="comboId" value={manualComboId} onChange={(event) => setManualComboId(event.target.value)} required><option value="">Seleccionar combo</option>{manualCombos.map((combo) => <option key={combo.id} value={combo.id}>{combo.name} · {combo.session_count} {combo.session_count === 1 ? "sesión" : "sesiones"} · {formatPrice(combo.fixed_price_cents)}</option>)}</select></label> : <label>Especial del mes<select name="monthlySpecialId" defaultValue=""><option value="">Sin promoción</option>{manualSpecials.map((special) => <option key={special.id} value={special.id}>{special.title}</option>)}</select></label>}
-            <label>Profesional<select name="professionalId" defaultValue=""><option value="">Autoasignar disponible</option>{manualProfessionals.map((professional) => <option key={professional.id} value={professional.id}>{professional.public_name || professional.full_name}</option>)}</select><small>Si elegís una persona, la base rechaza el turno si ya tiene otra reserva o bloqueo en ese horario.</small></label>
-            <label>Fecha y horario<input name="startsAt" type="datetime-local" min={defaultStart.slice(0, 10) + "T00:00"} defaultValue={defaultStart} required /></label>
+            <label>Tratamiento<select name="treatmentId" required value={manualTreatmentId} onChange={(event) => { setManualTreatmentId(event.target.value); setManualComboId(""); setManualProfessionalId(""); clearManualSlotSelection(); }}>{treatments.map((treatment) => <option key={treatment.id} value={treatment.id}>{treatment.name} · {specialtyName.get(treatment.specialty_id)}</option>)}</select></label>
+            {manualTreatment && manualTreatment.selection_mode !== "simple" ? <label>Combo<select name="comboId" value={manualComboId} onChange={(event) => { setManualComboId(event.target.value); clearManualSlotSelection(); }} required><option value="">Seleccionar combo</option>{manualCombos.map((combo) => <option key={combo.id} value={combo.id}>{combo.name} · {combo.session_count} {combo.session_count === 1 ? "sesión" : "sesiones"} · {formatPrice(combo.fixed_price_cents)}</option>)}</select></label> : <label>Especial del mes<select name="monthlySpecialId" defaultValue=""><option value="">Sin promoción</option>{manualSpecials.map((special) => <option key={special.id} value={special.id}>{special.title}</option>)}</select></label>}
+            <label>Profesional<select name="professionalId" value={manualProfessionalId} onChange={(event) => { setManualProfessionalId(event.target.value); clearManualSlotSelection(); }}><option value="">Autoasignar disponible</option>{manualProfessionals.map((professional) => <option key={professional.id} value={professional.id}>{professional.public_name || professional.full_name}</option>)}</select><small>Si elegís una persona, solo se muestran horarios donde está disponible.</small></label>
+            <label>Fecha<input name="manualDate" type="date" min={defaultStart.slice(0, 10)} value={manualDate} onChange={(event) => { setManualDate(event.target.value); clearManualSlotSelection(); }} required /></label>
+          </div>
+          <input type="hidden" name="startsAt" value={manualStartsAt} />
+          <div className="admin-slot-picker" role="group" aria-label="Horarios disponibles para el turno manual">
+            <div className="admin-slot-picker__heading">
+              <strong>Horarios disponibles</strong>
+              <span>{manualProfessionalId ? "Filtrados por profesional elegido" : "Autoasignación al primer profesional disponible"}</span>
+            </div>
+            {manualTreatment?.selection_mode !== "simple" && !manualComboId ? <p className="admin-slot-picker__message">Elegí un combo para consultar horarios.</p> : null}
+            {manualSlotsLoading ? <p className="admin-slot-picker__message" role="status">Consultando disponibilidad real...</p> : null}
+            {manualSlotsError ? <p className="form-message form-message--error" role="alert">No pudimos consultar horarios. Probá otra fecha o usá autoasignación.</p> : null}
+            {!manualSlotsLoading && !manualSlotsError && (!manualTreatment || manualTreatment.selection_mode === "simple" || manualComboId) && manualSlots.length === 0 ? <p className="admin-slot-picker__message">No hay horarios disponibles para esa combinación.</p> : null}
+            {manualSlots.length > 0 ? <div className="admin-slot-picker__grid">{manualSlots.map((slot) => <label key={slot.startsAt} className={`admin-slot-option${manualStartsAt === slot.startsAt ? " is-selected" : ""}`}><input type="radio" name="manualSlot" checked={manualStartsAt === slot.startsAt} onChange={() => setManualStartsAt(slot.startsAt)} /><span>{bookingTime(slot.startsAt)}</span></label>)}</div> : null}
           </div>
           <div className="admin-form-grid admin-form-grid--3"><label>Nombre y apellido<input name="fullName" minLength={2} maxLength={100} required /></label><label>WhatsApp<input name="phone" type="tel" minLength={8} maxLength={30} required /></label><label>Correo opcional<input name="email" type="email" maxLength={180} /></label></div>
           <div className="admin-form-grid"><label>Estado inicial<select name="status" defaultValue="confirmed"><option value="pending">Pendiente</option><option value="awaiting_deposit">Esperando seña</option><option value="confirmed">Confirmada</option></select></label><label>Nota del cliente<textarea name="customerNotes" rows={3} maxLength={240} /></label><label>Nota interna<textarea name="internalNotes" rows={3} maxLength={1000} /></label></div>
-          <div className="admin-form-footer"><p>La base valida la disponibilidad, los bloqueos y la capacidad de la especialidad antes de guardar.</p><button className="button button--primary" type="submit"><CheckCircle2 aria-hidden="true" strokeWidth={1.75} />Guardar turno</button></div>
+          <div className="admin-form-footer"><p>La base vuelve a validar disponibilidad, bloqueos y ocupación profesional antes de guardar.</p><button className="button button--primary" type="submit" disabled={!manualStartsAt}><CheckCircle2 aria-hidden="true" strokeWidth={1.75} />Guardar turno</button></div>
         </form>
       </section> : null}
 
