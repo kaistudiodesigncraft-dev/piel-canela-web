@@ -7,7 +7,7 @@ vi.mock("@/components/admin/WeeklyAvailabilityEditor", () => ({ WeeklyAvailabili
 vi.mock("@/components/admin/BookingStatusTransitionForm", () => ({ BookingStatusTransitionForm: () => null }));
 const props = {
   adminName: "Recepción", canManageAccess: false, referenceTime: "2026-09-10T12:00:00Z",
-  specialties: [], rules: [], exceptions: [], treatments: [], treatmentCombos: [], monthlySpecials: [], bookings: [],
+  specialties: [], rules: [], exceptions: [], treatments: [], treatmentCombos: [], professionals: [], monthlySpecials: [], bookings: [],
   agenda: { query: { view: "day" as const, date: "2026-09-10", status: "all" as const, page: 1 }, range: { startsAt: null, endsAt: null, previousDate: "2026-09-09", nextDate: "2026-09-11", label: "Hoy" }, total: 0, pageSize: 25, summary: { today: 0, attention: 0, confirmed: 0 } },
 };
 describe("Reception modules", () => {
@@ -28,5 +28,20 @@ describe("Reception modules", () => {
     render(<LiveAdminDashboard {...props} feedback={{ module: "today" }} unavailable={{ summary: true }} />);
     expect(screen.queryByRole("region", { name: "Resumen operativo" })).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Agenda y reservas" })).toBeInTheDocument();
+  });
+  it("offers auto assignment and eligible professionals in manual booking", () => {
+    render(<LiveAdminDashboard
+      {...props}
+      feedback={{ module: "agenda" }}
+      specialties={[{ id: "specialty", name: "Estética", slug: "estetica", description: "", display_order: 1, is_active: true }]}
+      treatments={[{ id: "treatment", name: "Depilación", specialty_id: "specialty", duration_minutes: 30, buffer_minutes: 10, start_interval_minutes: 15, selection_mode: "simple", price_cents: 10000, is_active: true }]}
+      professionals={[
+        { id: "professional-a", full_name: "Agustina", public_name: "Agustina Spertino", specialty_id: null, is_active: true, display_order: 1, specialty_ids: [], treatment_ids: ["treatment"] },
+        { id: "professional-b", full_name: "Melina", public_name: null, specialty_id: "other", is_active: true, display_order: 2, specialty_ids: [], treatment_ids: [] },
+      ]}
+    />);
+    expect(screen.getByRole("combobox", { name: /profesional/i })).toHaveTextContent("Autoasignar disponible");
+    expect(screen.getByRole("option", { name: "Agustina Spertino" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Melina" })).not.toBeInTheDocument();
   });
 });

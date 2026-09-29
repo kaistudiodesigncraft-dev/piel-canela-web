@@ -35,6 +35,7 @@ const manualBookingSchema = z.object({
   treatmentId: z.string().uuid(),
   comboId: z.string().uuid().optional(),
   monthlySpecialId: z.string().uuid().optional(),
+  professionalId: z.string().uuid().optional(),
   startsAt: z.string(),
   status: initialBookingStatusSchema,
   fullName: z.string().trim().min(2).max(100),
@@ -206,6 +207,7 @@ export async function createManualBooking(formData: FormData) {
     treatmentId: formData.get("treatmentId"),
     comboId: formData.get("comboId") || undefined,
     monthlySpecialId: formData.get("monthlySpecialId") || undefined,
+    professionalId: formData.get("professionalId") || undefined,
     startsAt: formData.get("startsAt"), status: formData.get("status"),
     fullName: formData.get("fullName"), phone: formData.get("phone"),
     email: formData.get("email") || undefined,
@@ -214,7 +216,7 @@ export async function createManualBooking(formData: FormData) {
   });
   const startsAt = parsed.success ? argentinaLocalDateTimeToIso(parsed.data.startsAt) : null;
   if (!parsed.success || !startsAt) redirect("/admin?manualBookingError=invalid#asignar");
-  const { error } = await supabase.rpc("create_admin_booking_for_selection", {
+  const bookingPayload = {
     requested_treatment_id: parsed.data.treatmentId,
     requested_combo_id: parsed.data.comboId ?? null,
     requested_monthly_special_id: parsed.data.monthlySpecialId ?? null,
@@ -226,7 +228,13 @@ export async function createManualBooking(formData: FormData) {
     customer_email: parsed.data.email ?? "",
     customer_notes: parsed.data.customerNotes ?? "",
     internal_notes: parsed.data.internalNotes ?? "",
-  });
+    requested_professional_id: parsed.data.professionalId ?? null,
+  };
+  let { error } = await supabase.rpc("create_admin_booking_for_selection", bookingPayload);
+  if (error && !parsed.data.professionalId && (error.code === "PGRST202" || error.message.includes("requested_professional_id"))) {
+    const legacyPayload = Object.fromEntries(Object.entries(bookingPayload).filter(([key]) => key !== "requested_professional_id"));
+    ({ error } = await supabase.rpc("create_admin_booking_for_selection", legacyPayload));
+  }
   if (error) {
     const reason = error.message.includes("slot_not_available") ? "conflict" : "save";
     redirect(`/admin?manualBookingError=${reason}#asignar`);

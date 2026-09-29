@@ -81,6 +81,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     exceptionsResult,
     treatmentsResult,
     combosResult,
+    professionalsResult,
+    treatmentProfessionalsResult,
+    professionalSpecialtiesResult,
     specialsResult,
     bookingsResult,
     todayCountResult,
@@ -92,6 +95,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     supabase.from("availability_exceptions").select("id,specialty_id,kind,starts_at,ends_at,public_reason,internal_reason").gte("ends_at", nowIso).order("starts_at").limit(40),
     supabase.from("treatments").select("id,name,specialty_id,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,price_cents,is_active").eq("is_active", true).order("name"),
     supabase.from("treatment_combos").select("id,treatment_id,name,mode,session_count,fixed_price_cents,is_active").eq("is_active", true).order("display_order"),
+    supabase.from("professionals").select("id,full_name,public_name,specialty_id,is_active,display_order").eq("is_active", true).order("display_order").order("full_name"),
+    supabase.from("treatment_professionals").select("treatment_id,professional_id").eq("is_active", true),
+    supabase.from("professional_specialties").select("professional_id,specialty_id"),
     supabase.from("monthly_specials").select("id,treatment_id,title,short_description,detail,image_path,image_alt,pricing_mode,special_price_cents,reference_price_cents,starts_at,ends_at,terms,is_active,display_order").order("display_order"),
     bookingsRequest,
     supabase.from("bookings").select("id", { count: "exact", head: true })
@@ -107,7 +113,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const failures = [
     ["Especialidades", specialtiesResult.error], ["Horarios", rulesResult.error],
     ["Excepciones", exceptionsResult.error], ["Tratamientos", treatmentsResult.error],
-    ["Combos", combosResult.error], ["Especiales", specialsResult.error],
+    ["Combos", combosResult.error], ["Profesionales", professionalsResult.error ?? treatmentProfessionalsResult.error ?? professionalSpecialtiesResult.error],
+    ["Especiales", specialsResult.error],
     ["Reservas", bookingsResult.error ?? searchError], ["Resumen de hoy", todayCountResult.error],
     ["Pendientes", attentionCountResult.error], ["Confirmadas", confirmedCountResult.error],
   ] as const;
@@ -171,6 +178,24 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       ? special.image_path
       : supabase.storage.from("treatment-media").getPublicUrl(special.image_path).data.publicUrl,
   }));
+  const treatmentIdsByProfessional = new Map<string, string[]>();
+  for (const row of treatmentProfessionalsResult.data ?? []) {
+    treatmentIdsByProfessional.set(row.professional_id, [...(treatmentIdsByProfessional.get(row.professional_id) ?? []), row.treatment_id]);
+  }
+  const specialtyIdsByProfessional = new Map<string, string[]>();
+  for (const row of professionalSpecialtiesResult.data ?? []) {
+    specialtyIdsByProfessional.set(row.professional_id, [...(specialtyIdsByProfessional.get(row.professional_id) ?? []), row.specialty_id]);
+  }
+  const professionals = (professionalsResult.data ?? []).map((professional) => ({
+    ...professional,
+    treatment_ids: treatmentIdsByProfessional.get(professional.id) ?? [],
+    specialty_ids: [
+      ...new Set([
+        ...(specialtyIdsByProfessional.get(professional.id) ?? []),
+        ...(professional.specialty_id ? [professional.specialty_id] : []),
+      ]),
+    ],
+  }));
 
   return (
     <LiveAdminDashboard
@@ -182,6 +207,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       exceptions={exceptionsResult.data ?? []}
       treatments={treatmentsResult.data ?? []}
       treatmentCombos={combosResult.data ?? []}
+      professionals={professionals}
       monthlySpecials={specials}
       bookings={bookings}
       agenda={{
@@ -200,7 +226,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       supportCode={warnings.length ? correlationId : undefined}
       unavailable={{
         bookings: Boolean(bookingsResult.error || searchError),
-        manual: Boolean(treatmentsResult.error || specialtiesResult.error || combosResult.error || specialsResult.error),
+        manual: Boolean(treatmentsResult.error || specialtiesResult.error || combosResult.error || professionalsResult.error || treatmentProfessionalsResult.error || professionalSpecialtiesResult.error || specialsResult.error),
         availability: Boolean(specialtiesResult.error || rulesResult.error || treatmentsResult.error),
         exceptions: Boolean(specialtiesResult.error || exceptionsResult.error),
         specialties: Boolean(specialtiesResult.error),

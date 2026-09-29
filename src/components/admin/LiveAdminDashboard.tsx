@@ -104,6 +104,17 @@ interface TreatmentComboRow {
   is_active: boolean;
 }
 
+interface ProfessionalOptionRow {
+  id: string;
+  full_name: string;
+  public_name: string | null;
+  specialty_id: string | null;
+  is_active: boolean;
+  display_order: number;
+  specialty_ids: string[];
+  treatment_ids: string[];
+}
+
 interface MonthlySpecialRow {
   id: string;
   treatment_id: string;
@@ -168,6 +179,7 @@ interface LiveAdminDashboardProps {
   exceptions: AvailabilityExceptionRow[];
   treatments: TreatmentRow[];
   treatmentCombos: TreatmentComboRow[];
+  professionals: ProfessionalOptionRow[];
   monthlySpecials: MonthlySpecialRow[];
   bookings: AdminBookingRow[];
   agenda: {
@@ -206,6 +218,7 @@ export function LiveAdminDashboard({
   exceptions,
   treatments,
   treatmentCombos,
+  professionals,
   monthlySpecials,
   bookings,
   agenda,
@@ -229,6 +242,16 @@ export function LiveAdminDashboard({
   const manualSpecials = activeSpecials.filter((special) => special.treatment_id === manualTreatmentId);
   const manualTreatment = treatments.find((treatment) => treatment.id === manualTreatmentId);
   const manualCombos = treatmentCombos.filter((combo) => combo.treatment_id === manualTreatmentId && combo.is_active);
+  const manualProfessionals = manualTreatment
+    ? professionals.filter((professional) =>
+      professional.is_active
+      && (
+        professional.treatment_ids.includes(manualTreatment.id)
+        || professional.specialty_ids.includes(manualTreatment.specialty_id)
+        || professional.specialty_id === manualTreatment.specialty_id
+      ),
+    )
+    : [];
   const defaultStart = toArgentinaDateTimeInput(new Date(referenceTimestamp + 60 * 60 * 1000).toISOString());
   const defaultEnd = toArgentinaDateTimeInput(new Date(referenceTimestamp + 2 * 60 * 60 * 1000).toISOString());
   const totalPages = Math.max(1, Math.ceil(agenda.total / agenda.pageSize));
@@ -330,6 +353,7 @@ export function LiveAdminDashboard({
           <div className="admin-form-grid admin-form-grid--3">
             <label>Tratamiento<select name="treatmentId" required value={manualTreatmentId} onChange={(event) => { setManualTreatmentId(event.target.value); setManualComboId(""); }}>{treatments.map((treatment) => <option key={treatment.id} value={treatment.id}>{treatment.name} · {specialtyName.get(treatment.specialty_id)}</option>)}</select></label>
             {manualTreatment && manualTreatment.selection_mode !== "simple" ? <label>Combo<select name="comboId" value={manualComboId} onChange={(event) => setManualComboId(event.target.value)} required><option value="">Seleccionar combo</option>{manualCombos.map((combo) => <option key={combo.id} value={combo.id}>{combo.name} · {combo.session_count} {combo.session_count === 1 ? "sesión" : "sesiones"} · {formatPrice(combo.fixed_price_cents)}</option>)}</select></label> : <label>Especial del mes<select name="monthlySpecialId" defaultValue=""><option value="">Sin promoción</option>{manualSpecials.map((special) => <option key={special.id} value={special.id}>{special.title}</option>)}</select></label>}
+            <label>Profesional<select name="professionalId" defaultValue=""><option value="">Autoasignar disponible</option>{manualProfessionals.map((professional) => <option key={professional.id} value={professional.id}>{professional.public_name || professional.full_name}</option>)}</select><small>Si elegís una persona, la base rechaza el turno si ya tiene otra reserva o bloqueo en ese horario.</small></label>
             <label>Fecha y horario<input name="startsAt" type="datetime-local" min={defaultStart.slice(0, 10) + "T00:00"} defaultValue={defaultStart} required /></label>
           </div>
           <div className="admin-form-grid admin-form-grid--3"><label>Nombre y apellido<input name="fullName" minLength={2} maxLength={100} required /></label><label>WhatsApp<input name="phone" type="tel" minLength={8} maxLength={30} required /></label><label>Correo opcional<input name="email" type="email" maxLength={180} /></label></div>

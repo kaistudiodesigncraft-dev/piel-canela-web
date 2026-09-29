@@ -5594,6 +5594,31 @@ svg {
 .admin-field-note--prominent span { color: var(--color-text-muted); font-weight: 500; }
 .depilation-admin { display: grid; gap: 1.5rem; }
 .depilation-feature-control > div { max-width: 48rem; }
+.depilation-admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium, 0.75rem);
+  background: color-mix(in srgb, var(--color-bone) 72%, white);
+}
+.depilation-admin-tabs a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.9rem;
+  border-radius: var(--radius-small, 0.5rem);
+  color: var(--color-text);
+  font-weight: 750;
+  text-decoration: none;
+}
+.depilation-admin-tabs a:hover,
+.depilation-admin-tabs a:focus-visible {
+  color: var(--color-action);
+  background: white;
+}
 .depilation-admin-list,
 .package-admin-list { display: grid; gap: 0.85rem; margin-top: 1rem; }
 .depilation-admin-list .admin-disclosure > summary { min-height: 64px; }
