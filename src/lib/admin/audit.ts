@@ -18,9 +18,17 @@ export interface OperationalAuditRecord {
   record_id: string | null;
   action: AuditAction;
   changed_fields: string[];
+  field_changes?: AuditFieldChange[];
   entity_reference: string | null;
   is_restorable: boolean;
   created_at: string;
+}
+
+export interface AuditFieldChange {
+  key: string;
+  before: unknown;
+  after: unknown;
+  isPrivate?: boolean;
 }
 
 export const AUDIT_TABLE_LABELS: Record<string, string> = {
@@ -111,6 +119,46 @@ export function auditChangedFields(record: AuditRecord | OperationalAuditRecord)
     .filter((key) => !ignoredFields.has(key))
     .filter((key) => record.action !== "update" || comparable(before[key]) !== comparable(after[key]))
     .map(fieldDescriptor);
+}
+
+function displayAuditValue(value: unknown) {
+  if (value === null || value === undefined) return "Vacío";
+  if (typeof value === "boolean") return value ? "Sí" : "No";
+  if (typeof value === "number") return new Intl.NumberFormat("es-AR").format(value);
+  if (typeof value === "string") {
+    if (!value.trim()) return "Vacío";
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)) {
+      return "Referencia vinculada";
+    }
+    return value.length > 120 ? `${value.slice(0, 117)}…` : value;
+  }
+  if (Array.isArray(value)) return value.length === 0 ? "Sin elementos" : `${value.length} elementos`;
+  return "Valor técnico actualizado";
+}
+
+export function auditFieldComparisons(record: OperationalAuditRecord) {
+  if (!Array.isArray(record.field_changes) || record.field_changes.length === 0) {
+    return auditChangedFields(record).map((field) => ({
+      ...field,
+      before: "",
+      after: field.isPrivate ? "Contenido protegido actualizado" : record.action === "insert" ? "Definido" : record.action === "delete" ? "Eliminado" : "Actualizado",
+      hasValues: false,
+    }));
+  }
+
+  return record.field_changes
+    .filter((field) => !ignoredFields.has(field.key))
+    .map((field) => {
+      const descriptor = fieldDescriptor(field.key);
+      const isPrivate = descriptor.isPrivate || field.isPrivate;
+      return {
+        ...descriptor,
+        isPrivate,
+        before: isPrivate ? "Contenido protegido" : displayAuditValue(field.before),
+        after: isPrivate ? "Contenido protegido" : displayAuditValue(field.after),
+        hasValues: !isPrivate,
+      };
+    });
 }
 
 export function auditEntityReference(record: AuditRecord | OperationalAuditRecord) {

@@ -7,8 +7,8 @@ import { AdminSubmitButton } from "@/components/admin/AdminSubmitButton";
 import {
   AUDIT_ACTION_LABELS,
   AUDIT_TABLE_LABELS,
-  auditChangedFields,
   auditEntityReference,
+  auditFieldComparisons,
   auditSearchText,
   type AuditAction,
   type OperationalAuditRecord,
@@ -111,7 +111,7 @@ export function AdminHistory({
         <div className="admin-activity-list">
           {filteredEvents.map((event) => {
             const actor = profileName(profiles, event.actor_id);
-            const fields = auditChangedFields(event);
+            const fields = auditFieldComparisons(event);
             const reference = auditEntityReference(event);
             const restorable = canRestore(event);
             return (
@@ -124,7 +124,7 @@ export function AdminHistory({
                 </summary>
                 <div className="admin-activity-item__body">
                   {fields.length === 0 ? <p>El evento no contiene campos públicos para mostrar.</p> : (
-                    <ul>{fields.map((field) => <li key={field.key}><strong>{field.label}</strong><span>{field.isPrivate ? "Contenido protegido actualizado" : event.action === "insert" ? "Definido" : event.action === "delete" ? "Eliminado" : "Actualizado"}</span></li>)}</ul>
+                    <ul>{fields.map((field) => <li key={field.key}><strong>{field.label}</strong><span>{field.hasValues ? `${field.before} → ${field.after}` : field.after}</span></li>)}</ul>
                   )}
                   <small>Identificador: {event.record_id ?? "sin referencia"}</small>
                   {restorable ? (
