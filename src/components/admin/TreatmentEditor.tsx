@@ -169,6 +169,7 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
       const target = event.target instanceof Element ? event.target.closest("a[href]") : null;
       if (!(target instanceof HTMLAnchorElement) || target.target === "_blank") return;
       const destination = new URL(target.href, window.location.href);
+      if (destination.pathname === window.location.pathname && destination.search === window.location.search) return;
       if (destination.origin !== window.location.origin) return;
       if (!window.confirm("Hay cambios sin guardar. ¿Querés salir y descartarlos?")) {
         event.preventDefault();
@@ -282,8 +283,11 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
         <input type="hidden" name="isNew" value={String(isNew)} />
         <input type="hidden" id={`${formId}-imagePath`} name="imagePath" value={imagePath} />
         <TreatmentActionFeedback state={actionState} formId={formId} />
+        <nav className="treatment-editor-nav" aria-label="Secciones del tratamiento">
+          <a href="#treatment-information">Información</a><a href="#treatment-scheduling">Agenda y precio</a><a href="#treatment-image">Imagen</a><a href="#treatment-publication">Publicación</a>
+        </nav>
 
-        <fieldset>
+        <fieldset id="treatment-information">
           <legend>Información pública</legend>
           <div className="admin-form-grid admin-form-grid--3">
             <label htmlFor={`${formId}-name`}>Nombre<input id={`${formId}-name`} name="name" defaultValue={treatment?.name ?? ""} minLength={2} maxLength={120} required aria-invalid={Boolean(fieldError("name")) || undefined} aria-describedby={fieldError("name") ? `${formId}-name-error` : undefined} /><FieldError id={`${formId}-name-error`} messages={fieldError("name")} /></label>
@@ -302,8 +306,8 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
           </div>
         </fieldset>
 
-        <fieldset>
-          <legend>Operación y precio</legend>
+        <fieldset id="treatment-scheduling">
+          <legend>Agenda y precio</legend>
           <div className="admin-selection-mode">
             <label htmlFor={`${formId}-selectionMode`}>Forma de reserva
               <select id={`${formId}-selectionMode`} name="selectionMode" value={selectionMode} onChange={(event) => setSelectionMode(event.target.value as "simple" | "closed_combo" | "combo_with_extras")} aria-invalid={Boolean(fieldError("selectionMode")) || undefined}>
@@ -314,7 +318,7 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
               <small>{selectionMode !== "simple" ? "La persona deberá elegir un combo publicado antes de reservar." : "La duración y el precio de esta ficha se aplican directamente."}</small>
               <FieldError id={`${formId}-selectionMode-error`} messages={fieldError("selectionMode")} />
             </label>
-            {selectionMode !== "simple" && treatment?.selection_mode !== "simple" ? <Link className="button button--quiet" href={`/admin/catalogo/${treatmentId}/combos`}>Configurar zonas, combos y extras</Link> : null}
+            {!isNew && selectionMode !== "simple" && treatment?.selection_mode !== "simple" ? <Link className="button button--quiet" href={`/admin/catalogo/${treatmentId}/combos`}>Configurar zonas, combos y extras</Link> : null}
             {selectionMode !== "simple" && (isNew || treatment?.selection_mode === "simple") ? <p className="admin-field-note">Guardá primero el tratamiento con esta forma de reserva para poder configurar sus zonas, combos y extras.</p> : null}
             {!isNew ? <Link className="button button--quiet" href={`/admin/mensajes?treatmentId=${treatmentId}`}>Personalizar mensajes de WhatsApp</Link> : null}
           </div>
@@ -328,7 +332,7 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
             {availableProfessionals.length === 0 ? <p className="admin-field-note">Primero cargá profesionales activos. El tratamiento no debería publicarse sin al menos una persona asignada.</p> : availableProfessionals.map((item) => <label className="admin-check" key={item.id}><input type="checkbox" name="professionalIds" value={item.id} checked={selectedProfessionals.includes(item.id)} onChange={(event) => setSelectedProfessionals((current) => event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id))} /><span><strong>{item.public_name || item.full_name}</strong><small>{item.is_active ? "Activo" : "Inactivo"}</small></span></label>)}
             <FieldError id={`${formId}-professionalIds-error`} messages={fieldError("professionalIds")} />
           </fieldset>
-          {selectionMode === "closed_combo" ? <div className="admin-field-note admin-field-note--prominent"><strong>Precio y duración se definen en cada combo.</strong><span>La duración real será la suma de sus zonas más un único margen de preparación. La frecuencia continúa siendo común a este tratamiento.</span><input type="hidden" name="durationMinutes" value={durationMinutes} /></div> : null}
+          {selectionMode !== "simple" ? <div className="admin-field-note admin-field-note--prominent"><strong>Precio y duración se definen en cada combo.</strong><span>La duración real será la suma de sus zonas más un único margen de preparación. La frecuencia continúa siendo común a este tratamiento.</span><input type="hidden" name="durationMinutes" value={durationMinutes} /></div> : null}
           <div className={`admin-form-grid ${selectionMode === "simple" ? "admin-form-grid--3" : ""}`}>
             {selectionMode === "simple" ? <label htmlFor={`${formId}-durationMinutes`}>Duración<input id={`${formId}-durationMinutes`} name="durationMinutes" type="number" min="5" max="480" step="5" value={durationMinutes} onChange={(event) => setDurationMinutes(Number(event.target.value))} required /></label> : null}
             <label htmlFor={`${formId}-bufferMinutes`}>Preparación entre turnos<input id={`${formId}-bufferMinutes`} name="bufferMinutes" type="number" min="0" max="180" step="5" value={bufferMinutes} onChange={(event) => setBufferMinutes(Number(event.target.value))} required /></label>
@@ -338,7 +342,7 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
           {treatment && treatment.future_booking_count > 0 ? <label className="admin-impact-check" htmlFor={`${formId}-confirmImpact`}><input id={`${formId}-confirmImpact`} type="checkbox" name="confirmImpact" required={actionState.error === "impact"} /><span><strong>{treatment.future_booking_count} reservas futuras.</strong> Confirmo cambios que puedan afectar su agenda.</span><FieldError id={`${formId}-confirmImpact-error`} messages={fieldError("confirmImpact")} /></label> : null}
         </fieldset>
 
-        <fieldset>
+        <fieldset id="treatment-image">
           <legend>Imagen del tratamiento</legend>
           <p className="admin-fieldset-intro">Se prepara en tu dispositivo, se sube directamente al espacio seguro y se verifica antes de guardar.</p>
           <div className="admin-treatment-image-control">
@@ -352,7 +356,7 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
           <div className="admin-form-grid"><label htmlFor={`${formId}-focalX`}>Foco horizontal: <output>{focalX}%</output><input id={`${formId}-focalX`} name="focalX" type="range" min="0" max="100" value={focalX} onChange={(event) => setFocalX(Number(event.target.value))} /></label><label htmlFor={`${formId}-focalY`}>Foco vertical: <output>{focalY}%</output><input id={`${formId}-focalY`} name="focalY" type="range" min="0" max="100" value={focalY} onChange={(event) => setFocalY(Number(event.target.value))} /></label></div>
         </fieldset>
 
-        <div className="admin-form-footer admin-treatment-editor-footer"><p>La imagen es opcional y puede agregarse o reemplazarse después. Si cargás una, su descripción accesible sí es obligatoria.</p><EditorSubmitButtons isNew={isNew} isPublished={Boolean(treatment?.is_active)} mediaBusy={mediaBusy} /></div>
+        <div id="treatment-publication" className="admin-form-footer admin-treatment-editor-footer"><p>La imagen es opcional y puede agregarse o reemplazarse después. Si cargás una, su descripción accesible sí es obligatoria.</p><EditorSubmitButtons isNew={isNew} isPublished={Boolean(treatment?.is_active)} mediaBusy={mediaBusy} /></div>
       </form>
 
       <aside className="admin-treatment-editor-side" aria-label="Estado del tratamiento">

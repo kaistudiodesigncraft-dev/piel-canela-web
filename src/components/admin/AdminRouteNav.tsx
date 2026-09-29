@@ -23,6 +23,12 @@ const routes: readonly { id: AdminRoute; href: string; label: string; icon: type
   { id: "account", href: "/admin/mi-cuenta", label: "Mi cuenta", icon: UserRound },
   { id: "governance", href: "/admin/seguridad", label: "Accesos y actividad", icon: ShieldCheck },
 ];
+const groups: { label: string; ids: AdminRoute[] }[] = [
+  { label: "Operación", ids: ["operations", "agenda", "availability", "packages", "customers"] },
+  { label: "Tratamientos y equipo", ids: ["catalog", "professionals", "specials"] },
+  { label: "Web y comunicación", ids: ["content", "messages", "settings"] },
+  { label: "Ayuda y cuenta", ids: ["history", "manual", "account", "governance"] },
+];
 export function AdminRouteNav({ current, canManageAccess = false }: { current: AdminRoute; canManageAccess?: boolean }) {
   const [compact, setCompact] = useState(false);
   const [open, setOpen] = useState(false);
@@ -41,10 +47,12 @@ export function AdminRouteNav({ current, canManageAccess = false }: { current: A
     return () => { node?.close(); document.body.style.overflow = overflow; media.removeEventListener("change", closeOnDesktop); returnFocus?.focus(); };
   }, [open]);
   const navigation = (mobile = false) => <nav aria-label="Navegación administrativa" className={styles.links}>
-    {routes.filter((route) => route.id !== "governance" || canManageAccess).map((route) => {
+    {groups.map((group) => <div className={styles.group} key={group.label}>
+      <p className={styles.groupLabel}>{group.label}</p>
+      {group.ids.map((id) => routes.find((route) => route.id === id)!).filter((route) => route.id !== "governance" || canManageAccess).map((route) => {
       const Icon = route.icon;
       return <Link key={route.id} href={route.href} aria-current={route.id === current ? "page" : undefined} title={compact && !mobile ? route.label : undefined} aria-label={route.label} onClick={() => setOpen(false)}><Icon aria-hidden="true" strokeWidth={1.75} /><span>{route.label}</span></Link>;
-    })}
+      })}</div>)}
   </nav>;
   return <>
     <aside className={`${styles.sidebar} ${compact ? styles.compact : ""}`} data-admin-sidebar="true">

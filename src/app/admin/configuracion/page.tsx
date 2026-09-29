@@ -29,6 +29,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <div className="live-admin__actions"><Link className="button button--quiet" href="/" target="_blank" rel="noreferrer"><ExternalLink aria-hidden="true" strokeWidth={1.75} />Ver sitio</Link><form action={signOutAdmin}><button className="button button--quiet" type="submit"><LogOut aria-hidden="true" strokeWidth={1.75} />Cerrar sesión</button></form></div>
       </header>
       <AdminRouteNav current="settings" canManageAccess={profile.role === "admin"} />
+      {!settings.whatsapp_number?.trim() || !settings.public_email?.trim() ? <p className="form-message form-message--error" role="alert">Faltan datos de contacto público. Completá WhatsApp con código de país y correo en este formulario, guardá y verificá el pie de la web pública. El enlace “Consultar” depende de estos datos.</p> : null}
       <BusinessSettingsAdmin settings={settings} publicDetailsAvailable={publicDetailsAvailable} feedback={await searchParams} />
     </div>
   );

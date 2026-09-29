@@ -31,6 +31,7 @@ export function CatalogExperience({
   const openerRef = useRef<HTMLAnchorElement | null>(null);
   const catalogHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const categorySlug = searchParams.get("category");
+  const searchQuery = searchParams.get("q")?.trim() ?? "";
   const selectedCategory = categories.find((category) => category.slug === categorySlug);
   const selectedTreatmentSlug = searchParams.get("treatment");
   const selectedTreatment = treatments.find(
@@ -48,10 +49,11 @@ export function CatalogExperience({
     : undefined;
 
   const visibleTreatments = useMemo(() => {
-    const active = treatments.filter((treatment) => treatment.isActive);
+    const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es");
+    const active = treatments.filter((treatment) => treatment.isActive && normalize(treatment.name).includes(normalize(searchQuery)));
     if (!selectedCategory) return active;
     return active.filter((treatment) => treatment.categoryId === selectedCategory.id);
-  }, [selectedCategory, treatments]);
+  }, [selectedCategory, treatments, searchQuery]);
 
   function withCurrentParams(changes: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -87,10 +89,19 @@ export function CatalogExperience({
 
   return (
     <div className="catalog-experience">
+      <form role="search" className="catalog-search" action={pathname} onSubmit={(event) => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        router.replace(withCurrentParams({ q: String(data.get("q") ?? "").trim(), treatment: null, monthlySpecial: null }), { scroll: false });
+      }}>
+        <label htmlFor="treatment-search">Buscar un tratamiento</label>
+        <div><input key={searchQuery} id="treatment-search" name="q" type="search" maxLength={100} defaultValue={searchQuery} placeholder="Nombre del tratamiento" />
+        <button className="button button--primary" type="submit">Buscar</button></div>
+      </form>
       <div className="catalog-filters" aria-label="Filtrar tratamientos por categoría">
         <Link
           className={`filter-chip${selectedCategory ? "" : " is-active"}`}
-          href="/tratamientos#catalogo"
+          href={withCurrentParams({ category: null, treatment: null, monthlySpecial: null })}
           scroll={false}
           aria-current={selectedCategory ? undefined : "page"}
         >
@@ -100,7 +111,7 @@ export function CatalogExperience({
           <Link
             key={category.id}
             className={`filter-chip${selectedCategory?.id === category.id ? " is-active" : ""}`}
-            href={`/tratamientos?category=${category.slug}#catalogo`}
+            href={withCurrentParams({ category: category.slug, treatment: null, monthlySpecial: null })}
             scroll={false}
             aria-current={selectedCategory?.id === category.id ? "page" : undefined}
           >
@@ -121,8 +132,8 @@ export function CatalogExperience({
       {visibleTreatments.length === 0 ? (
         <StatePanel
           kind="empty"
-          title="No hay tratamientos publicados en esta categoría"
-          description="Probá con otra categoría o volvé a ver el catálogo completo."
+          title="No encontramos tratamientos con esos filtros"
+          description="Probá otro nombre, cambiá la categoría o volvé a ver el catálogo completo."
           actionHref="/tratamientos#catalogo"
           actionLabel="Ver todos"
         />
@@ -165,7 +176,7 @@ export function CatalogExperience({
         />
       ) : null}
 
-      {selectedCategory ? (
+      {selectedCategory || searchQuery ? (
         <Link className="catalog-reset text-link" href="/tratamientos#catalogo" scroll={false}>
           <RotateCcw aria-hidden="true" strokeWidth={1.75} />
           Limpiar filtro

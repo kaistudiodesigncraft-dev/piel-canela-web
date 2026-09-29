@@ -72,6 +72,41 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, messageTempl
   const idempotencyKey = useRef<string | null>(null);
   const submissionInFlight = useRef(false);
   const initialStepRender = useRef(true);
+  const searchEpoch = useRef(0);
+  const [searchingNext, setSearchingNext] = useState(false);
+  const [searchMessage, setSearchMessage] = useState("");
+  useEffect(() => () => { searchEpoch.current += 1; }, []);
+
+  async function findNextAvailableDate() {
+    const epoch = ++searchEpoch.current;
+    setSearchingNext(true);
+    setSearchMessage("Buscando dentro del período habilitado…");
+    try {
+      const start = dates.findIndex((item) => item.value === date) + 1;
+      for (let index = start; index < dates.length; index += 1) {
+        if (epoch !== searchEpoch.current) return;
+        const candidate = dates[index]!;
+        const result = await getAvailableSlots({ treatmentId: selection.treatmentId, comboId: selection.comboId ?? null, extraIds: [...(selection.extraIds ?? [])], date: candidate.value });
+        if (epoch !== searchEpoch.current) return;
+        if (!result.ok) throw new Error("availability_unavailable");
+        if (result.slots.length) {
+          setDate(candidate.value);
+          setVisibleDateCount((count) => Math.max(count, index + 1));
+          setSelectedSlot(null);
+          setSlotsError(false);
+          setIsLoadingSlots(true);
+          setShowAllSlots(false);
+          setSearchMessage(`Encontramos horarios para ${candidate.longLabel}. Elegí uno para continuar.`);
+          return;
+        }
+      }
+      setSearchMessage("No hay horarios posteriores disponibles dentro del período habilitado. Podés revisar una fecha anterior o consultar a recepción.");
+    } catch {
+      if (epoch === searchEpoch.current) setSearchMessage("No pudimos completar la búsqueda. Tu selección se conserva; intentá nuevamente.");
+    } finally {
+      if (epoch === searchEpoch.current) setSearchingNext(false);
+    }
+  }
 
   const selectedDate = dates.find((item) => item.value === date);
   const selectedTime = selectedSlot ? formatBookingTime(selectedSlot) : null;
@@ -142,7 +177,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, messageTempl
       combo: selection.comboName ? `${selection.comboName} (${selection.sessionCount ?? 1} sesiones)` : "No aplica",
       fecha: selectedDate.longLabel,
       hora: selectedTime,
-      duracion: formatDuration(selection.occupiedDurationMinutes ?? selection.durationMinutes),
+      duracion: formatDuration(selection.durationMinutes),
       codigo: booking.code,
       direccion: address,
       sena: depositText,
@@ -316,6 +351,9 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, messageTempl
                       type="button"
                       aria-pressed={date === item.value}
                       onClick={() => {
+                        searchEpoch.current += 1;
+                        setSearchingNext(false);
+                        setSearchMessage("");
                         if (date === item.value) return;
                         setDate(item.value);
                         setIsLoadingSlots(true);
@@ -341,6 +379,9 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, messageTempl
 
               <fieldset>
                 <legend>Horarios disponibles</legend>
+                <button className="button button--quiet" type="button" disabled={searchingNext || !dates.length} onClick={() => void findNextAvailableDate()}>{searchingNext ? "Buscando…" : "Buscar próxima fecha disponible"}</button>
+                {searchingNext ? <button className="button button--quiet" type="button" onClick={() => { searchEpoch.current += 1; setSearchingNext(false); setSearchMessage("Búsqueda cancelada. Tu selección se conserva."); }}>Cancelar búsqueda</button> : null}
+                {searchMessage ? <p role="status">{searchMessage}</p> : null}
                 {isLoadingSlots ? (
                   <p className="booking-inline-state" role="status">
                     <LoaderCircle className="is-spinning" aria-hidden="true" strokeWidth={1.75} /> Consultando horarios…
@@ -390,6 +431,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, messageTempl
               </fieldset>
 
               <div className="booking-step-actions booking-step-actions--end booking-step-actions--desktop">
+                {!selectedSlot ? <p>Seleccioná un horario para continuar.</p> : null}
                 <button className="button button--primary" type="button" disabled={!selectedSlot} onClick={() => setStep("details")}>
                   Continuar <ArrowRight aria-hidden="true" strokeWidth={1.75} />
                 </button>
@@ -474,7 +516,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, messageTempl
           {selection.monthlySpecialTitle ? <p>{selection.treatmentName}</p> : null}
           {selection.comboName ? <><p className="booking-selection-rail__combo">{selection.comboName}</p><p>{selection.comboZones?.join(" · ")}</p></> : null}
           <dl className="numeric">
-            <div><dt>Duración</dt><dd>{formatDuration(selection.occupiedDurationMinutes ?? selection.durationMinutes)}</dd></div>
+            <div><dt>Duración</dt><dd>{formatDuration(selection.durationMinutes)}</dd></div>
             {selection.sessionCount && selection.sessionCount > 1 ? <div><dt>Sesiones</dt><dd>{selection.sessionCount}</dd></div> : null}
             <div><dt>Valor total</dt><dd>{formatPrice(selection.appliedPriceCents)}</dd></div>
             {selection.pricePerSessionCents && selection.sessionCount && selection.sessionCount > 1 ? <div><dt>Por sesión</dt><dd>{formatPrice(selection.pricePerSessionCents)}</dd></div> : null}

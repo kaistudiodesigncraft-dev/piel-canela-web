@@ -20,7 +20,7 @@ export function MonthlySpecialFeature({
   treatment,
   category,
 }: MonthlySpecialFeatureProps) {
-  const usesClosedCombos = treatment.selectionMode === "closed_combo";
+  const usesClosedCombos = treatment.selectionMode !== "simple";
   return (
     <article className="monthly-special-feature">
       <div className="monthly-special-feature__image">

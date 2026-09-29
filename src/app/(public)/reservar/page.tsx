@@ -73,7 +73,7 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
 
   return (
     <>
-      <BookingHeader content={content} image={headerImage} />
+      <h1 className="sr-only">Reservar {treatment.name}</h1>
       <div className="site-container booking-demo-page">
         <LiveBookingFlow
           selection={resolveBookingSelection(treatment, treatment.selectionMode === "simple" ? monthlySpecial : undefined, combo, selectedExtras)}

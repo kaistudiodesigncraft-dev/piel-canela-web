@@ -1,4 +1,8 @@
 .sidebar { position:fixed; inset:0 auto 0 0; width:248px; z-index:40; display:flex; flex-direction:column; padding:22px 14px; background:var(--color-bone); border-right:1px solid var(--color-border); color:var(--color-ink); overflow-y:auto; }
+.group { display: flex; flex-direction: column; gap: 4px; }
+.group + .group { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--color-border); }
+.groupLabel { margin: 0 12px 6px; font-size: 12px; font-weight: 650; color: var(--color-text-secondary); }
+.compact .groupLabel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .brand { display:flex; align-items:center; gap:12px; text-decoration:none; padding:8px; }
 .brand>span { display:grid; place-items:center; width:40px; height:40px; flex-shrink:0; color:var(--color-petrol); border:1px solid currentColor; border-radius:50%; font-weight:650; }
 .brand strong { font-size:17px; }.brand small { display:block; font-size:13px; font-weight:400; color:var(--color-text-secondary); }

@@ -1,0 +1,23 @@
+/* Task-oriented UX, scoped to existing Materia Clara components. */
+.catalog-search { margin-block: 0 1.5rem; max-width: 42rem; }
+.catalog-search label { display: block; margin-bottom: .5rem; font-weight: 600; }
+.catalog-search > div { display: flex; gap: .5rem; }
+.catalog-search input { min-width: 0; flex: 1; min-height: 44px; padding: .7rem; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-white); }
+.privacy-preferences-button { min-height: 44px; padding: .5rem 0; color: inherit; background: none; border: 0; font: inherit; text-decoration: underline; cursor: pointer; }
+.treatment-editor-nav { display: flex; flex-wrap: wrap; gap: .5rem; }
+.treatment-editor-nav a { display: inline-flex; align-items: center; min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-petrol); text-decoration: none; }
+.admin-treatment-editor fieldset[id] { scroll-margin-top: 1.5rem; }
+.admin-treatment-editor-footer { position: sticky; bottom: 0; z-index: 5; padding: 1rem; background: var(--color-bone); border-top: 1px solid var(--color-border); }
+.admin-product-shell .live-admin__header h1 { font-size: clamp(1.75rem, 3vw, 2.5rem); line-height: 1.15; }
+.admin-product-shell .live-admin__header { padding-block: 1.5rem; }
+.combo-editor-fields { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 1rem; }
+.combo-editor-fields label[hidden] { display: none; }
+.treatment-detail__image--empty { display: none; }
+.treatment-detail__hero:has(.treatment-detail__image--empty) { grid-template-columns: 1fr; }
+.page-hero--catalog { padding-block: 2rem; }
+@media (max-width: 600px) {
+  .admin-treatment-editor-footer { position: static; }
+  .admin-treatment-editor-side { order: 2; }
+  .catalog-search > div { flex-wrap: wrap; }
+  .catalog-search input { flex-basis: 65%; }
+}

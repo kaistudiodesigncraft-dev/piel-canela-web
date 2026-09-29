@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { ConsentManagedInsights } from "@/components/layout/ConsentManagedInsights";
 import "./globals.css";
+import "./ux-refinements.css";
 
 const monaSans = localFont({
   src: "./fonts/MonaSans-Variable.woff2",

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PrivacyPreferencesButton } from "./PrivacyPreferencesButton";
 import { publicEmailLink, publicInstagramLink, publicWhatsAppLink } from "./public-contact";
 import styles from "./PublicInformation.module.css";
 
@@ -53,6 +54,7 @@ export function SiteFooter({ settings, hasMonthlySpecials = false }: SiteFooterP
         <span>© {new Date().getFullYear()} Piel Canela</span>
         <span className="site-footer__legal-links"><Link href="/privacidad">Privacidad</Link><Link href="/cookies">Cookies</Link><Link href="/condiciones-de-reserva">Condiciones de reserva</Link></span>
         <span>Diseño y producto por Kai Studio</span>
+        <PrivacyPreferencesButton />
       </div>
     </footer>
   );

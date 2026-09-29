@@ -1,3 +1,4 @@
+import { SearchableManual } from "@/components/admin/SearchableManual";
 import type { Metadata } from "next";
 import { ExternalLink, LogOut } from "lucide-react";
 import Link from "next/link";
@@ -22,11 +23,11 @@ const sections = [
   {
     title: "Cargar un tratamiento",
     steps: [
-      "Abrí Tratamientos y elegí Crear tratamiento.",
+      "Abrí Tratamientos y elegí Nuevo tratamiento.",
       "Completá nombre, categoría, especialidad, descripción, duración, preparación y frecuencia de inicio.",
       "Asigná al menos un profesional activo antes de publicar para evitar turnos pisados.",
       "Podés guardar borrador sin imagen y agregarla después.",
-      "Publicá solo cuando precio, duración, texto e imagen estén revisados.",
+      "Publicá cuando precio, duración y textos estén revisados. La imagen es opcional; si la cargás, revisá también su descripción accesible.",
     ],
   },
   {
@@ -42,7 +43,7 @@ const sections = [
     title: "Imágenes",
     steps: [
       "Usá JPG, PNG, WebP o AVIF de hasta 4 MB.",
-      "La imagen es opcional para guardar borrador, pero si se carga debe tener descripción accesible.",
+      "La imagen es opcional tanto para guardar borrador como para publicar, pero si se carga debe tener descripción accesible.",
       "Ajustá foco horizontal y vertical para que el recorte se vea bien en mobile y desktop.",
       "Si una carga falla, guardá el tratamiento sin imagen y repetí la carga más tarde.",
     ],
@@ -68,8 +69,8 @@ const sections = [
   {
     title: "Turnos manuales",
     steps: [
-      "Desde Hoy o Agenda, asigná turnos recibidos por WhatsApp o recepción.",
-      "Podés elegir profesional o dejar autoasignación cuando corresponda.",
+      "Desde Agenda, usá Asignar un turno manual para solicitudes recibidas por WhatsApp o recepción.",
+      "La reserva asigna un profesional habilitado y disponible; revisá su nombre en la agenda después de guardar.",
       "Confirmá estado, horario y datos de contacto antes de guardar.",
       "Usá notas internas solo para información operativa, no para datos sensibles innecesarios.",
     ],
@@ -133,16 +134,7 @@ export default async function AdminManualPage() {
           </div>
           <span className="admin-count numeric">{sections.length} temas</span>
         </div>
-        <div className="admin-manual-grid">
-          {sections.map((section) => (
-            <article className="admin-manual-card" key={section.title}>
-              <h3>{section.title}</h3>
-              <ol>
-                {section.steps.map((step) => <li key={step}>{step}</li>)}
-              </ol>
-            </article>
-          ))}
-        </div>
+<SearchableManual sections={sections.map((section, index) => ({ ...section, href: ["/admin/mi-cuenta", "/admin/catalogo/nuevo", "/admin/catalogo", "/admin/catalogo", "/admin/profesionales", "/admin?module=availability", "/admin?module=agenda#asignar", "/admin/catalogo", "/admin/mensajes", "/admin/contenido", "/admin/historial"][index] }))} />
       </section>
     </div>
   );

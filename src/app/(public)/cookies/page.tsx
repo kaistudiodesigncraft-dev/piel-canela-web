@@ -35,7 +35,7 @@ export default function CookiesPage() {
 
       <section>
         <h2>Cómo cambiar tu decisión</h2>
-        <p>Podés borrar los datos del sitio desde la configuración de tu navegador para volver a ver el aviso y elegir nuevamente. Las cookies de sesión administrativa también pueden eliminarse cerrando sesión o limpiando datos del navegador.</p>
+        <p>Podés cambiar tu decisión desde “Preferencias de privacidad”, al pie de cualquier página. Elegir “Solo necesarias” desactiva la medición opcional; no borra mediciones ya enviadas. Las cookies de sesión administrativa se gestionan al cerrar sesión.</p>
       </section>
 
       <section>

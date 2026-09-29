@@ -23,7 +23,7 @@ export function MonthlySpecialGrid({ items }: MonthlySpecialGridProps) {
   return (
     <div className="monthly-special-grid">
       {items.map(({ special, treatment, category }) => {
-        const usesClosedCombos = treatment.selectionMode === "closed_combo";
+        const usesClosedCombos = treatment.selectionMode !== "simple";
         return <article className="monthly-special-item" key={special.id}>
           <div className="monthly-special-item__image">
             <Image

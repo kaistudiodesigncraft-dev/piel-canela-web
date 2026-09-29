@@ -1,5 +1,9 @@
+import { quoteCombo } from "@/lib/combo-quote";
+import { ComboEditorForm } from "./ComboEditorForm";
+import { ComboPricingFields } from "./ComboPricingFields";
+import { DepilationZoneEditorForm } from "./DepilationZoneEditorForm";
 import { Boxes, CircleDollarSign, Plus, Trash2 } from "lucide-react";
-import { deleteDepilationZone, deleteTreatmentCombo, saveDepilationZone, saveTreatmentCombo, saveTreatmentComboExtra, toggleDepilationFeature } from "@/app/admin/catalogo/[id]/combos/actions";
+import { deleteDepilationZone, deleteTreatmentCombo, saveTreatmentComboExtra, toggleDepilationFeature } from "@/app/admin/catalogo/[id]/combos/actions";
 import { AdminSubmitButton } from "@/components/admin/AdminSubmitButton";
 import { ComboSessionFields } from "@/components/admin/ComboSessionFields";
 import { formatDuration, formatPrice } from "@/lib/format";
@@ -22,7 +26,7 @@ function ProtectedDeleteForm({ treatmentId, recordId, label, action }: { treatme
 }
 
 function ZoneForm({ treatmentId, zone }: { treatmentId: string; zone?: ZoneRow }) {
-  return <form action={saveDepilationZone} className="admin-form depilation-zone-form">
+  return <DepilationZoneEditorForm submitLabel={zone ? "Guardar zona" : "Crear zona"}>
     <input type="hidden" name="treatmentId" value={treatmentId} />
     {zone ? <input type="hidden" name="zoneId" value={zone.id} /> : null}
     <div className="admin-form-grid admin-form-grid--3">
@@ -35,8 +39,7 @@ function ZoneForm({ treatmentId, zone }: { treatmentId: string; zone?: ZoneRow }
       <label>Duración de la zona<input name="durationMinutes" type="number" min="5" max="240" step="5" defaultValue={zone?.duration_minutes ?? 15} required /></label>
     </div>
     <label className="admin-check"><input name="isActive" type="checkbox" defaultChecked={zone?.is_active ?? true} /><span>Disponible para armar combos</span></label>
-    <AdminSubmitButton pendingLabel="Guardando zona…">{zone ? "Guardar zona" : "Crear zona"}</AdminSubmitButton>
-  </form>;
+  </DepilationZoneEditorForm>;
 }
 
 function ExtraForm({ treatmentId, extra }: { treatmentId: string; extra?: ExtraRow }) {
@@ -59,7 +62,7 @@ function ExtraForm({ treatmentId, extra }: { treatmentId: string; extra?: ExtraR
 }
 
 function ComboForm({ treatmentId, zones, extras, combo }: { treatmentId: string; zones: ZoneRow[]; extras: ExtraRow[]; combo?: ComboRow }) {
-  return <form action={saveTreatmentCombo} className="admin-form depilation-combo-form">
+  return <ComboEditorForm>
     <input type="hidden" name="treatmentId" value={treatmentId} />
     {combo ? <input type="hidden" name="comboId" value={combo.id} /> : null}
     <div className="admin-form-grid admin-form-grid--3">
@@ -69,21 +72,11 @@ function ComboForm({ treatmentId, zones, extras, combo }: { treatmentId: string;
     </div>
     <label>Descripción breve<textarea name="description" defaultValue={combo?.description ?? ""} rows={2} maxLength={500} /></label>
     <ComboSessionFields initialMode={combo?.mode ?? "single_session"} sessionCount={combo?.session_count ?? 1} validityDays={combo?.validity_days ?? null} />
-    <div className="admin-form-grid admin-form-grid--3">
-      <label>Regla de precio<select name="pricingMode" defaultValue={combo?.pricing_mode ?? "fixed_price"}><option value="fixed_price">Precio final manual</option><option value="percentage_discount">Descuento porcentual</option><option value="tiered_discount">Descuento por cantidad</option></select></label>
-      <label>Precio total base<input name="fixedPricePesos" type="number" min="1" step="1" defaultValue={combo ? combo.fixed_price_cents / 100 : ""} required /><small>Se usa como precio final si la regla es manual.</small></label>
-      <label>Descuento %<input name="discountPercent" type="number" min="0" max="100" step="0.01" defaultValue={combo?.discount_percent ?? ""} /></label>
-    </div>
-    <div className="admin-form-grid">
-      <label>Cantidad mínima para descuento<input name="tierMinItems" type="number" min="1" max="99" defaultValue={combo?.tier_min_items ?? ""} /></label>
-      <label>Descuento por cantidad %<input name="tierDiscountPercent" type="number" min="0" max="100" step="0.01" defaultValue={combo?.tier_discount_percent ?? ""} /></label>
-    </div>
+    <ComboPricingFields mode={combo?.pricing_mode ?? "fixed_price"} fixedPrice={(combo?.fixed_price_cents ?? 0) / 100} discount={Number(combo?.discount_percent ?? 0)} tierItems={combo?.tier_min_items ?? 2} tierDiscount={Number(combo?.tier_discount_percent ?? 0)} zones={zones} />
     <fieldset className="depilation-zone-picker"><legend>Zonas incluidas</legend>{zones.filter((zone) => zone.is_active || combo?.zone_ids.includes(zone.id)).map((zone) => <label className="admin-check" key={zone.id}><input type="checkbox" name="zoneIds" value={zone.id} defaultChecked={combo?.zone_ids.includes(zone.id)} /><span><strong>{zone.name}</strong><small>{audienceLabels[zone.audience]} · {formatDuration(zone.duration_minutes)} · {formatPrice(zone.reference_price_cents)}</small></span></label>)}</fieldset>
     <label className="admin-check"><input name="allowPublicExtras" type="checkbox" defaultChecked={combo?.allow_public_extras ?? false} /><span>Permitir que el público sume extras habilitados</span></label>
     <fieldset className="depilation-zone-picker"><legend>Extras compatibles</legend>{extras.length === 0 ? <p className="admin-field-note">Todavía no hay extras. Podés crearlos en el bloque de abajo.</p> : extras.filter((extra) => extra.is_active || combo?.extra_ids.includes(extra.id)).map((extra) => <label className="admin-check" key={extra.id}><input type="checkbox" name="extraIds" value={extra.id} defaultChecked={combo?.extra_ids.includes(extra.id)} /><span><strong>{extra.name}</strong><small>{audienceLabels[extra.audience]} · +{formatDuration(extra.duration_minutes)} · {formatPrice(extra.price_cents)}</small></span></label>)}</fieldset>
-    <label className="admin-check"><input name="isActive" type="checkbox" defaultChecked={combo?.is_active ?? false} /><span>Publicar este combo</span></label>
-    <AdminSubmitButton pendingLabel="Guardando combo…">{combo ? "Guardar combo" : "Crear combo"}</AdminSubmitButton>
-  </form>;
+  </ComboEditorForm>;
 }
 
 export function DepilationComboAdmin({ treatmentId, treatmentName, treatmentBufferMinutes, startIntervalMinutes, featureEnabled, zones, extras, combos, feedback }: { treatmentId: string; treatmentName: string; treatmentBufferMinutes: number; startIntervalMinutes: number; featureEnabled: boolean; zones: ZoneRow[]; extras: ExtraRow[]; combos: ComboRow[]; feedback: Record<string, string | undefined> }) {
@@ -116,7 +109,13 @@ export function DepilationComboAdmin({ treatmentId, treatmentName, treatmentBuff
         const reference = selectedZones.reduce((total, zone) => total + zone.reference_price_cents, 0) * combo.session_count;
         const duration = selectedZones.reduce((total, zone) => total + zone.duration_minutes, 0);
         const extraCount = combo.extra_ids.length;
-        return <details key={combo.id} className="admin-disclosure"><summary><span><strong>{combo.name}</strong><small>{audienceLabels[combo.audience]} · {combo.mode === "package" ? `${combo.session_count} sesiones` : "Una sesión"} · ocupa {formatDuration(duration + treatmentBufferMinutes)}{combo.allow_public_extras ? ` · ${extraCount} extras posibles` : ""}</small></span><span className="depilation-combo-price"><strong>{formatPrice(combo.fixed_price_cents)}</strong><small>{reference > combo.fixed_price_cents ? `${formatPrice(reference - combo.fixed_price_cents)} de ahorro` : combo.pricing_mode === "fixed_price" ? "Sin ahorro informado" : "Descuento calculado al reservar"}</small></span><span className={`status-badge ${combo.is_active ? "status-confirmed" : "status-expired"}`}>{combo.is_active ? "Publicado" : "Borrador"}</span></summary><div className="depilation-reference-note"><CircleDollarSign aria-hidden="true" /><p>{combo.booking_count > 0 || combo.package_count > 0 ? `Usado por ${combo.booking_count} reservas y ${combo.package_count} paquetes. Puede pausarse, pero no debe eliminarse.` : "Todavía no tiene historial y puede editarse libremente."}</p></div><ComboForm treatmentId={treatmentId} zones={zones} extras={extras} combo={combo} />{combo.booking_count === 0 && combo.package_count === 0 ? <ProtectedDeleteForm treatmentId={treatmentId} recordId={combo.id} label={combo.name} action={deleteTreatmentCombo} /> : null}</details>;
+        const quote = quoteCombo({ audience: combo.audience, allowPublicExtras: false, extras: [], zones: selectedZones,
+          sessionCount: combo.session_count, referencePriceCents: reference, pricingMode: combo.pricing_mode,
+          discountPercent: combo.discount_percent == null ? null : Number(combo.discount_percent), tierMinItems: combo.tier_min_items,
+          tierDiscountPercent: combo.tier_discount_percent == null ? null : Number(combo.tier_discount_percent),
+          fixedPriceCents: combo.fixed_price_cents, durationMinutes: duration });
+
+        return <details key={combo.id} className="admin-disclosure"><summary><span><strong>{combo.name}</strong><small>{audienceLabels[combo.audience]} · {combo.mode === "package" ? `${combo.session_count} sesiones` : "Una sesión"} · ocupa {formatDuration(duration + treatmentBufferMinutes)}{combo.allow_public_extras ? ` · ${extraCount} extras posibles` : ""}</small></span><span className="depilation-combo-price"><strong>{formatPrice(quote.priceCents)}</strong><small>{quote.savingsCents > 0 ? `${formatPrice(quote.savingsCents)} de ahorro` : combo.pricing_mode === "fixed_price" ? "Sin ahorro informado" : "Descuento calculado al reservar"}</small></span><span className={`status-badge ${combo.is_active ? "status-confirmed" : "status-expired"}`}>{combo.is_active ? "Publicado" : "Borrador"}</span></summary><div className="depilation-reference-note"><CircleDollarSign aria-hidden="true" /><p>{combo.booking_count > 0 || combo.package_count > 0 ? `Usado por ${combo.booking_count} reservas y ${combo.package_count} paquetes. Puede pausarse, pero no debe eliminarse.` : "Todavía no tiene historial y puede editarse libremente."}</p></div><ComboForm treatmentId={treatmentId} zones={zones} extras={extras} combo={combo} />{combo.booking_count === 0 && combo.package_count === 0 ? <ProtectedDeleteForm treatmentId={treatmentId} recordId={combo.id} label={combo.name} action={deleteTreatmentCombo} /> : null}</details>;
       })}</div>
     </section>
   </div>;

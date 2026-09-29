@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   monthlySpecials,
@@ -17,6 +17,22 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("CatalogExperience filters", () => {
+  it("combines accent-insensitive search and category while preserving both in details", () => {
+    currentSearchParams = new URLSearchParams("category=bienestar&q=relajacion");
+    render(<CatalogExperience categories={treatmentCategories} treatments={treatments} monthlySpecials={monthlySpecials} />);
+    expect(screen.getByText("1 tratamiento")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ver detalles de Relajación profunda" })).toHaveAttribute("href", "/tratamientos?category=bienestar&q=relajacion&treatment=relajacion-profunda");
+    expect(screen.getByRole("link", { name: "Todos" })).toHaveAttribute("href", "/tratamientos?q=relajacion");
+  });
+
+  it("updates search in the URL without dropping the category", () => {
+    currentSearchParams = new URLSearchParams("category=bienestar");
+    render(<CatalogExperience categories={treatmentCategories} treatments={treatments} monthlySpecials={monthlySpecials} />);
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: " masaje " } });
+    fireEvent.submit(screen.getByRole("search"));
+    expect(router.replace).toHaveBeenCalledWith("/tratamientos?category=bienestar&q=masaje", { scroll: false });
+  });
+
   beforeEach(() => {
     currentSearchParams = new URLSearchParams();
     router.replace.mockReset();

@@ -126,6 +126,8 @@ interface MonthlySpecialRow {
 interface AdminBookingRow {
   messageTemplates?: MessageTemplates;
   id: string;
+  professional_id?: string | null;
+  professional?: { full_name: string; public_name: string | null } | null;
   booking_code: string;
   status: BookingStatus;
   starts_at: string;
@@ -181,15 +183,6 @@ interface LiveAdminDashboardProps {
   unavailable?: Partial<Record<"bookings" | "manual" | "availability" | "exceptions" | "specialties" | "specials" | "summary", boolean>>;
 }
 
-const navItems = [
-  ["resumen", "Resumen"],
-  ["reservas", "Agenda"],
-  ["asignar", "Asignar turno"],
-  ["disponibilidad", "Horarios"],
-  ["excepciones", "Bloqueos"],
-  ["especialidades", "Especialidades"],
-  ["especiales-mes", "Especiales del mes"],
-] as const;
 
 function bookingDate(value: string) {
   return new Intl.DateTimeFormat("es-AR", {
@@ -221,8 +214,11 @@ export function LiveAdminDashboard({
   supportCode,
   unavailable = {},
 }: LiveAdminDashboardProps) {
-  const activeModule = ["today", "agenda", "availability", "specials"].includes(feedback.module ?? "") ? feedback.module : "all";
-  const show = (section: "today" | "agenda" | "availability" | "specials") => activeModule === "all" || activeModule === section;
+  const feedbackModule = Object.keys(feedback).some((key) => key.startsWith("manualBooking")) ? "agenda"
+    : Object.keys(feedback).some((key) => /^(special|monthlySpecial)/.test(key)) ? "specials"
+      : Object.keys(feedback).some((key) => /^(rule|exception|specialty|availability)/.test(key)) ? "availability" : "today";
+  const activeModule = ["today", "agenda", "availability", "specials"].includes(feedback.module ?? "") ? feedback.module : feedbackModule;
+  const show = (section: "today" | "agenda" | "availability" | "specials") => activeModule === section;
   const [manualTreatmentId, setManualTreatmentId] = useState(treatments[0]?.id ?? "");
   const [manualComboId, setManualComboId] = useState("");
   const specialtyName = useMemo(() => new Map(specialties.map((item) => [item.id, item.name])), [specialties]);
@@ -254,9 +250,6 @@ export function LiveAdminDashboard({
       <AdminRouteNav current={activeModule === "agenda" ? "agenda" : activeModule === "availability" ? "availability" : activeModule === "specials" ? "specials" : "operations"} canManageAccess={canManageAccess} />
       {warnings.length > 0 ? <div className="form-message form-message--error" role="alert"><p>Algunos módulos no están disponibles. No se modificó ningún dato.</p><ul>{warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul><p>Código de soporte: {supportCode}</p><Link className="button button--quiet" href={`/admin?module=${activeModule}`}>Reintentar consulta</Link></div> : null}
 
-      {activeModule === "all" ? <nav className="admin-command-nav" aria-label="Secciones del panel">
-        {navItems.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}
-      </nav> : null}
 
       {show("today") && !unavailable.summary ? <section className="admin-summary-grid" aria-label="Resumen operativo">
         <article><span>Turnos de hoy</span><strong className="numeric">{agenda.summary.today}</strong><small>Agenda completa del día</small></article>
@@ -268,11 +261,11 @@ export function LiveAdminDashboard({
       {(show("today") || show("agenda")) && !unavailable.bookings ? <section className="live-admin__section admin-bookings" id="reservas" aria-labelledby="bookings-title">
         <div className="admin-section-heading">
           <div><h2 id="bookings-title">Agenda y reservas</h2><p>{agenda.range.label}. Los filtros consultan la base completa y cada página carga solo lo necesario.</p></div>
-          <span className="admin-count numeric">{agenda.total} {agenda.total === 1 ? "reserva" : "reservas"}</span>
+          <Link className="button button--primary" href="/admin?module=agenda#asignar">Nuevo turno</Link>
         </div>
         <Feedback show={feedback.bookingSaved === "1"} error={feedback.bookingError} success="Estado de la reserva actualizado y registrado." errorText={feedback.bookingError === "reason" ? "Indicá un motivo para cancelar o marcar una ausencia." : feedback.bookingError === "transition" ? "El estado cambió o esa transición ya no está permitida." : "No se pudo aplicar ese cambio de estado."} />
         <Feedback show={feedback.bookingDetailSaved === "1"} error={feedback.bookingDetailError} success="Notas de la reserva actualizadas." errorText="No se pudieron guardar las notas." />
-        <Feedback show={feedback.rescheduleSaved === "1"} error={feedback.rescheduleError} success="Reserva reprogramada y agenda actualizada." errorText={feedback.rescheduleError === "conflict" ? "Ese horario ya está ocupado para la especialidad." : feedback.rescheduleError === "status" ? "El estado actual no permite reprogramar." : "No se pudo reprogramar la reserva."} />
+        <Feedback show={feedback.rescheduleSaved === "1"} error={feedback.rescheduleError} success="Reserva reprogramada y agenda actualizada." errorText={feedback.rescheduleError === "conflict" ? "No hay un profesional disponible en ese horario para la especialidad." : feedback.rescheduleError === "status" ? "El estado actual no permite reprogramar." : "No se pudo reprogramar la reserva."} />
         <form className="admin-agenda-filters" action="/admin#reservas" method="get">
           <input type="hidden" name="module" value="agenda" />
           <label className="admin-search"><Search aria-hidden="true" strokeWidth={1.75} /><span className="sr-only">Buscar reservas por nombre, teléfono o código</span><input name="agendaSearch" maxLength={100} defaultValue={agenda.query.search ?? ""} placeholder="Nombre, teléfono o código" /></label>
@@ -308,14 +301,14 @@ export function LiveAdminDashboard({
               return <article key={booking.id} className="live-booking-row">
                 <div className="live-booking-row__time numeric"><Clock3 aria-hidden="true" strokeWidth={1.75} /><time dateTime={booking.starts_at}>{bookingDate(booking.starts_at)}</time></div>
                 <div className="live-booking-row__identity"><strong>{customerName}</strong><a href={`https://wa.me/${normalizePhone(phone)}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer"><MessageCircle aria-hidden="true" strokeWidth={1.75} />{phone || "Sin teléfono"}</a></div>
-                <div className="live-booking-row__treatment"><strong>{treatmentName}</strong>{booking.combo_name_snapshot ? <span>{booking.combo_name_snapshot}</span> : null}<span className="numeric">{booking.booking_code} · {booking.package_charge_kind === "package_included" ? "Incluida en paquete" : formatPrice(booking.applied_price_snapshot_cents)}</span>{booking.customer_package_id && (booking.status === "completed" || booking.status === "no_show") ? <Link className="text-link" href="/admin/paquetes">Resolver consumo de sesión</Link> : null}</div>
+                <div className="live-booking-row__treatment"><strong>{treatmentName}</strong><span>Profesional: {booking.professional?.public_name || booking.professional?.full_name || "Sin asignación registrada"}</span>{booking.combo_name_snapshot ? <span>{booking.combo_name_snapshot}</span> : null}<span className="numeric">{booking.booking_code} · {booking.package_charge_kind === "package_included" ? "Incluida en paquete" : formatPrice(booking.applied_price_snapshot_cents)}</span>{booking.customer_package_id && (booking.status === "completed" || booking.status === "no_show") ? <Link className="text-link" href="/admin/paquetes">Resolver consumo de sesión</Link> : null}</div>
                 <span className={`status-badge status-${booking.status}`}>{BOOKING_STATUS_LABELS[booking.status]}</span>
                 {transitions.length > 0 ? <BookingStatusTransitionForm bookingId={booking.id} bookingCode={booking.booking_code} transitions={transitions} /> : <span className="booking-status-closed">Estado final</span>}
                 <details className="booking-detail-disclosure" id={`booking-${booking.id}`}>
                   <summary><span><NotebookPen aria-hidden="true" strokeWidth={1.75} />Detalle operativo</span><ChevronDown aria-hidden="true" strokeWidth={1.75} /></summary>
                   <div className="booking-detail-disclosure__body">
                     <dl className="booking-detail-facts"><div><dt>Creada</dt><dd>{bookingDate(booking.created_at)}</dd></div><div><dt>Reprogramaciones</dt><dd className="numeric">{booking.reschedule_count}</dd></div><div><dt>Correo</dt><dd>{booking.customer?.email ?? "No informado"}</dd></div></dl>
-                    {canRescheduleBooking(booking.status) ? <form action={rescheduleBooking} className="admin-form admin-form--booking-action"><input type="hidden" name="bookingId" value={booking.id} /><div><h3>Reprogramar</h3><p>La base vuelve a comprobar la capacidad de la especialidad.</p></div><label>Nueva fecha y hora<input name="startsAt" type="datetime-local" defaultValue={toArgentinaDateTimeInput(booking.starts_at)} required /></label><button className="button button--quiet" type="submit">Mover reserva</button></form> : null}
+                    {canRescheduleBooking(booking.status) ? <form action={rescheduleBooking} className="admin-form admin-form--booking-action"><input type="hidden" name="bookingId" value={booking.id} /><div><h3>Reprogramar</h3><p>Se comprueba la disponibilidad de la especialidad y que el profesional no tenga otro turno.</p></div><label>Nueva fecha y hora<input name="startsAt" type="datetime-local" defaultValue={toArgentinaDateTimeInput(booking.starts_at)} required /></label><button className="button button--quiet" type="submit">Mover reserva</button></form> : null}
                     <form action={saveBookingNotes} className="admin-form admin-form--booking-notes"><input type="hidden" name="bookingId" value={booking.id} /><div className="admin-form-grid"><label>Nota de la persona<textarea name="customerNotes" rows={3} maxLength={240} defaultValue={booking.customer_notes ?? ""} /></label><label>Nota interna<textarea name="internalNotes" rows={3} maxLength={1000} defaultValue={booking.internal_notes ?? ""} /></label></div><div className="admin-form-footer"><p>Las notas internas no se muestran en la web ni se incluyen en WhatsApp.</p><button className="button button--quiet" type="submit">Guardar notas</button></div></form>
                     <div className="booking-status-history" aria-label={`Historial de estado de ${booking.booking_code}`}>
                       <h3>Historial de estados</h3>
@@ -331,12 +324,12 @@ export function LiveAdminDashboard({
       </section> : null}
 
       {show("agenda") && !unavailable.manual ? <section className="live-admin__section" id="asignar" aria-labelledby="manual-title">
-        <div className="admin-section-heading"><div><h2 id="manual-title">Asignar un turno manual</h2><p>Para solicitudes recibidas por WhatsApp, teléfono o en el local. La base impide superponer una misma especialidad.</p></div><UserPlus aria-hidden="true" strokeWidth={1.75} /></div>
-        <Feedback show={feedback.manualBookingSaved === "1"} error={feedback.manualBookingError} success="Turno manual creado y agregado a la agenda." errorText={feedback.manualBookingError === "conflict" ? "Ese horario ya está ocupado para la especialidad seleccionada." : "No se pudo crear el turno manual."} />
+        <div className="admin-section-heading"><div><h2 id="manual-title">Asignar un turno manual</h2><p>Para solicitudes recibidas por WhatsApp, teléfono o en el local. Se valida la disponibilidad de la especialidad y la ocupación del profesional.</p></div><UserPlus aria-hidden="true" strokeWidth={1.75} /></div>
+        <Feedback show={feedback.manualBookingSaved === "1"} error={feedback.manualBookingError} success="Turno manual creado y agregado a la agenda." errorText={feedback.manualBookingError === "conflict" ? "No hay un profesional disponible en ese horario para la especialidad seleccionada." : "No se pudo crear el turno manual."} />
         <form action={createManualBooking} className="admin-form admin-form--wide">
           <div className="admin-form-grid admin-form-grid--3">
             <label>Tratamiento<select name="treatmentId" required value={manualTreatmentId} onChange={(event) => { setManualTreatmentId(event.target.value); setManualComboId(""); }}>{treatments.map((treatment) => <option key={treatment.id} value={treatment.id}>{treatment.name} · {specialtyName.get(treatment.specialty_id)}</option>)}</select></label>
-            {manualTreatment?.selection_mode === "closed_combo" ? <label>Combo<select name="comboId" value={manualComboId} onChange={(event) => setManualComboId(event.target.value)} required><option value="">Seleccionar combo</option>{manualCombos.map((combo) => <option key={combo.id} value={combo.id}>{combo.name} · {combo.session_count} {combo.session_count === 1 ? "sesión" : "sesiones"} · {formatPrice(combo.fixed_price_cents)}</option>)}</select></label> : <label>Especial del mes<select name="monthlySpecialId" defaultValue=""><option value="">Sin promoción</option>{manualSpecials.map((special) => <option key={special.id} value={special.id}>{special.title}</option>)}</select></label>}
+            {manualTreatment && manualTreatment.selection_mode !== "simple" ? <label>Combo<select name="comboId" value={manualComboId} onChange={(event) => setManualComboId(event.target.value)} required><option value="">Seleccionar combo</option>{manualCombos.map((combo) => <option key={combo.id} value={combo.id}>{combo.name} · {combo.session_count} {combo.session_count === 1 ? "sesión" : "sesiones"} · {formatPrice(combo.fixed_price_cents)}</option>)}</select></label> : <label>Especial del mes<select name="monthlySpecialId" defaultValue=""><option value="">Sin promoción</option>{manualSpecials.map((special) => <option key={special.id} value={special.id}>{special.title}</option>)}</select></label>}
             <label>Fecha y horario<input name="startsAt" type="datetime-local" min={defaultStart.slice(0, 10) + "T00:00"} defaultValue={defaultStart} required /></label>
           </div>
           <div className="admin-form-grid admin-form-grid--3"><label>Nombre y apellido<input name="fullName" minLength={2} maxLength={100} required /></label><label>WhatsApp<input name="phone" type="tel" minLength={8} maxLength={30} required /></label><label>Correo opcional<input name="email" type="email" maxLength={180} /></label></div>

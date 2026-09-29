@@ -160,6 +160,8 @@ export function WeeklyAvailabilityEditor({
           className="button button--quiet"
           type="button"
           onClick={() => {
+            if (days.some((day) => day.weekday >= 2 && day.weekday <= 5 && day.enabled && day.ranges.length > 0)
+              && !window.confirm("Se reemplazarán las franjas de martes a viernes por las del lunes. ¿Continuar?")) return;
             setIsDirty(true);
             setDays((current) => copyMondayToWeekdays(cloneDays(current)));
           }}
@@ -180,7 +182,7 @@ export function WeeklyAvailabilityEditor({
           <div className="weekly-availability__column-head" aria-hidden="true">
             <span>Día</span><span>Franjas disponibles</span>
           </div>
-          {days.map((day) => {
+          {[...days].sort((a, b) => ((a.weekday + 6) % 7) - ((b.weekday + 6) % 7)).map((day) => {
             const dayError = validation.errors[day.weekday];
             return (
               <fieldset className={`weekly-day${day.enabled ? " is-open" : ""}${dayError ? " has-error" : ""}`} key={day.weekday}>

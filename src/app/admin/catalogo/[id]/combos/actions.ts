@@ -61,6 +61,18 @@ function feedbackPath(treatmentId: string, value: string) {
 }
 
 export async function saveDepilationZone(formData: FormData) {
+  const result = await saveDepilationZoneResult(formData);
+  redirect(feedbackPath(String(formData.get("treatmentId")), result.status === "saved" ? "zoneSaved=1" : "zoneError=invalid"));
+}
+
+export interface DepilationZoneEditorResult {
+  status: "saved" | "invalid" | "failed";
+  zoneId?: string;
+  fieldErrors: Record<string, string[]>;
+  message: string;
+}
+
+export async function saveDepilationZoneResult(formData: FormData): Promise<DepilationZoneEditorResult> {
   const { supabase } = await requireAdmin();
   const parsed = zoneSchema.safeParse({
     zoneId: formData.get("zoneId") || undefined,
@@ -71,7 +83,13 @@ export async function saveDepilationZone(formData: FormData) {
     durationMinutes: formData.get("durationMinutes"),
     displayOrder: formData.get("displayOrder"),
   });
-  if (!parsed.success) redirect(feedbackPath(String(formData.get("treatmentId")), "zoneError=invalid"));
+  if (!parsed.success) {
+    return {
+      status: "invalid",
+      fieldErrors: z.flattenError(parsed.error).fieldErrors,
+      message: "Revisá los campos indicados. No se guardó la zona.",
+    };
+  }
   const payload = {
     name: parsed.data.name,
     audience: parsed.data.audience,
@@ -81,17 +99,48 @@ export async function saveDepilationZone(formData: FormData) {
     is_active: formData.get("isActive") === "on",
   };
   const result = parsed.data.zoneId
-    ? await supabase.from("depilation_zones").update(payload).eq("id", parsed.data.zoneId)
-    : await supabase.from("depilation_zones").insert(payload);
-  if (result.error) redirect(feedbackPath(parsed.data.treatmentId, `zoneError=${result.error.code === "23505" ? "duplicate" : "save"}`));
+    ? await supabase.from("depilation_zones").update(payload).eq("id", parsed.data.zoneId).select("id").single()
+    : await supabase.from("depilation_zones").insert(payload).select("id").single();
+  if (result.error) {
+    const message = result.error.message ?? "";
+    if (result.error.code === "23505") {
+      return { status: "failed", fieldErrors: { name: ["Ya existe una zona con ese nombre."] }, message: "No se guardó porque el nombre ya existe." };
+    }
+    if (message.includes("zone_used_by_active_combo")) {
+      return { status: "failed", fieldErrors: { isActive: ["Esta zona integra un combo publicado. Pausá primero el combo o editá su composición."] }, message: "No se puede pausar una zona usada por un combo publicado." };
+    }
+    if (message.includes("zone_audience_conflict")) {
+      return { status: "failed", fieldErrors: { audience: ["La etiqueta no coincide con uno o más combos donde se usa esta zona."] }, message: "No se puede cambiar la etiqueta porque rompería combos existentes." };
+    }
+    return { status: "failed", fieldErrors: {}, message: "No pudimos guardar la zona. Tus datos se conservan; reintentá o revisá si ya quedó guardada." };
+  }
   revalidatePath(`/admin/catalogo/${parsed.data.treatmentId}/combos`);
   revalidatePath("/tratamientos");
-  redirect(feedbackPath(parsed.data.treatmentId, "zoneSaved=1"));
+  return { status: "saved", zoneId: result.data.id, fieldErrors: {}, message: parsed.data.zoneId ? "Zona actualizada." : "Zona creada. Ya podés usarla en combos." };
 }
 
-export async function saveTreatmentCombo(formData: FormData) {
+export interface ComboEditorResult {
+  status: "saved" | "invalid" | "failed";
+  comboId?: string;
+  fieldErrors: Record<string, string[]>;
+  message: string;
+}
+
+export async function saveTreatmentComboResult(formData: FormData): Promise<ComboEditorResult> {
   const { supabase } = await requireAdmin();
   const mode = formData.get("mode");
+  // Discount modes use the server-side zone reference total as their stored base.
+  // Never ask reception to invent an unrelated fixed price just to satisfy SQL.
+  let fixedPricePesos = formData.get("fixedPricePesos");
+  if (formData.get("pricingMode") !== "fixed_price") {
+    const ids = z.array(z.string().uuid()).min(1).safeParse(formData.getAll("zoneIds"));
+    const sessions = z.coerce.number().int().min(1).max(48).safeParse(mode === "single_session" ? 1 : formData.get("sessionCount"));
+    if (ids.success && sessions.success) {
+      const { data, error } = await supabase.from("depilation_zones").select("reference_price_cents").in("id", ids.data);
+      if (error) return { status: "failed", fieldErrors: {}, message: "No pudimos consultar las zonas. Tus datos se conservan; reintentá." };
+      fixedPricePesos = String((data ?? []).reduce((sum, zone) => sum + zone.reference_price_cents, 0) * sessions.data / 100);
+    }
+  }
   const parsed = comboSchema.safeParse({
     comboId: formData.get("comboId") || undefined,
     treatmentId: formData.get("treatmentId"),
@@ -100,7 +149,7 @@ export async function saveTreatmentCombo(formData: FormData) {
     audience: formData.get("audience"),
     mode,
     sessionCount: mode === "single_session" ? 1 : formData.get("sessionCount"),
-    fixedPricePesos: formData.get("fixedPricePesos"),
+    fixedPricePesos,
     pricingMode: formData.get("pricingMode"),
     discountPercent: formData.get("discountPercent") || undefined,
     tierMinItems: formData.get("tierMinItems") || undefined,
@@ -111,8 +160,8 @@ export async function saveTreatmentCombo(formData: FormData) {
     zoneIds: formData.getAll("zoneIds"),
     extraIds: formData.getAll("extraIds"),
   });
-  if (!parsed.success) redirect(feedbackPath(String(formData.get("treatmentId")), "comboError=invalid"));
-  const { error } = await supabase.rpc("save_depilation_combo_v2", {
+  if (!parsed.success) return { status: "invalid", fieldErrors: z.flattenError(parsed.error).fieldErrors, message: "Revisá los campos indicados. No se guardó ningún cambio." };
+  const { data: savedId, error } = await supabase.rpc("save_depilation_combo_v2", {
     requested_combo_id: parsed.data.comboId ?? null,
     requested_treatment_id: parsed.data.treatmentId,
     requested_name: parsed.data.name,
@@ -136,12 +185,17 @@ export async function saveTreatmentCombo(formData: FormData) {
     const reason = error.message.includes("requires_zone") || error.message.includes("not_available")
       ? "zones"
       : error.code === "23505" ? "duplicate" : "save";
-    redirect(feedbackPath(parsed.data.treatmentId, `comboError=${reason}`));
+    return { status: "failed", fieldErrors: reason === "duplicate" ? { name: ["Ya existe un combo con ese nombre."] } : reason === "zones" ? { zoneIds: ["Elegí zonas y extras activos, compatibles con la etiqueta del combo."] } : {}, message: "No se guardaron los cambios. Revisá la configuración y volvé a intentar." };
   }
   revalidatePath(`/admin/catalogo/${parsed.data.treatmentId}/combos`);
   revalidatePath(`/tratamientos`);
   revalidatePath(`/reservar`);
-  redirect(feedbackPath(parsed.data.treatmentId, "comboSaved=1"));
+  return { status: "saved", comboId: String(savedId), fieldErrors: {}, message: formData.get("isActive") === "on" ? "Combo publicado. El selector global también debe estar habilitado." : "Borrador guardado. No se muestra al público." };
+}
+
+export async function saveTreatmentCombo(formData: FormData) {
+  const result = await saveTreatmentComboResult(formData);
+  redirect(feedbackPath(String(formData.get("treatmentId")), result.status === "saved" ? "comboSaved=1" : "comboError=invalid"));
 }
 
 export async function saveTreatmentComboExtra(formData: FormData) {

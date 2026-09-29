@@ -32,7 +32,24 @@ export function TreatmentDetailContent({
   return (
     <article className={`treatment-detail${compact ? " treatment-detail--compact" : ""}`}>
       <div className="treatment-detail__hero">
-        <div className="treatment-detail__image">
+        <div className="treatment-detail__intro">
+          <p className="eyebrow">{activeSpecial ? "Especial del mes" : category.name}</p>
+          <h1>{activeSpecial?.title ?? treatment.name}</h1>
+          {treatment.selectionMode === "simple" ? <p className="numeric">{formatDuration(treatment.durationMinutes)} · {formatPrice(price)}</p> : <p>Elegí un combo para conocer duración y precio.</p>}
+          <p className="treatment-detail__lead">
+            {activeSpecial?.shortDescription ?? treatment.shortDescription}
+          </p>
+          {activeSpecial ? <p>{activeSpecial.detail}</p> : null}
+          <ul className="feature-list">
+            {treatment.characteristics.slice(0, 3).map((characteristic) => (
+              <li key={characteristic}>
+                <Check aria-hidden="true" strokeWidth={1.75} />
+                {characteristic}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className={`treatment-detail__image${image ? "" : " treatment-detail__image--empty"}`}>
           {image ? (
             <Image
               src={image.src}
@@ -49,22 +66,7 @@ export function TreatmentDetailContent({
             </span>
           )}
         </div>
-        <div className="treatment-detail__intro">
-          <p className="eyebrow">{activeSpecial ? "Especial del mes" : category.name}</p>
-          <h1>{activeSpecial?.title ?? treatment.name}</h1>
-          <p className="treatment-detail__lead">
-            {activeSpecial?.shortDescription ?? treatment.shortDescription}
-          </p>
-          {activeSpecial ? <p>{activeSpecial.detail}</p> : null}
-          <ul className="feature-list">
-            {treatment.characteristics.slice(0, 3).map((characteristic) => (
-              <li key={characteristic}>
-                <Check aria-hidden="true" strokeWidth={1.75} />
-                {characteristic}
-              </li>
-            ))}
-          </ul>
-        </div>
+
       </div>
 
       <div className="treatment-detail__body">
@@ -100,7 +102,7 @@ export function TreatmentDetailContent({
         </div>
       </div>
 
-      {treatment.selectionMode === "closed_combo" ? (
+      {treatment.selectionMode !== "simple" ? (
         treatment.combos.length > 0 ? <TreatmentComboSelector treatment={treatment} /> : <section className="combo-selector combo-selector--empty"><h2>Combos en preparación</h2><p>Piel Canela está terminando de configurar las opciones disponibles. Volvé a consultar pronto.</p></section>
       ) : <footer className="treatment-detail__booking numeric">
         <div>

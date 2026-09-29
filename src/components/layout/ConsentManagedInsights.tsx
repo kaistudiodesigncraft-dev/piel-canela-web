@@ -29,8 +29,11 @@ function writeConsent(value: ConsentValue) {
 export function ConsentManagedInsights() {
   const [consent, setConsent] = useState<ConsentValue | null>(null);
   const [ready, setReady] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
+    const reopen = () => setEditing(true);
+    window.addEventListener("piel-canela:privacy-preferences", reopen);
     let cancelled = false;
     queueMicrotask(() => {
       if (cancelled) return;
@@ -39,22 +42,25 @@ export function ConsentManagedInsights() {
     });
     return () => {
       cancelled = true;
+      window.removeEventListener("piel-canela:privacy-preferences", reopen);
     };
   }, []);
 
   const acceptAnalytics = () => {
     writeConsent("analytics");
     setConsent("analytics");
+    setEditing(false);
   };
   const acceptEssential = () => {
     writeConsent("essential");
     setConsent("essential");
+    setEditing(false);
   };
 
   return (
     <>
       {consent === "analytics" ? <><Analytics /><SpeedInsights /></> : null}
-      {ready && consent === null ? (
+      {ready && (consent === null || editing) ? (
         <aside className="cookie-consent" aria-label="Preferencias de privacidad y medición">
           <div>
             <strong>Privacidad y medición</strong>

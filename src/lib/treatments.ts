@@ -1,3 +1,4 @@
+import { quoteCombo } from "./combo-quote";
 import type {
   BookingInitialSelection,
   MonthlySpecial,
@@ -99,10 +100,9 @@ export function resolveBookingSelection(
   if (combo && monthlySpecial) {
     throw new Error("Los combos cerrados no acumulan especiales del mes.");
   }
-  const extraPrice = extras.reduce((total, extra) => total + extra.priceCents, 0) * (combo?.sessionCount ?? 1);
-  const extraDuration = extras.reduce((total, extra) => total + extra.durationMinutes, 0);
-  const basePrice = (combo?.referencePriceCents ?? treatment.priceCents) + extraPrice;
-  const appliedPrice = (combo?.fixedPriceCents ?? monthlySpecial?.specialPriceCents ?? treatment.priceCents) + extraPrice;
+  const quote = combo ? quoteCombo(combo, extras.map((extra) => extra.id)) : null;
+  const selectedExtras = quote?.extras ?? [];
+  const durationMinutes = quote?.durationMinutes ?? treatment.durationMinutes;
   return {
     treatmentId: treatment.id,
     treatmentName: treatment.name,
@@ -113,18 +113,18 @@ export function resolveBookingSelection(
     comboMode: combo?.mode,
     comboAudience: combo?.audience,
     comboZones: combo?.zones.map((zone) => zone.name),
-    comboExtras: extras.map((extra) => extra.name),
-    extraIds: extras.map((extra) => extra.id),
+    comboExtras: selectedExtras.map((extra) => extra.name),
+    extraIds: selectedExtras.map((extra) => extra.id),
     pricingMode: combo?.pricingMode,
     discountSummary: combo?.pricingMode === "fixed_price" ? undefined : "Descuento calculado por Piel Canela",
     sessionCount: combo?.sessionCount,
     validityDays: combo?.validityDays,
-    pricePerSessionCents: combo?.pricePerSessionCents,
-    savingsCents: combo?.savingsCents,
-    durationMinutes: (combo?.durationMinutes ?? treatment.durationMinutes) + extraDuration,
-    occupiedDurationMinutes: combo ? combo.durationMinutes + extraDuration + treatment.bufferMinutes : treatment.durationMinutes + treatment.bufferMinutes,
-    basePriceCents: basePrice,
-    appliedPriceCents: appliedPrice,
+    pricePerSessionCents: quote?.pricePerSessionCents,
+    savingsCents: quote?.savingsCents,
+    durationMinutes,
+    occupiedDurationMinutes: durationMinutes + treatment.bufferMinutes,
+    basePriceCents: quote?.referencePriceCents ?? treatment.priceCents,
+    appliedPriceCents: quote?.priceCents ?? monthlySpecial?.specialPriceCents ?? treatment.priceCents,
   };
 }
 
