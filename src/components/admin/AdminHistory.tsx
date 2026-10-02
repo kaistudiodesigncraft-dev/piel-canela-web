@@ -39,6 +39,7 @@ function restoreErrorMessage(error: string | undefined) {
   if (error === "invalid") return "Completá un motivo para restaurar esta versión.";
   if (error === "notRestorable") return "Ese evento no tiene una versión anterior restaurable.";
   if (error === "conflict") return "No se pudo restaurar porque ya existe un registro con la misma identidad o URL.";
+  if (error === "version") return "No restauramos esta versión porque el registro recibió cambios posteriores. Revisá primero la edición más reciente para no perder trabajo.";
   if (error === "permission") return "Tu cuenta no tiene permiso para restaurar este evento.";
   if (error) return "No pudimos restaurar la versión. Revisá el evento o contactá a soporte.";
   return null;

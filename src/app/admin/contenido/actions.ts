@@ -13,9 +13,9 @@ import {
 import {
   ADMIN_IMAGE_MAX_BYTES,
   ADMIN_IMAGE_TYPES,
-  inspectAdminImage,
 } from "@/lib/admin/image-upload";
 import { requireAdmin } from "@/lib/admin/require-admin";
+import { normalizeAdminImageOnServer } from "@/lib/admin/server-image";
 
 const sectionSchema = z.enum([
   "hero", "categories", "specials", "approach", "booking", "faq",
@@ -107,17 +107,16 @@ export async function finalizeSiteContentMediaUpload(input: {
     .from("site-content-media-ingest").download(input.ingestPath);
   if (downloadError || !blob) return { ok: false, error: "No se pudo verificar la imagen cargada." };
 
-  const file = new File([await blob.arrayBuffer()], "site-content", { type: input.mimeType });
-  const inspection = await inspectAdminImage(file);
-  if (!inspection.valid) {
+  const normalized = await normalizeAdminImageOnServer(blob);
+  if (!normalized.ok) {
     await supabase.storage.from("site-content-media-ingest").remove([input.ingestPath]);
     return { ok: false, error: "La imagen no es válida o no cumple las dimensiones requeridas." };
   }
 
-  const imagePath = `drafts/${section.data}/${randomUUID()}.${imageExtension[input.mimeType]}`;
+  const imagePath = `drafts/${section.data}/${randomUUID()}.webp`;
   const { error: uploadError } = await supabase.storage
     .from("site-content-media")
-    .upload(imagePath, file, { contentType: input.mimeType, upsert: false });
+    .upload(imagePath, normalized.data, { contentType: normalized.mimeType, upsert: false });
   await supabase.storage.from("site-content-media-ingest").remove([input.ingestPath]);
   if (uploadError) return { ok: false, error: "La imagen se verificó, pero no pudo guardarse." };
 

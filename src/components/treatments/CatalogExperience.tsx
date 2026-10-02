@@ -89,6 +89,7 @@ export function CatalogExperience({
 
   return (
     <div className="catalog-experience">
+      <div className="catalog-tools">
       <form role="search" className="catalog-search" action={pathname} onSubmit={(event) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
@@ -119,14 +120,20 @@ export function CatalogExperience({
           </Link>
         ))}
       </div>
+      </div>
 
       <div className="catalog-summary">
         <h2 ref={catalogHeadingRef} tabIndex={-1}>
           {selectedCategory ? selectedCategory.name : "Todos los tratamientos"}
         </h2>
-        <p aria-live="polite">
+        <div className="catalog-summary__meta"><p aria-live="polite">
           {visibleTreatments.length} {visibleTreatments.length === 1 ? "tratamiento" : "tratamientos"}
         </p>
+        {selectedCategory || searchQuery ? (
+          <Link className="text-link" href="/tratamientos#catalogo" scroll={false}>
+            <RotateCcw aria-hidden="true" strokeWidth={1.75} />Limpiar filtro
+          </Link>
+        ) : null}</div>
       </div>
 
       {visibleTreatments.length === 0 ? (
@@ -176,12 +183,6 @@ export function CatalogExperience({
         />
       ) : null}
 
-      {selectedCategory || searchQuery ? (
-        <Link className="catalog-reset text-link" href="/tratamientos#catalogo" scroll={false}>
-          <RotateCcw aria-hidden="true" strokeWidth={1.75} />
-          Limpiar filtro
-        </Link>
-      ) : null}
     </div>
   );
 }

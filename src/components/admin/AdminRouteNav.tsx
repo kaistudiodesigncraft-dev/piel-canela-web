@@ -60,7 +60,7 @@ export function AdminRouteNav({ current, canManageAccess = false }: { current: A
       <button className={styles.collapse} type="button" aria-label={compact ? "Expandir menú" : "Contraer menú"} aria-expanded={!compact} onClick={() => setCompact(!compact)}>{compact ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}</button>
       {navigation()}<Link className={styles.publicLink} href="/" target="_blank" rel="noreferrer">Ver web pública</Link>
     </aside>
-    <button className={styles.mobileTrigger} type="button" ref={trigger} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}><Menu aria-hidden="true" />Menú del panel</button>
+    <button className={styles.mobileTrigger} type="button" ref={trigger} aria-label="Menú del panel" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}><Menu aria-hidden="true" /><span>Menú</span><strong>{routes.find((route) => route.id === current)?.label}</strong></button>
     {open ? createPortal(<dialog ref={dialog} className={styles.drawer} aria-labelledby="admin-menu-title" onCancel={() => setOpen(false)} onClick={(event) => { if (event.target === event.currentTarget) setOpen(false); }}><div className={styles.drawerHeading}><strong id="admin-menu-title">Piel Canela</strong><button type="button" autoFocus aria-label="Cerrar menú" onClick={() => setOpen(false)}><X aria-hidden="true" /></button></div>{navigation(true)}</dialog>, document.body) : null}
   </>;
 }

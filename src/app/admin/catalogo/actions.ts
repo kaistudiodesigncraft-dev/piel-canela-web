@@ -78,6 +78,10 @@ function operationalFailure(stage: string, code?: string): SaveTreatmentState {
 }
 
 function treatmentConstraintFailure(message: string): SaveTreatmentState | null {
+  if (message.includes("treatment_version_conflict")) return treatmentFailure("stale");
+  if (message.includes("professional_specialty_mismatch") || message.includes("professional_not_available")) {
+    return treatmentFailure("professional", { professionalIds: ["Revisá que los profesionales estén habilitados para esta especialidad."] });
+  }
   if (message.includes("published_treatment_requires_active_professional")) {
     return treatmentFailure("professional", { professionalIds: ["Asigná al menos un profesional activo antes de publicar."] });
   }
@@ -334,23 +338,14 @@ async function saveTreatmentImpl(
     return treatmentFailure("invalid", { name: ["El nombre debe contener letras o números para crear la URL."] });
   }
 
-  const shouldStageActivation = isActive && (isNew || !existing?.is_active);
-  const writePayload = shouldStageActivation ? { ...payload, is_active: false } : payload;
-  const result = isNew
-    ? await supabase.from("treatments").insert({ id, ...writePayload })
-    : await supabase.from("treatments").update(writePayload).eq("id", id);
-  if (result.error) return treatmentMutationFailure(result.error, { isNew, id, supabase });
-
-  const { error: professionalsError } = await supabase.rpc("save_treatment_professional_assignments", {
+  const result = await supabase.rpc("save_admin_treatment", {
     requested_treatment_id: id,
+    requested_values: payload,
     requested_professional_ids: selectedProfessionalIds,
+    requested_is_new: isNew,
+    expected_updated_at: String(formData.get("expectedUpdatedAt") ?? "") || null,
   });
-  if (professionalsError) return operationalFailure("save_professionals", professionalsError.code);
-
-  if (shouldStageActivation) {
-    const activationResult = await supabase.from("treatments").update({ is_active: true }).eq("id", id);
-    if (activationResult.error) return treatmentMutationFailure(activationResult.error);
-  }
+  if (result.error) return treatmentMutationFailure(result.error, { isNew, id, supabase });
 
   revalidatePath("/");
   revalidatePath("/tratamientos");
@@ -385,6 +380,10 @@ export async function deleteTreatment(formData: FormData) {
   });
   if (!parsed.success) catalogRedirect("treatmentError=deleteConfirmation");
   if (!isTreatmentDeleteCodeConfigured()) catalogRedirect("treatmentError=deleteNotConfigured");
+  const attempt = await supabase.rpc("register_admin_protected_action_attempt", {
+    requested_action: "delete_treatment",
+  });
+  if (attempt.error || attempt.data !== true) catalogRedirect("treatmentError=deleteRateLimited");
   if (!verifyTreatmentDeleteCode(parsed.data.confirmationCode)) catalogRedirect("treatmentError=deleteCode");
   const guardSecret = process.env.BOOKING_GUARD_SECRET;
   if (!guardSecret || guardSecret.length < 32) catalogRedirect("treatmentError=deleteNotConfigured");
@@ -408,6 +407,9 @@ export async function deleteTreatment(formData: FormData) {
   if (error) {
     catalogRedirect(`treatmentError=${error.code === "23503" ? "deleteLinked" : error.code === "42501" ? "deleteNotConfigured" : "deleteFailed"}`);
   }
+  await supabase.rpc("clear_admin_protected_action_attempts", {
+    requested_action: "delete_treatment",
+  });
 
   revalidatePath("/");
   revalidatePath("/tratamientos");

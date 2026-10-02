@@ -7,6 +7,8 @@ export type CatalogQueryStage =
   | "specialties"
   | "professionals"
   | "treatments"
+  | "assignments"
+  | "combos"
   | "future-bookings";
 
 interface CatalogQueryError {

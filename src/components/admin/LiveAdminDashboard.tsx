@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { AdminRouteNav } from "@/components/admin/AdminRouteNav";
 import { BookingStatusTransitionForm } from "@/components/admin/BookingStatusTransitionForm";
 import { WeeklyAvailabilityEditor } from "@/components/admin/WeeklyAvailabilityEditor";
@@ -36,7 +36,7 @@ import {
   signOutAdmin,
   toggleSpecialty,
 } from "@/app/admin/actions";
-import { rescheduleBooking, saveBookingNotes } from "@/app/admin/reservas/actions";
+import { getBookingRescheduleSlots, rescheduleBooking, saveBookingNotes } from "@/app/admin/reservas/actions";
 import type { BookingStatus } from "@/domain/treatment";
 import type { MessageTemplates } from "@/domain/whatsapp";
 import {
@@ -55,6 +55,7 @@ import {
   type AdminAgendaRange,
 } from "@/lib/admin/agenda";
 import { formatPrice } from "@/lib/format";
+import { idempotencyUuid } from "@/lib/idempotency";
 
 interface SpecialtyRow {
   id: string;
@@ -64,7 +65,6 @@ interface SpecialtyRow {
   display_order: number;
   is_active: boolean;
 }
-
 interface AvailabilityRuleRow {
   id: string;
   specialty_id: string;
@@ -102,6 +102,17 @@ interface TreatmentComboRow {
   mode: "single_session" | "package";
   session_count: number;
   fixed_price_cents: number;
+  allow_public_extras: boolean;
+  extra_ids: string[];
+  is_active: boolean;
+}
+
+interface TreatmentComboExtraRow {
+  id: string;
+  treatment_id: string;
+  name: string;
+  price_cents: number;
+  duration_minutes: number;
   is_active: boolean;
 }
 
@@ -138,6 +149,8 @@ interface MonthlySpecialRow {
 interface AdminBookingRow {
   messageTemplates?: MessageTemplates;
   id: string;
+  treatment_id: string;
+  treatment_combo_id?: string | null;
   professional_id?: string | null;
   professional?: { full_name: string; public_name: string | null } | null;
   booking_code: string;
@@ -180,6 +193,7 @@ interface LiveAdminDashboardProps {
   exceptions: AvailabilityExceptionRow[];
   treatments: TreatmentRow[];
   treatmentCombos: TreatmentComboRow[];
+  treatmentComboExtras: TreatmentComboExtraRow[];
   professionals: ProfessionalOptionRow[];
   monthlySpecials: MonthlySpecialRow[];
   bookings: AdminBookingRow[];
@@ -219,6 +233,62 @@ function Feedback({ show, error, success, errorText }: { show: boolean; error?: 
   return null;
 }
 
+function BookingRescheduleForm({ booking }: { booking: AdminBookingRow }) {
+  const [date, setDate] = useState(toArgentinaDateTimeInput(booking.starts_at).slice(0, 10));
+  const [startsAt, setStartsAt] = useState("");
+  const [slots, setSlots] = useState<{ startsAt: string; endsAt: string }[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let isActive = true;
+    if (!date) return () => { isActive = false; };
+    void (async () => {
+      setLoading(true);
+      setError(false);
+      setSlots([]);
+      const result = await getBookingRescheduleSlots({ bookingId: booking.id, date });
+      if (!isActive) return;
+      if (result.ok) {
+        setSlots(result.slots);
+      } else {
+        setError(true);
+      }
+      setLoading(false);
+    })().catch(() => {
+      if (!isActive) return;
+      setError(true);
+      setLoading(false);
+    });
+    return () => { isActive = false; };
+  }, [booking.id, date]);
+
+  return (
+    <form action={rescheduleBooking} className="admin-form admin-form--booking-action">
+      <input type="hidden" name="bookingId" value={booking.id} />
+      <input type="hidden" name="startsAt" value={startsAt} />
+      <div><h3>Reprogramar</h3><p>Elegí una fecha y después un horario disponible. La base vuelve a validar antes de mover la reserva.</p></div>
+      <label>Nueva fecha<input name="rescheduleDate" type="date" value={date} onChange={(event) => { setDate(event.target.value); setStartsAt(""); setSlots([]); setError(false); }} required /></label>
+      <div className="admin-slot-picker" role="group" aria-label={`Horarios disponibles para reprogramar ${booking.booking_code}`}>
+        <div className="admin-slot-picker__heading">
+          <strong>Horarios disponibles</strong>
+          <span>{booking.professional_id ? "Respeta el profesional asignado" : "Autoasigna un profesional disponible"}</span>
+        </div>
+        {loading ? <p className="admin-slot-picker__message" role="status">Consultando disponibilidad real...</p> : null}
+        {error ? <p className="form-message form-message--error" role="alert">No pudimos consultar horarios. Probá otra fecha.</p> : null}
+        {!loading && !error && slots.length === 0 ? <p className="admin-slot-picker__message">No hay horarios disponibles para esa fecha.</p> : null}
+        {slots.length > 0 ? <div className="admin-slot-picker__grid">{slots.map((slot) => (
+          <label key={slot.startsAt} className={`admin-slot-option${startsAt === slot.startsAt ? " is-selected" : ""}`}>
+            <input type="radio" name="rescheduleSlot" checked={startsAt === slot.startsAt} onChange={() => setStartsAt(slot.startsAt)} />
+            <span>{bookingTime(slot.startsAt)}</span>
+          </label>
+        ))}</div> : null}
+      </div>
+      <button className="button button--quiet" type="submit" disabled={!startsAt}>Mover reserva</button>
+    </form>
+  );
+}
+
 export function LiveAdminDashboard({
   adminName,
   canManageAccess,
@@ -228,6 +298,7 @@ export function LiveAdminDashboard({
   exceptions,
   treatments,
   treatmentCombos,
+  treatmentComboExtras,
   professionals,
   monthlySpecials,
   bookings,
@@ -247,6 +318,8 @@ export function LiveAdminDashboard({
   const defaultEnd = toArgentinaDateTimeInput(new Date(referenceTimestamp + 2 * 60 * 60 * 1000).toISOString());
   const [manualTreatmentId, setManualTreatmentId] = useState(treatments[0]?.id ?? "");
   const [manualComboId, setManualComboId] = useState("");
+  const [manualExtraIds, setManualExtraIds] = useState<string[]>([]);
+  const manualIdempotencyKey = idempotencyUuid(useId());
   const [manualProfessionalId, setManualProfessionalId] = useState("");
   const [manualDate, setManualDate] = useState(defaultStart.slice(0, 10));
   const [manualStartsAt, setManualStartsAt] = useState("");
@@ -260,6 +333,10 @@ export function LiveAdminDashboard({
   const manualSpecials = activeSpecials.filter((special) => special.treatment_id === manualTreatmentId);
   const manualTreatment = treatments.find((treatment) => treatment.id === manualTreatmentId);
   const manualCombos = treatmentCombos.filter((combo) => combo.treatment_id === manualTreatmentId && combo.is_active);
+  const manualCombo = manualCombos.find((combo) => combo.id === manualComboId);
+  const manualExtras = treatmentComboExtras.filter((extra) =>
+    extra.is_active && extra.treatment_id === manualTreatmentId && manualCombo?.extra_ids.includes(extra.id),
+  );
   const manualProfessionals = manualTreatment
     ? professionals.filter((professional) =>
       professional.is_active
@@ -288,6 +365,7 @@ export function LiveAdminDashboard({
       const result = await getManualBookingSlots({
         treatmentId: manualTreatmentId,
         comboId: manualComboId || undefined,
+        extraIds: manualExtraIds,
         professionalId: manualProfessionalId || undefined,
         date: manualDate,
       });
@@ -306,7 +384,7 @@ export function LiveAdminDashboard({
       }
     });
     return () => { isActive = false; };
-  }, [manualComboId, manualDate, manualProfessionalId, manualTreatment?.selection_mode, manualTreatmentId]);
+  }, [manualComboId, manualDate, manualExtraIds, manualProfessionalId, manualTreatment?.selection_mode, manualTreatmentId]);
   const totalPages = Math.max(1, Math.ceil(agenda.total / agenda.pageSize));
 
   return (
@@ -384,7 +462,7 @@ export function LiveAdminDashboard({
                   <summary><span><NotebookPen aria-hidden="true" strokeWidth={1.75} />Detalle operativo</span><ChevronDown aria-hidden="true" strokeWidth={1.75} /></summary>
                   <div className="booking-detail-disclosure__body">
                     <dl className="booking-detail-facts"><div><dt>Creada</dt><dd>{bookingDate(booking.created_at)}</dd></div><div><dt>Reprogramaciones</dt><dd className="numeric">{booking.reschedule_count}</dd></div><div><dt>Correo</dt><dd>{booking.customer?.email ?? "No informado"}</dd></div></dl>
-                    {canRescheduleBooking(booking.status) ? <form action={rescheduleBooking} className="admin-form admin-form--booking-action"><input type="hidden" name="bookingId" value={booking.id} /><div><h3>Reprogramar</h3><p>Se comprueba la disponibilidad de la especialidad y que el profesional no tenga otro turno.</p></div><label>Nueva fecha y hora<input name="startsAt" type="datetime-local" defaultValue={toArgentinaDateTimeInput(booking.starts_at)} required /></label><button className="button button--quiet" type="submit">Mover reserva</button></form> : null}
+                    {canRescheduleBooking(booking.status) ? <BookingRescheduleForm booking={booking} /> : null}
                     <form action={saveBookingNotes} className="admin-form admin-form--booking-notes"><input type="hidden" name="bookingId" value={booking.id} /><div className="admin-form-grid"><label>Nota de la persona<textarea name="customerNotes" rows={3} maxLength={240} defaultValue={booking.customer_notes ?? ""} /></label><label>Nota interna<textarea name="internalNotes" rows={3} maxLength={1000} defaultValue={booking.internal_notes ?? ""} /></label></div><div className="admin-form-footer"><p>Las notas internas no se muestran en la web ni se incluyen en WhatsApp.</p><button className="button button--quiet" type="submit">Guardar notas</button></div></form>
                     <div className="booking-status-history" aria-label={`Historial de estado de ${booking.booking_code}`}>
                       <h3>Historial de estados</h3>
@@ -403,12 +481,14 @@ export function LiveAdminDashboard({
         <div className="admin-section-heading"><div><h2 id="manual-title">Asignar un turno manual</h2><p>Para solicitudes recibidas por WhatsApp, teléfono o en el local. Se valida la disponibilidad de la especialidad y la ocupación del profesional.</p></div><UserPlus aria-hidden="true" strokeWidth={1.75} /></div>
         <Feedback show={feedback.manualBookingSaved === "1"} error={feedback.manualBookingError} success="Turno manual creado y agregado a la agenda." errorText={feedback.manualBookingError === "conflict" ? "No hay un profesional disponible en ese horario para la especialidad seleccionada." : "No se pudo crear el turno manual."} />
         <form action={createManualBooking} className="admin-form admin-form--wide">
+          <input type="hidden" name="idempotencyKey" value={manualIdempotencyKey} />
           <div className="admin-form-grid admin-form-grid--3">
-            <label>Tratamiento<select name="treatmentId" required value={manualTreatmentId} onChange={(event) => { setManualTreatmentId(event.target.value); setManualComboId(""); setManualProfessionalId(""); clearManualSlotSelection(); }}>{treatments.map((treatment) => <option key={treatment.id} value={treatment.id}>{treatment.name} · {specialtyName.get(treatment.specialty_id)}</option>)}</select></label>
-            {manualTreatment && manualTreatment.selection_mode !== "simple" ? <label>Combo<select name="comboId" value={manualComboId} onChange={(event) => { setManualComboId(event.target.value); clearManualSlotSelection(); }} required><option value="">Seleccionar combo</option>{manualCombos.map((combo) => <option key={combo.id} value={combo.id}>{combo.name} · {combo.session_count} {combo.session_count === 1 ? "sesión" : "sesiones"} · {formatPrice(combo.fixed_price_cents)}</option>)}</select></label> : <label>Especial del mes<select name="monthlySpecialId" defaultValue=""><option value="">Sin promoción</option>{manualSpecials.map((special) => <option key={special.id} value={special.id}>{special.title}</option>)}</select></label>}
+            <label>Tratamiento<select name="treatmentId" required value={manualTreatmentId} onChange={(event) => { setManualTreatmentId(event.target.value); setManualComboId(""); setManualExtraIds([]); setManualProfessionalId(""); clearManualSlotSelection(); }}>{treatments.map((treatment) => <option key={treatment.id} value={treatment.id}>{treatment.name} · {specialtyName.get(treatment.specialty_id)}</option>)}</select></label>
+            {manualTreatment && manualTreatment.selection_mode !== "simple" ? <label>Combo<select name="comboId" value={manualComboId} onChange={(event) => { setManualComboId(event.target.value); setManualExtraIds([]); clearManualSlotSelection(); }} required><option value="">Seleccionar combo</option>{manualCombos.map((combo) => <option key={combo.id} value={combo.id}>{combo.name} · {combo.session_count} {combo.session_count === 1 ? "sesión" : "sesiones"} · {formatPrice(combo.fixed_price_cents)}</option>)}</select></label> : <label>Especial del mes<select name="monthlySpecialId" defaultValue=""><option value="">Sin promoción</option>{manualSpecials.map((special) => <option key={special.id} value={special.id}>{special.title}</option>)}</select></label>}
             <label>Profesional<select name="professionalId" value={manualProfessionalId} onChange={(event) => { setManualProfessionalId(event.target.value); clearManualSlotSelection(); }}><option value="">Autoasignar disponible</option>{manualProfessionals.map((professional) => <option key={professional.id} value={professional.id}>{professional.public_name || professional.full_name}</option>)}</select><small>Si elegís una persona, solo se muestran horarios donde está disponible.</small></label>
             <label>Fecha<input name="manualDate" type="date" min={defaultStart.slice(0, 10)} value={manualDate} onChange={(event) => { setManualDate(event.target.value); clearManualSlotSelection(); }} required /></label>
           </div>
+          {manualCombo?.allow_public_extras && manualExtras.length > 0 ? <fieldset className="depilation-zone-picker"><legend>Extras del combo</legend>{manualExtras.map((extra) => <label className="admin-check" key={extra.id}><input type="checkbox" name="extraIds" value={extra.id} checked={manualExtraIds.includes(extra.id)} onChange={(event) => { setManualExtraIds((current) => event.target.checked ? [...current, extra.id] : current.filter((id) => id !== extra.id)); clearManualSlotSelection(); }} /><span><strong>{extra.name}</strong><small>+{formatPrice(extra.price_cents)} · +{extra.duration_minutes} min</small></span></label>)}</fieldset> : null}
           <input type="hidden" name="startsAt" value={manualStartsAt} />
           <div className="admin-slot-picker" role="group" aria-label="Horarios disponibles para el turno manual">
             <div className="admin-slot-picker__heading">

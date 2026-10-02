@@ -1,5 +1,6 @@
-/* Task-oriented UX, scoped to existing Materia Clara components. */
-.catalog-search { margin-block: 0 1.5rem; max-width: 42rem; }
+/* Presentation layer only. Keep business state, pricing and permissions in their existing owners. */
+.catalog-tools { display: grid; gap: 1rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--color-border); }
+.catalog-search { margin: 0; max-width: 42rem; width: 100%; }
 .catalog-search label { display: block; margin-bottom: .5rem; font-weight: 600; }
 .catalog-search > div { display: flex; gap: .5rem; }
 .catalog-search input { min-width: 0; flex: 1; min-height: 44px; padding: .7rem; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-white); }
@@ -8,16 +9,133 @@
 .treatment-editor-nav a { display: inline-flex; align-items: center; min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-petrol); text-decoration: none; }
 .admin-treatment-editor fieldset[id] { scroll-margin-top: 1.5rem; }
 .admin-treatment-editor-footer { position: sticky; bottom: 0; z-index: 5; padding: 1rem; background: var(--color-bone); border-top: 1px solid var(--color-border); }
-.admin-product-shell .live-admin__header h1 { font-size: clamp(1.75rem, 3vw, 2.5rem); line-height: 1.15; }
-.admin-product-shell .live-admin__header { padding-block: 1.5rem; }
+.admin-product-shell .live-admin__header h1 { max-width: 32ch; font-size: clamp(1.5rem, 2.5vw, 2rem); line-height: 1.2; letter-spacing: -.03em; }
+.admin-product-shell .live-admin__header { padding-block: 1.5rem; gap: 1.25rem; align-items: center; }
 .combo-editor-fields { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 1rem; }
 .combo-editor-fields label[hidden] { display: none; }
 .treatment-detail__image--empty { display: none; }
 .treatment-detail__hero:has(.treatment-detail__image--empty) { grid-template-columns: 1fr; }
-.page-hero--catalog { padding-block: 2rem; }
+.page-hero--catalog { padding-block: 2rem 1.5rem; background: var(--color-bone); }
+.page-hero--catalog .page-hero__content { gap: .65rem; }
+.page-hero--catalog h1 { max-width: 32ch; font-size: clamp(1.8rem, 3.2vw, 2.75rem); line-height: 1.15; }
+.page-hero--catalog .page-hero__content > p:last-child { max-width: 65ch; font-size: 1rem; }
+.page-hero--catalog .eyebrow { font-size: .75rem; letter-spacing: .035em; }
+.section--catalog { padding-block: 1rem 4rem; }
+.catalog-experience { gap: 1.25rem; }
+.catalog-filters { flex-wrap: wrap; padding: 0; overflow: visible; }
+.filter-chip { font-weight: 600; text-decoration: none; }
+.catalog-summary h2 { font-size: 1.125rem; letter-spacing: -.02em; }
+.catalog-summary__meta { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.25rem; font-size: .9rem; }
+.catalog-summary__meta .text-link { min-height: 44px; }
+
+/* Compare name, time and price first. The existing detail holds the complete content. */
+.treatment-editorial-card { min-height: 0; border-radius: 1rem; box-shadow: none; }
+.treatment-editorial-card:hover,
+.treatment-editorial-card:focus-within { transform: none; box-shadow: 0 4px 16px rgb(36 50 46 / 5%); }
+.treatment-editorial-card__top { grid-template-columns: 32% minmax(0, 1fr); min-height: 14rem; }
+.treatment-editorial-card__image { border-radius: 0 0 2.25rem 0; }
+.treatment-editorial-card__content { padding: 1.25rem; gap: .65rem; align-content: start; }
+.treatment-editorial-card__content h3 { font-size: 1.3rem; line-height: 1.25; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.treatment-editorial-card__content .eyebrow { font-size: .7rem; letter-spacing: .035em; }
+.treatment-editorial-card__description { font-size: .95rem; }
+.treatment-editorial-card__footer { grid-template-columns: 1fr auto; min-height: 0; gap: .35rem .75rem; padding: 1rem 1.25rem; border-radius: 0; border-top: 1px solid var(--color-border); background: var(--color-white); color: var(--color-ink); }
+.treatment-editorial-card__duration { grid-column: 1; font-size: .85rem; color: var(--color-text-secondary); }
+.treatment-editorial-card__footer strong { grid-column: 1; grid-row: 2; font-size: 1.25rem; white-space: normal; overflow-wrap: anywhere; }
+.treatment-editorial-card__arrow { grid-column: 2; grid-row: 1 / 3; display: inline-flex; gap: .4rem; width: auto; height: auto; min-height: 44px; padding: .65rem .8rem; border-radius: .65rem; background: var(--color-green-mist); color: var(--color-deep-petrol); box-shadow: none; font-weight: 650; font-size: .875rem; text-decoration: none; }
+.treatment-editorial-card:hover .treatment-editorial-card__arrow,
+.treatment-editorial-card:focus-within .treatment-editorial-card__arrow { transform: none; }
+.treatment-editorial-card--text .treatment-editorial-card__top { grid-template-columns: 1fr; }
+.treatment-editorial-card--text .treatment-editorial-card__image { display: none; }
+
+/* A bounded image and a single action precede the extended information. */
+.treatment-detail__intro { gap: .8rem; padding: 1.5rem; }
+.treatment-detail__hero,
+.treatment-detail--compact .treatment-detail__hero { grid-template-columns: 1fr; }
+.treatment-detail__intro { grid-row: 1; }
+.treatment-detail__image { grid-row: 3; }
+.treatment-detail__booking { grid-row: 2; }
+.treatment-detail__intro h1 { font-size: clamp(1.6rem, 3vw, 2.5rem); line-height: 1.2; }
+.treatment-detail__lead { font-size: 1rem; }
+.treatment-detail__image,
+.treatment-detail--compact .treatment-detail__image { min-height: 0; height: 12rem; border-radius: 0; }
+.treatment-detail__booking,
+.treatment-detail--compact .treatment-detail__booking { grid-template-columns: 1fr 1fr; gap: .75rem; padding: 1rem 1.5rem; }
+.treatment-detail__booking .button { grid-column: 1 / -1; }
+.treatment-detail__booking strong { font-size: 1.25rem; }
+.treatment-detail__body { gap: 1.5rem; padding: 1.5rem; }
+.treatment-detail__body h2 { font-size: 1.15rem; }
+
+/* The appointment controls take precedence over page-level introductions. */
+.booking-demo-page { padding-block: 1.5rem 3rem; }
+.booking-flow { gap: 1.5rem; }
+.booking-flow__header { gap: 1rem; align-items: center; }
+.booking-flow__header h2 { max-width: 32ch; font-size: clamp(1.5rem, 3vw, 2.25rem); line-height: 1.2; letter-spacing: -.03em; }
+.booking-flow__header .eyebrow { font-size: .75rem; letter-spacing: .035em; }
+.booking-step-caption { color: var(--color-text-secondary); font-size: .875rem; white-space: nowrap; }
+.booking-progress { margin: 0; }
+.booking-step-panel { padding: clamp(1rem, 2.5vw, 1.75rem); border-radius: 1rem; box-shadow: none; }
+.booking-selection-rail { border-radius: 1rem; padding: 1.25rem; }
+.booking-selection-rail h2 { font-size: 1.25rem; line-height: 1.3; }
+.booking-selection-rail__hint { font-size: .875rem; }
+.date-choice { min-height: 72px; border-radius: .65rem; }
+.date-choice strong { font-size: 1.5rem; }
+.time-choice { min-height: 44px; border-radius: .65rem; }
+
+/* Reception uses the same colors and type, with a quieter operational density. */
+.admin-product-shell { background: var(--color-cloud); min-height: 100dvh; }
+.admin-product-shell .live-admin { padding-bottom: 3rem; }
+.admin-product-shell .live-admin__header .eyebrow { font-size: .75rem; letter-spacing: .025em; }
+.admin-product-shell .live-admin__header > div > p:last-child { max-width: 65ch; font-size: .95rem; }
+.admin-product-shell .admin-section-heading h2 { font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.3; }
+.admin-product-shell .live-admin__section { padding: clamp(1rem, 2.5vw, 1.75rem); border-radius: 1rem; }
+.admin-product-shell .admin-section-heading p { max-width: 65ch; font-size: .95rem; }
+.admin-product-shell .button { border-radius: .65rem; box-shadow: none; min-height: 44px; }
+.admin-product-shell .admin-summary-grid article { border-radius: .8rem; box-shadow: none; padding: 1.25rem; }
+.admin-product-shell .admin-summary-grid strong { font-size: 2rem; }
+.admin-product-shell .admin-form fieldset { padding: clamp(1rem, 2vw, 1.5rem); border-radius: .8rem; background: var(--color-white); }
+.admin-product-shell .admin-form legend { font-size: 1.05rem; }
+.admin-product-shell .admin-form :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=range]), select, textarea) { min-height: 44px; border-radius: .55rem; }
+.admin-secondary-settings > summary { min-height: 44px; padding-block: .5rem; cursor: pointer; font-weight: 650; }
+.admin-secondary-settings__hint { display: block; margin: .25rem 0 .25rem 1rem; color: var(--color-text-secondary); font-weight: 400; font-size: .875rem; }
+.admin-secondary-settings[open] > p { margin-bottom: 1rem; color: var(--color-text-secondary); }
+.admin-product-shell .admin-treatment-manager-item { border-radius: .8rem; box-shadow: none; }
+.admin-product-shell .admin-treatment-manager-item__summary { gap: 1rem; padding: 1rem; }
+.admin-product-shell .admin-treatment-manager-item__summary h3 { font-size: 1.1rem; }
+.admin-product-shell .admin-treatment-manager-item__summary p { font-size: .875rem; }
+.admin-product-shell .admin-treatment-editor-side { border-radius: 1rem; }
+.admin-product-shell .status-badge { font-size: .75rem; letter-spacing: 0; }
+
+@media (min-width: 768px) {
+  .catalog-tools { grid-template-columns: minmax(18rem, 1fr) auto; align-items: end; gap: 1.5rem; }
+  .catalog-filters { justify-content: flex-end; }
+  .treatment-detail__hero,
+  .treatment-detail--compact .treatment-detail__hero { grid-template-columns: minmax(0, 1fr) minmax(100px, 25%); align-items: stretch; }
+  .treatment-detail__image,
+  .treatment-detail--compact .treatment-detail__image { height: auto; min-height: 100%; grid-column: 2; grid-row: 1 / 3; }
+  .treatment-detail__booking { grid-column: 1; }
+  .treatment-detail__booking,
+  .treatment-detail--compact .treatment-detail__booking { grid-template-columns: 1fr 1fr auto; }
+  .treatment-detail__booking .button,
+  .treatment-detail--compact .treatment-detail__booking .button { grid-column: auto; width: auto; }
+}
 @media (max-width: 600px) {
   .admin-treatment-editor-footer { position: static; }
   .admin-treatment-editor-side { order: 2; }
   .catalog-search > div { flex-wrap: wrap; }
   .catalog-search input { flex-basis: 65%; }
+  .catalog-tools { gap: .85rem; }
+  .catalog-filters { gap: .4rem; }
+  .filter-chip { padding-inline: .8rem; font-size: .875rem; }
+  .catalog-summary { gap: .3rem; }
+  .catalog-summary__meta { width: 100%; justify-content: space-between; }
+  .treatment-editorial-card__top { min-height: 11rem; }
+  .treatment-editorial-card__content { padding: 1rem; }
+  .treatment-editorial-card__content h3 { font-size: 1.2rem; }
+  .treatment-editorial-card__footer { padding: .85rem 1rem; }
+  .booking-flow__header { display: grid; }
+  .booking-flow__header > div:first-child { gap: .5rem; }
+  .booking-progress li { font-size: .8rem; padding-inline: .25rem; }
+  .booking-selection-rail { padding: 1rem; }
+  .admin-product-shell .live-admin__actions { flex-wrap: wrap; gap: .5rem; }
+  .admin-product-shell .live-admin__actions .button { font-size: .875rem; padding-inline: .75rem; }
 }

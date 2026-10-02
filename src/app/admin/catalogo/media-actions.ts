@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { inspectAdminImage } from "@/lib/admin/image-upload";
+import { normalizeAdminImageOnServer } from "@/lib/admin/server-image";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import {
   TREATMENT_MEDIA_BUCKET,
@@ -121,12 +121,11 @@ async function finalizeTreatmentMediaUploadImpl(uploadId: string): Promise<Media
     console.error("treatment_media_download", { incidentId: incident, code: downloadError?.name });
     return { ok: false, error: "download", incidentId: incident };
   }
-  const file = new File([downloaded], "normalized-treatment.webp", { type: TREATMENT_MEDIA_OUTPUT_TYPE });
-  const inspection = await inspectAdminImage(file);
-  if (!inspection.valid) {
+  const normalized = await normalizeAdminImageOnServer(downloaded);
+  if (!normalized.ok) {
     await supabase.from("treatment_media_uploads").update({
       status: "failed",
-      failure_code: `image_${inspection.error}`,
+      failure_code: `image_${normalized.error}`,
     }).eq("id", upload.id).eq("user_id", userId);
     return { ok: false, error: "image", incidentId: incident };
   }
@@ -134,7 +133,7 @@ async function finalizeTreatmentMediaUploadImpl(uploadId: string): Promise<Media
   const finalPath = `treatments/${upload.treatment_id}/${upload.id}.webp`;
   const { error: storeError } = await supabase.storage.from(TREATMENT_MEDIA_BUCKET).upload(
     finalPath,
-    downloaded,
+    normalized.data,
     { contentType: TREATMENT_MEDIA_OUTPUT_TYPE, upsert: false, cacheControl: "31536000" },
   );
   const isAlreadyStored = Boolean(storeError?.message.match(/already exists|duplicate/i));
@@ -147,9 +146,9 @@ async function finalizeTreatmentMediaUploadImpl(uploadId: string): Promise<Media
     status: "finalized",
     final_path: finalPath,
     mime_type: TREATMENT_MEDIA_OUTPUT_TYPE,
-    byte_size: downloaded.size,
-    width: inspection.width,
-    height: inspection.height,
+    byte_size: normalized.data.byteLength,
+    width: normalized.width,
+    height: normalized.height,
     failure_code: null,
     finalized_at: new Date().toISOString(),
   }).eq("id", upload.id).eq("user_id", userId);
@@ -161,5 +160,5 @@ async function finalizeTreatmentMediaUploadImpl(uploadId: string): Promise<Media
   // Final media is durable before this best-effort cleanup. A failed cleanup can
   // never break an already saved treatment or its previous image.
   await supabase.storage.from(TREATMENT_MEDIA_INGEST_BUCKET).remove([upload.ingest_path]);
-  return { ok: true, imagePath: finalPath, width: inspection.width, height: inspection.height };
+  return { ok: true, imagePath: finalPath, width: normalized.width, height: normalized.height };
 }

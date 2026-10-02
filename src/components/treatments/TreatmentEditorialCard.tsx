@@ -21,7 +21,7 @@ export function TreatmentEditorialCard({
   const activeCombos = treatment.combos.filter((combo) => combo.isActive);
   const comboPrice = activeCombos.length > 0 ? Math.min(...activeCombos.map((combo) => quoteCombo(combo).priceCents)) : null;
   return (
-    <article className="treatment-editorial-card">
+    <article className={`treatment-editorial-card${treatment.image ? "" : " treatment-editorial-card--text"}`}>
       <div className="treatment-editorial-card__top">
         <div className="treatment-editorial-card__image">
           {treatment.image ? (
@@ -41,13 +41,8 @@ export function TreatmentEditorialCard({
         </div>
         <div className="treatment-editorial-card__content">
           <p className="eyebrow">{category.name}</p>
-          <h2>{treatment.name}</h2>
+          <h3>{treatment.name}</h3>
           <p className="treatment-editorial-card__description">{treatment.shortDescription}</p>
-          <ul className="feature-list feature-list--compact">
-            {treatment.characteristics.slice(0, 3).map((characteristic) => (
-              <li key={characteristic}>{characteristic}</li>
-            ))}
-          </ul>
         </div>
       </div>
       <div className="treatment-editorial-card__footer numeric">
@@ -64,6 +59,7 @@ export function TreatmentEditorialCard({
           aria-label={`Ver detalles de ${treatment.name}`}
           onClick={(event) => onOpen(event.currentTarget)}
         >
+          <span>Ver detalle</span>
           <ArrowRight aria-hidden="true" strokeWidth={1.75} />
         </Link>
       </div>

@@ -31,6 +31,8 @@ export function getTreatmentPublicationState(input: {
   shortDescription?: string;
   description?: string;
   priceCents?: number;
+  selectionMode?: "simple" | "closed_combo" | "combo_with_extras";
+  hasActiveCombo?: boolean;
 }) {
   if (input.isActive) return "published" as const;
   const imageIsValid = !input.imagePath || Boolean(input.imageAlt?.trim());
@@ -38,7 +40,9 @@ export function getTreatmentPublicationState(input: {
     imageIsValid
     && (input.shortDescription?.trim().length ?? 0) >= 10
     && (input.description?.trim().length ?? 0) >= 20
-    && (input.priceCents ?? 0) > 0
+    && (input.selectionMode && input.selectionMode !== "simple"
+      ? Boolean(input.hasActiveCombo)
+      : (input.priceCents ?? 0) > 0)
   ) return "ready" as const;
   return "draft" as const;
 }

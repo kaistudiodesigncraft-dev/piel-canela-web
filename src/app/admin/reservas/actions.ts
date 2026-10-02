@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { argentinaLocalDateTimeToIso } from "@/lib/admin/operations";
+import { adminSubmittedDateTimeToIso } from "@/lib/admin/operations";
 import { requireAdmin } from "@/lib/admin/require-admin";
 
 const notesSchema = z.object({
@@ -16,9 +16,40 @@ const rescheduleSchema = z.object({
   bookingId: z.string().uuid(),
   startsAt: z.string(),
 });
+const rescheduleSlotsSchema = z.object({
+  bookingId: z.string().uuid(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
+export type BookingRescheduleSlotsResult =
+  | { ok: true; slots: { startsAt: string; endsAt: string }[] }
+  | { ok: false; reason: "invalid" | "status" | "server" };
 
 function reservationRedirect(params: string): never {
   redirect(`/admin?${params}#reservas`);
+}
+
+export async function getBookingRescheduleSlots(input: unknown): Promise<BookingRescheduleSlotsResult> {
+  const { supabase } = await requireAdmin();
+  const parsed = rescheduleSlotsSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, reason: "invalid" };
+  const { data, error } = await supabase.rpc("get_available_slots_for_reschedule", {
+    requested_booking_id: parsed.data.bookingId,
+    requested_date: parsed.data.date,
+  });
+  if (error) {
+    return {
+      ok: false,
+      reason: error.message.includes("cannot_be_rescheduled") ? "status" : "server",
+    };
+  }
+  return {
+    ok: true,
+    slots: ((data ?? []) as { starts_at: string; ends_at: string }[]).map((slot) => ({
+      startsAt: slot.starts_at,
+      endsAt: slot.ends_at,
+    })),
+  };
 }
 
 export async function saveBookingNotes(formData: FormData) {
@@ -45,7 +76,7 @@ export async function rescheduleBooking(formData: FormData) {
     bookingId: formData.get("bookingId"),
     startsAt: formData.get("startsAt"),
   });
-  const startsAt = parsed.success ? argentinaLocalDateTimeToIso(parsed.data.startsAt) : null;
+  const startsAt = parsed.success ? adminSubmittedDateTimeToIso(parsed.data.startsAt) : null;
   if (!parsed.success || !startsAt) reservationRedirect("rescheduleError=invalid");
   const { error } = await supabase.rpc("reschedule_admin_booking", {
     requested_booking_id: parsed.data.bookingId,

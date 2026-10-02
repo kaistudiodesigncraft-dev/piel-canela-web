@@ -7,12 +7,14 @@ Web pública, catálogo de tratamientos, pre-reservas y administración operativ
 - La web pública consulta catálogo, disponibilidad y pre-reservas reales cuando `NEXT_PUBLIC_DATA_SOURCE=supabase`.
 - La fundación remota vive en Supabase, proyecto `dlrdlwjighvcyhirwgfu`.
 - La fuente de datos se cambia mediante `NEXT_PUBLIC_DATA_SOURCE`.
-- El backend permite simultaneidad entre especialidades distintas e impide solapamientos dentro de una misma especialidad.
+- El backend autoasigna únicamente profesionales habilitados para el tratamiento e impide que una misma persona reciba turnos superpuestos. La capacidad por especialidad se conserva como barrera operativa secundaria.
 - La administración dispone de agenda diaria, semanal e histórica con filtros y paginación real, asignación manual de turnos, horarios habituales, bloqueos y aperturas excepcionales.
-- Las especialidades pueden crearse como activas o futuras y controlan la capacidad simultánea.
+- Las especialidades pueden crearse como activas o futuras y definen las ventanas base; cada profesional puede tener disponibilidad y bloqueos propios.
 - Los Especiales del mes se crean y editan desde el panel con vigencia, precio e imagen.
 - `/admin/catalogo` permite crear borradores, publicar y editar tratamientos, precios, duración, margen entre turnos y asignación profesional. La imagen es opcional: puede cargarse, reemplazarse y encuadrarse en cualquier momento sin bloquear el alta.
-- `/admin/profesionales` mantiene perfiles internos y públicos reutilizables por especialidad.
+- `/admin/profesionales` mantiene perfiles internos y públicos reutilizables por múltiples especialidades y tratamientos.
+- Los turnos manuales usan disponibilidad real, profesional específico o autoasignación y, cuando corresponde, combos con extras autorizados.
+- `/admin/historial` ofrece trazabilidad operativa y restauración individual con control de versión para evitar sobrescribir cambios posteriores.
 - `/admin/clientes` busca y pagina el directorio desde la base, y carga el historial únicamente para los perfiles visibles.
 - La ventana de días del calendario público responde a `maximum_advance_days`, configurado por la administración y validado nuevamente por PostgreSQL.
 - Los cambios que afectan reservas futuras exigen una confirmación explícita y cada tratamiento dispone de vista previa administrativa protegida.

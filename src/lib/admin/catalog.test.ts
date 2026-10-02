@@ -24,5 +24,7 @@ describe("admin catalog helpers", () => {
     expect(getTreatmentPublicationState({ isActive: false, imagePath: null, imageAlt: null, shortDescription: "Una descripción suficiente", description: "Un detalle completo y suficientemente claro.", priceCents: 10000 })).toBe("ready");
     expect(getTreatmentPublicationState({ isActive: false, imagePath: "treatments/a.webp", imageAlt: null, shortDescription: "Una descripción suficiente", description: "Un detalle completo y suficientemente claro.", priceCents: 10000 })).toBe("draft");
     expect(getTreatmentPublicationState({ isActive: true, imagePath: "treatments/a.webp", imageAlt: "Cabina" })).toBe("published");
+    expect(getTreatmentPublicationState({ isActive: false, imagePath: null, imageAlt: null, shortDescription: "Una descripción suficiente", description: "Un detalle completo y suficientemente claro.", priceCents: 0, selectionMode: "closed_combo", hasActiveCombo: true })).toBe("ready");
+    expect(getTreatmentPublicationState({ isActive: false, imagePath: null, imageAlt: null, shortDescription: "Una descripción suficiente", description: "Un detalle completo y suficientemente claro.", priceCents: 0, selectionMode: "closed_combo", hasActiveCombo: false })).toBe("draft");
   });
 });

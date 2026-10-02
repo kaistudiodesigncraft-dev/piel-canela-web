@@ -9,7 +9,7 @@ import type { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
-const treatmentSelect = "id,category_id,specialty_id,professional_id,requires_professional_assignment,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order";
+const treatmentSelect = "id,updated_at,category_id,specialty_id,professional_id,requires_professional_assignment,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order";
 
 export async function loadTreatmentEditorTaxonomies(supabase: SupabaseServerClient) {
   const [categoriesResult, specialtiesResult, professionalsResult] = await Promise.all([
@@ -35,7 +35,15 @@ export async function loadTreatmentForEditor(supabase: SupabaseServerClient, tre
       .gte("starts_at", new Date().toISOString()),
     supabase.from("treatment_professionals").select("professional_id").eq("treatment_id", treatmentId).eq("is_active", true),
   ]);
-  if (treatmentResult.error || !treatmentResult.data) return null;
+  if (treatmentResult.error) {
+    if (treatmentResult.error.code === "PGRST116") return null;
+    throw new Error(`treatment_editor_record:${treatmentResult.error.code ?? "query"}`);
+  }
+  if (!treatmentResult.data) return null;
+  // Never present an empty assignment list when its authoritative query failed.
+  if (treatmentProfessionalsResult.error) {
+    throw new Error(`treatment_editor_assignments:${treatmentProfessionalsResult.error.code ?? "query"}`);
+  }
   const row = treatmentResult.data;
   const imageUrl = row.image_path
     ? row.image_path.startsWith("/") || row.image_path.startsWith("https://")

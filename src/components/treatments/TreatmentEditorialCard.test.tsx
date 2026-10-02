@@ -37,11 +37,13 @@ describe("TreatmentEditorialCard", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { name: treatment.name })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: treatment.name, level: 3 })).toBeInTheDocument();
     expect(screen.getByText(treatment.shortDescription)).toBeInTheDocument();
     expect(screen.getByText("60 minutos")).toBeInTheDocument();
 
     const action = screen.getByRole("link", { name: `Ver detalles de ${treatment.name}` });
+    expect(action).toHaveTextContent("Ver detalle");
+    expect(screen.getAllByRole("link")).toHaveLength(1);
     expect(action).toHaveAttribute("href", `/tratamientos?treatment=${treatment.slug}`);
     action.addEventListener("click", (event) => event.preventDefault(), { once: true });
     await user.click(action);

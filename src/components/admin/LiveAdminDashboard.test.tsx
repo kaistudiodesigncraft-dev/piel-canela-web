@@ -8,7 +8,7 @@ vi.mock("@/components/admin/WeeklyAvailabilityEditor", () => ({ WeeklyAvailabili
 vi.mock("@/components/admin/BookingStatusTransitionForm", () => ({ BookingStatusTransitionForm: () => null }));
 const props = {
   adminName: "Recepción", canManageAccess: false, referenceTime: "2026-09-10T12:00:00Z",
-  specialties: [], rules: [], exceptions: [], treatments: [], treatmentCombos: [], professionals: [], monthlySpecials: [], bookings: [],
+  specialties: [], rules: [], exceptions: [], treatments: [], treatmentCombos: [], treatmentComboExtras: [], professionals: [], monthlySpecials: [], bookings: [],
   agenda: { query: { view: "day" as const, date: "2026-09-10", status: "all" as const, page: 1 }, range: { startsAt: null, endsAt: null, previousDate: "2026-09-09", nextDate: "2026-09-11", label: "Hoy" }, total: 0, pageSize: 25, summary: { today: 0, attention: 0, confirmed: 0 } },
 };
 describe("Reception modules", () => {

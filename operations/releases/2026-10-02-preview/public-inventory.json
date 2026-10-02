@@ -1,0 +1,199 @@
+{
+  "capturedAt": "2026-10-02T06:21:28.389Z",
+  "scope": "public-rls-sanitized",
+  "projectRef": "dlrdlwjighvcyhirwgfu",
+  "warning": "No incluye clientes, reservas, notas, correos, teléfonos ni objetos privados de Storage.",
+  "counts": {
+    "visibleTreatments": 25,
+    "visibleCategories": null,
+    "visibleSpecialties": null,
+    "visibleProfessionals": null,
+    "visibleMonthlySpecials": 0
+  },
+  "restrictedQueries": {
+    "categories": "42501",
+    "specialties": "42501",
+    "professionals": "42501"
+  },
+  "treatments": [
+    {
+      "id": "f82ca641-5f58-4bcf-b528-28e031b883eb",
+      "slug": "asesoramiento-personalizado-en-rutina-de-skincare",
+      "specialty_id": "4de9f453-12ed-4a74-930e-0b7a13163c3c",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "f105c05b-102a-41ba-9c59-d2e41a99ba53",
+      "slug": "combo-lifting-perfilado-y-laminado",
+      "specialty_id": "a591ca92-adcd-4ac9-b0b6-b155d43d785d",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "13011857-0079-467c-8caf-e3e4cbbb56c1",
+      "slug": "combo-lifting-y-perfilado",
+      "specialty_id": "a591ca92-adcd-4ac9-b0b6-b155d43d785d",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "c4ad01a6-62eb-48df-b6e9-382c03c81aa9",
+      "slug": "combo-maderoterapia-en-piernas",
+      "specialty_id": "a06a4601-5696-4b75-90c0-4fa81f20cc38",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "b1db9d2f-43ac-4430-80a8-14bc4f1d547f",
+      "slug": "combo-perfilado-y-laminado",
+      "specialty_id": "a591ca92-adcd-4ac9-b0b6-b155d43d785d",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "b09f422d-70e8-4077-8354-74f3d04a0de1",
+      "slug": "diseno-y-perfilado-de-cejas",
+      "specialty_id": "a591ca92-adcd-4ac9-b0b6-b155d43d785d",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000002",
+      "slug": "drenaje-corporal",
+      "specialty_id": "a06a4601-5696-4b75-90c0-4fa81f20cc38",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000005",
+      "slug": "evaluacion-kinesica",
+      "specialty_id": "20000000-0000-4000-8000-000000000003",
+      "is_active": true,
+      "updated_at": "2026-09-15T21:05:31.715778+00:00"
+    },
+    {
+      "id": "6929cc34-625b-4169-aed1-49155e2aff55",
+      "slug": "higiene-facial-con-dermaplaning",
+      "specialty_id": "4de9f453-12ed-4a74-930e-0b7a13163c3c",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "82a73dc5-80c4-41b7-87be-dab39e7907c2",
+      "slug": "higiene-facial-con-radiofrecuencia",
+      "specialty_id": "4de9f453-12ed-4a74-930e-0b7a13163c3c",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "8b85ed10-0441-4c3c-b410-e7b6a5a70772",
+      "slug": "laminado-de-cejas",
+      "specialty_id": "a591ca92-adcd-4ac9-b0b6-b155d43d785d",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "3316938d-8eed-4dec-bd57-46e531d1c6ba",
+      "slug": "lifting-de-pestanas",
+      "specialty_id": "a591ca92-adcd-4ac9-b0b6-b155d43d785d",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "586fe136-c38f-44dc-a25d-c869848c3834",
+      "slug": "limpieza-de-espalda",
+      "specialty_id": "4de9f453-12ed-4a74-930e-0b7a13163c3c",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000001",
+      "slug": "limpieza-facial-profunda",
+      "specialty_id": "4de9f453-12ed-4a74-930e-0b7a13163c3c",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "d8a545fb-18cd-4993-b7b2-379152ef78f0",
+      "slug": "maderoterapia",
+      "specialty_id": "a06a4601-5696-4b75-90c0-4fa81f20cc38",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "ee39701f-89f9-47d1-9403-247f9312984c",
+      "slug": "maderoterapia-abdomen-gluteos-y-pantalon-de-montar",
+      "specialty_id": "a06a4601-5696-4b75-90c0-4fa81f20cc38",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "1a4d5dd5-89d3-4781-ae86-3516d4a20adc",
+      "slug": "maderoterapia-gluteo-y-pantalon-de-montar",
+      "specialty_id": "a06a4601-5696-4b75-90c0-4fa81f20cc38",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "92b4ba9b-8b52-4144-93c8-88ac12a0a40e",
+      "slug": "masaje-deportivo",
+      "specialty_id": "20000000-0000-4000-8000-000000000002",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000004",
+      "slug": "masaje-descontracturante",
+      "specialty_id": "20000000-0000-4000-8000-000000000002",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "ce0ddac2-280a-420a-a620-66979a8fe5f2",
+      "slug": "masaje-medio-cuerpo",
+      "specialty_id": "20000000-0000-4000-8000-000000000002",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "686a113e-fdd0-4fdc-b549-ec1e7af01552",
+      "slug": "microneedling-con-dermapen",
+      "specialty_id": "4de9f453-12ed-4a74-930e-0b7a13163c3c",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "bada611c-7015-4322-8c68-a74efb7344b2",
+      "slug": "pack-x6-maderoterapia-piernas",
+      "specialty_id": "a06a4601-5696-4b75-90c0-4fa81f20cc38",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "86723ce1-f0ef-4240-bd5b-2d679b025f9e",
+      "slug": "peeling-quimico",
+      "specialty_id": "4de9f453-12ed-4a74-930e-0b7a13163c3c",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000006",
+      "slug": "recuperacion-muscular",
+      "specialty_id": "a06a4601-5696-4b75-90c0-4fa81f20cc38",
+      "is_active": true,
+      "updated_at": "2026-09-25T03:53:14.89034+00:00"
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000003",
+      "slug": "relajacion-profunda",
+      "specialty_id": "20000000-0000-4000-8000-000000000002",
+      "is_active": true,
+      "updated_at": "2026-09-29T21:06:59.005842+00:00"
+    }
+  ],
+  "categories": [],
+  "specialties": [],
+  "professionals": [],
+  "monthlySpecials": []
+}

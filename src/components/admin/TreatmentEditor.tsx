@@ -51,7 +51,9 @@ const treatmentErrorMessages: Record<string, string> = {
   missing: "El tratamiento ya no existe o no está disponible.",
   invalid: "Hay datos que necesitan corrección.",
   save: "No pudimos guardar el tratamiento.",
+  stale: "Este tratamiento cambió mientras lo editabas. Tus datos siguen aquí: comparalos con la versión actual antes de volver a guardar.",
   unexpected: "Se interrumpió el guardado. Volvé a intentar.",
+  deleteRateLimited: "Se alcanzó el límite de intentos de eliminación. Por seguridad, esperá una hora antes de volver a probar.",
 };
 
 const mediaStageLabels: Record<TreatmentMediaStage, string> = {
@@ -281,6 +283,7 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
       <form action={formAction} className="admin-form admin-form--treatment admin-treatment-editor" onInput={() => setIsDirty(true)}>
         <input type="hidden" name="treatmentId" value={treatmentId} />
         <input type="hidden" name="isNew" value={String(isNew)} />
+        <input type="hidden" name="expectedUpdatedAt" value={treatment?.updated_at ?? ""} />
         <input type="hidden" id={`${formId}-imagePath`} name="imagePath" value={imagePath} />
         <TreatmentActionFeedback state={actionState} formId={formId} />
         <nav className="treatment-editor-nav" aria-label="Secciones del tratamiento">
@@ -344,7 +347,7 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
 
         <fieldset id="treatment-image">
           <legend>Imagen del tratamiento</legend>
-          <p className="admin-fieldset-intro">Se prepara en tu dispositivo, se sube directamente al espacio seguro y se verifica antes de guardar.</p>
+          <p className="admin-fieldset-intro">Elegí una foto y ajustá el encuadre. Podés agregarla o cambiarla más adelante.</p>
           <div className="admin-treatment-image-control">
             <div className="admin-treatment-image-preview">{imagePreview ? <Image src={imagePreview} alt="Vista previa de la imagen seleccionada" fill sizes="260px" style={{ objectPosition: `${focalX}% ${focalY}%` }} /> : <span><ImageIcon aria-hidden="true" strokeWidth={1.75} />Todavía no hay una imagen</span>}</div>
             <div className="admin-treatment-image-fields">

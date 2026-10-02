@@ -7,13 +7,15 @@ export function AdminSubmitButton({
   children,
   pendingLabel,
   className = "button button--primary",
+  disabled = false,
 }: {
   children: ReactNode;
   pendingLabel: string;
   className?: string;
+  disabled?: boolean;
 }) {
   const { pending } = useFormStatus();
-  return <button className={className} type="submit" disabled={pending} aria-disabled={pending}>
+  return <button className={className} type="submit" disabled={pending || disabled} aria-disabled={pending || disabled}>
     {pending ? pendingLabel : children}
   </button>;
 }

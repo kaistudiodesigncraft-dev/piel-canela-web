@@ -37,6 +37,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Project instructions are managed by the workspace, not by the dev server.
+  agentRules: false,
   reactStrictMode: true,
   poweredByHeader: false,
   experimental: {

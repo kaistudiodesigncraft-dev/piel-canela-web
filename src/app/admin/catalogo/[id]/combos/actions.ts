@@ -129,6 +129,7 @@ export interface ComboEditorResult {
 export async function saveTreatmentComboResult(formData: FormData): Promise<ComboEditorResult> {
   const { supabase } = await requireAdmin();
   const mode = formData.get("mode");
+  const publishing = formData.get("isActive") === "on";
   // Discount modes use the server-side zone reference total as their stored base.
   // Never ask reception to invent an unrelated fixed price just to satisfy SQL.
   let fixedPricePesos = formData.get("fixedPricePesos");
@@ -160,7 +161,20 @@ export async function saveTreatmentComboResult(formData: FormData): Promise<Comb
     zoneIds: formData.getAll("zoneIds"),
     extraIds: formData.getAll("extraIds"),
   });
-  if (!parsed.success) return { status: "invalid", fieldErrors: z.flattenError(parsed.error).fieldErrors, message: "Revisá los campos indicados. No se guardó ningún cambio." };
+  if (!parsed.success) {
+    const fieldErrors = z.flattenError(parsed.error).fieldErrors;
+    const hasZoneError = Array.isArray(fieldErrors.zoneIds) && fieldErrors.zoneIds.length > 0;
+    const hasPriceError = Array.isArray(fieldErrors.fixedPricePesos) && fieldErrors.fixedPricePesos.length > 0;
+    return {
+      status: "invalid",
+      fieldErrors,
+      message: hasZoneError
+        ? "Primero elegí al menos una zona activa para el combo. Tus datos siguen en pantalla."
+        : hasPriceError
+          ? "Indicá el precio final o elegí una regla de descuento válida. Tus datos siguen en pantalla."
+          : "Revisá los campos indicados. No se guardó ningún cambio.",
+    };
+  }
   const { data: savedId, error } = await supabase.rpc("save_depilation_combo_v2", {
     requested_combo_id: parsed.data.comboId ?? null,
     requested_treatment_id: parsed.data.treatmentId,
@@ -172,7 +186,7 @@ export async function saveTreatmentComboResult(formData: FormData): Promise<Comb
     requested_fixed_price_cents: pesosToCents(parsed.data.fixedPricePesos),
     requested_validity_days: parsed.data.mode === "package" ? parsed.data.validityDays : null,
     requested_display_order: parsed.data.displayOrder,
-    requested_is_active: formData.get("isActive") === "on",
+    requested_is_active: publishing,
     requested_zone_ids: parsed.data.zoneIds,
     requested_pricing_mode: parsed.data.pricingMode,
     requested_discount_percent: parsed.data.pricingMode === "percentage_discount" ? parsed.data.discountPercent ?? 0 : null,
@@ -182,15 +196,32 @@ export async function saveTreatmentComboResult(formData: FormData): Promise<Comb
     requested_extra_ids: parsed.data.extraIds,
   });
   if (error) {
-    const reason = error.message.includes("requires_zone") || error.message.includes("not_available")
+    const message = error.message ?? "";
+    const reason = message.includes("requires_zone") || message.includes("zone_not_available") || message.includes("extra_not_available")
       ? "zones"
-      : error.code === "23505" ? "duplicate" : "save";
-    return { status: "failed", fieldErrors: reason === "duplicate" ? { name: ["Ya existe un combo con ese nombre."] } : reason === "zones" ? { zoneIds: ["Elegí zonas y extras activos, compatibles con la etiqueta del combo."] } : {}, message: "No se guardaron los cambios. Revisá la configuración y volvé a intentar." };
+      : message.includes("requires_configurable_treatment")
+        ? "mode"
+        : error.code === "23505" ? "duplicate" : "save";
+    return {
+      status: "failed",
+      fieldErrors: reason === "duplicate"
+        ? { name: ["Ya existe un combo con ese nombre."] }
+        : reason === "zones"
+          ? { zoneIds: ["Usá zonas/extras activos y compatibles con la etiqueta del combo. Si cambiás Mujeres/Hombres/Compartido, revisá la selección."] }
+          : reason === "mode"
+            ? { treatmentId: ["Este tratamiento todavía no está configurado como Depilación con combos. Activá “Usa combos cerrados” en la ficha del tratamiento."] }
+            : {},
+      message: reason === "zones"
+        ? "No se guardó porque alguna zona o extra no está disponible para este combo. Tus datos se conservan."
+        : reason === "mode"
+          ? "Antes de guardar combos, configurá el tratamiento como combo cerrado."
+          : "No se guardaron los cambios. Revisá la configuración y volvé a intentar.",
+    };
   }
   revalidatePath(`/admin/catalogo/${parsed.data.treatmentId}/combos`);
   revalidatePath(`/tratamientos`);
   revalidatePath(`/reservar`);
-  return { status: "saved", comboId: String(savedId), fieldErrors: {}, message: formData.get("isActive") === "on" ? "Combo publicado. El selector global también debe estar habilitado." : "Borrador guardado. No se muestra al público." };
+  return { status: "saved", comboId: String(savedId), fieldErrors: {}, message: publishing ? "Combo publicado. El selector global también debe estar habilitado." : "Borrador guardado. No se muestra al público." };
 }
 
 export async function saveTreatmentCombo(formData: FormData) {
@@ -266,6 +297,12 @@ function deletionGuardOrRedirect(treatmentId: string, formData: FormData) {
 export async function deleteTreatmentCombo(formData: FormData) {
   const treatmentId = String(formData.get("treatmentId") ?? "");
   const { supabase } = await requireAdmin();
+  const attempt = await supabase.rpc("register_admin_protected_action_attempt", {
+    requested_action: "delete_combo",
+  });
+  if (attempt.error || attempt.data !== true) {
+    redirect(feedbackPath(treatmentId, "deleteError=rateLimited"));
+  }
   const { recordId, guardSecret } = deletionGuardOrRedirect(treatmentId, formData);
   const { error } = await supabase.rpc("delete_treatment_combo_if_unlinked", {
     requested_combo_id: recordId,
@@ -274,6 +311,9 @@ export async function deleteTreatmentCombo(formData: FormData) {
   if (error) {
     redirect(feedbackPath(treatmentId, `deleteError=${error.code === "23503" ? "linked" : "failed"}`));
   }
+  await supabase.rpc("clear_admin_protected_action_attempts", {
+    requested_action: "delete_combo",
+  });
   revalidatePath(`/admin/catalogo/${treatmentId}/combos`);
   revalidatePath("/tratamientos");
   redirect(feedbackPath(treatmentId, "comboDeleted=1"));
@@ -282,6 +322,12 @@ export async function deleteTreatmentCombo(formData: FormData) {
 export async function deleteDepilationZone(formData: FormData) {
   const treatmentId = String(formData.get("treatmentId") ?? "");
   const { supabase } = await requireAdmin();
+  const attempt = await supabase.rpc("register_admin_protected_action_attempt", {
+    requested_action: "delete_depilation_zone",
+  });
+  if (attempt.error || attempt.data !== true) {
+    redirect(feedbackPath(treatmentId, "deleteError=rateLimited"));
+  }
   const { recordId, guardSecret } = deletionGuardOrRedirect(treatmentId, formData);
   const { error } = await supabase.rpc("delete_depilation_zone_if_unlinked", {
     requested_zone_id: recordId,
@@ -290,6 +336,9 @@ export async function deleteDepilationZone(formData: FormData) {
   if (error) {
     redirect(feedbackPath(treatmentId, `deleteError=${error.code === "23503" ? "linked" : "failed"}`));
   }
+  await supabase.rpc("clear_admin_protected_action_attempts", {
+    requested_action: "delete_depilation_zone",
+  });
   revalidatePath(`/admin/catalogo/${treatmentId}/combos`);
   redirect(feedbackPath(treatmentId, "zoneDeleted=1"));
 }

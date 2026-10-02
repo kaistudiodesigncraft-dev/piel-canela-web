@@ -20,9 +20,8 @@ export default async function NewTreatmentPage() {
       <header className="live-admin__header admin-editor-page-header">
         <div>
           <Link className="admin-back-link" href="/admin/catalogo"><ArrowLeft aria-hidden="true" strokeWidth={1.75} />Catálogo</Link>
-          <p className="eyebrow">Nuevo tratamiento</p>
-          <h1>Prepará la ficha antes de publicarla.</h1>
-          <p>{profile.full_name}, podés guardar un borrador aunque todavía falten imagen, precio o texto accesible.</p>
+          <h1>Nuevo tratamiento</h1>
+          <p>Completá la ficha y guardá tu avance como borrador. La imagen es opcional.</p>
         </div>
       </header>
       <AdminRouteNav current="catalog" canManageAccess={profile.role === "admin"} />

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  adminSubmittedDateTimeToIso,
   argentinaLocalDateTimeToIso,
   bookingSearchText,
   bookingStatusRequiresReason,
@@ -16,6 +17,9 @@ describe("admin operations", () => {
   it("converts Córdoba local input to an absolute instant", () => {
     expect(argentinaLocalDateTimeToIso("2026-08-17T09:30")).toBe("2026-08-17T12:30:00.000Z");
     expect(argentinaLocalDateTimeToIso("invalid")).toBeNull();
+    expect(adminSubmittedDateTimeToIso("2026-08-17T09:30")).toBe("2026-08-17T12:30:00.000Z");
+    expect(adminSubmittedDateTimeToIso("2026-08-17T12:30:00.000Z")).toBe("2026-08-17T12:30:00.000Z");
+    expect(adminSubmittedDateTimeToIso("invalid")).toBeNull();
     expect(toArgentinaDateTimeInput("2026-08-17T12:30:00.000Z")).toBe("2026-08-17T09:30");
   });
 

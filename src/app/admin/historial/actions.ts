@@ -30,6 +30,8 @@ export async function restoreAuditRecord(formData: FormData) {
   if (error) {
     const reason = error.message.includes("not_restorable") || error.message.includes("missing")
       ? "notRestorable"
+      : error.message.includes("version_conflict") || error.code === "40001"
+        ? "version"
       : error.code === "23505"
         ? "conflict"
         : error.code === "42501"

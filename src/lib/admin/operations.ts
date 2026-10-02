@@ -50,6 +50,13 @@ export function argentinaLocalDateTimeToIso(value: string) {
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
+export function adminSubmittedDateTimeToIso(value: string) {
+  const localValue = argentinaLocalDateTimeToIso(value);
+  if (localValue) return localValue;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
 export function pesosToCents(value: number) {
   return Math.round(value * 100);
 }

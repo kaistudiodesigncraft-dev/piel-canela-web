@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
+  adminSubmittedDateTimeToIso,
   argentinaLocalDateTimeToIso,
   pesosToCents,
   slugifySpecialty,
@@ -32,8 +33,10 @@ const bookingStatusSchema = z.enum([
 ]);
 const initialBookingStatusSchema = z.enum(["pending", "awaiting_deposit", "confirmed"]);
 const manualBookingSchema = z.object({
+  idempotencyKey: z.string().uuid(),
   treatmentId: z.string().uuid(),
   comboId: z.string().uuid().optional(),
+  extraIds: z.array(z.string().uuid()).max(24).default([]),
   monthlySpecialId: z.string().uuid().optional(),
   professionalId: z.string().uuid().optional(),
   startsAt: z.string(),
@@ -47,6 +50,7 @@ const manualBookingSchema = z.object({
 const manualBookingAvailabilitySchema = z.object({
   treatmentId: z.string().uuid(),
   comboId: z.string().uuid().optional(),
+  extraIds: z.array(z.string().uuid()).max(24).default([]),
   professionalId: z.string().uuid().optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
@@ -210,8 +214,10 @@ export async function deleteAvailabilityException(formData: FormData) {
 export async function createManualBooking(formData: FormData) {
   const { supabase } = await requireAdmin();
   const parsed = manualBookingSchema.safeParse({
+    idempotencyKey: formData.get("idempotencyKey"),
     treatmentId: formData.get("treatmentId"),
     comboId: formData.get("comboId") || undefined,
+    extraIds: formData.getAll("extraIds"),
     monthlySpecialId: formData.get("monthlySpecialId") || undefined,
     professionalId: formData.get("professionalId") || undefined,
     startsAt: formData.get("startsAt"), status: formData.get("status"),
@@ -220,7 +226,7 @@ export async function createManualBooking(formData: FormData) {
     customerNotes: formData.get("customerNotes") || undefined,
     internalNotes: formData.get("internalNotes") || undefined,
   });
-  const startsAt = parsed.success ? argentinaLocalDateTimeToIso(parsed.data.startsAt) : null;
+  const startsAt = parsed.success ? adminSubmittedDateTimeToIso(parsed.data.startsAt) : null;
   if (!parsed.success || !startsAt) redirect("/admin?manualBookingError=invalid#asignar");
   const bookingPayload = {
     requested_treatment_id: parsed.data.treatmentId,
@@ -228,19 +234,16 @@ export async function createManualBooking(formData: FormData) {
     requested_monthly_special_id: parsed.data.monthlySpecialId ?? null,
     requested_starts_at: startsAt,
     requested_status: parsed.data.status,
-    requested_idempotency_key: randomUUID(),
+    requested_idempotency_key: parsed.data.idempotencyKey,
     customer_full_name: parsed.data.fullName,
     customer_phone: parsed.data.phone,
     customer_email: parsed.data.email ?? "",
     customer_notes: parsed.data.customerNotes ?? "",
     internal_notes: parsed.data.internalNotes ?? "",
+    requested_extra_ids: parsed.data.extraIds,
     requested_professional_id: parsed.data.professionalId ?? null,
   };
-  let { error } = await supabase.rpc("create_admin_booking_for_selection", bookingPayload);
-  if (error && !parsed.data.professionalId && (error.code === "PGRST202" || error.message.includes("requested_professional_id"))) {
-    const legacyPayload = Object.fromEntries(Object.entries(bookingPayload).filter(([key]) => key !== "requested_professional_id"));
-    ({ error } = await supabase.rpc("create_admin_booking_for_selection", legacyPayload));
-  }
+  const { error } = await supabase.rpc("create_admin_booking_for_selection", bookingPayload);
   if (error) {
     const reason = error.message.includes("slot_not_available") ? "conflict" : "save";
     redirect(`/admin?manualBookingError=${reason}#asignar`);
@@ -261,19 +264,10 @@ export async function getManualBookingSlots(input: unknown): Promise<ManualBooki
     requested_treatment_id: parsed.data.treatmentId,
     requested_combo_id: parsed.data.comboId ?? null,
     requested_date: parsed.data.date,
-    requested_extra_ids: [],
+    requested_extra_ids: parsed.data.extraIds,
     requested_professional_id: parsed.data.professionalId ?? null,
   };
-  let { data, error } = await supabase.rpc("get_admin_available_slots_for_selection", payload);
-  if (error && !parsed.data.professionalId && (error.code === "PGRST202" || error.message.includes("requested_professional_id"))) {
-    const fallbackPayload = {
-      requested_treatment_id: parsed.data.treatmentId,
-      requested_combo_id: parsed.data.comboId ?? null,
-      requested_date: parsed.data.date,
-      requested_extra_ids: [],
-    };
-    ({ data, error } = await supabase.rpc("get_available_slots_for_selection_v2", fallbackPayload));
-  }
+  const { data, error } = await supabase.rpc("get_admin_available_slots_for_selection", payload);
   if (error) return { ok: false, reason: error.message.includes("not_available") ? "unavailable" : "server" };
   return {
     ok: true,

@@ -1,24 +1,59 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { argentinaLocalDateTimeToIso } from "@/lib/admin/operations";
+import { adminSubmittedDateTimeToIso, argentinaLocalDateTimeToIso } from "@/lib/admin/operations";
 import { requireAdmin } from "@/lib/admin/require-admin";
+
+const packageSlotsSchema = z.object({
+  packageId: z.string().uuid(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+const packageScheduleSchema = z.object({
+  packageId: z.string().uuid(),
+  idempotencyKey: z.string().uuid(),
+  startsAt: z.string().min(1),
+  internalNotes: z.string().trim().max(1000),
+});
+
+export type PackageSessionSlotsResult =
+  | { ok: true; slots: { startsAt: string; endsAt: string }[] }
+  | { ok: false; reason: "invalid" | "unavailable" | "server" };
+
+export async function getPackageSessionSlots(input: unknown): Promise<PackageSessionSlotsResult> {
+  const { supabase } = await requireAdmin();
+  const parsed = packageSlotsSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, reason: "invalid" };
+  const { data, error } = await supabase.rpc("get_available_slots_for_package", {
+    requested_package_id: parsed.data.packageId,
+    requested_date: parsed.data.date,
+  });
+  if (error) return { ok: false, reason: error.message.includes("package_not_available") ? "unavailable" : "server" };
+  return {
+    ok: true,
+    slots: ((data ?? []) as { starts_at: string; ends_at: string }[]).map((slot) => ({
+      startsAt: slot.starts_at,
+      endsAt: slot.ends_at,
+    })),
+  };
+}
 
 export async function schedulePackageSession(formData: FormData) {
   const { supabase } = await requireAdmin();
-  const packageId = z.string().uuid().safeParse(formData.get("packageId"));
-  const startsAtInput = z.string().min(1).safeParse(formData.get("startsAt"));
-  const notes = z.string().trim().max(1000).safeParse(formData.get("internalNotes") || "");
-  const startsAt = startsAtInput.success ? argentinaLocalDateTimeToIso(startsAtInput.data) : null;
-  if (!packageId.success || !startsAt || !notes.success) redirect("/admin/paquetes?packageError=invalid");
+  const parsed = packageScheduleSchema.safeParse({
+    packageId: formData.get("packageId"),
+    idempotencyKey: formData.get("idempotencyKey"),
+    startsAt: formData.get("startsAt"),
+    internalNotes: formData.get("internalNotes") || "",
+  });
+  const startsAt = parsed.success ? adminSubmittedDateTimeToIso(parsed.data.startsAt) : null;
+  if (!parsed.success || !startsAt) redirect("/admin/paquetes?packageError=invalid");
   const { error } = await supabase.rpc("create_admin_package_booking", {
-    requested_package_id: packageId.data,
+    requested_package_id: parsed.data.packageId,
     requested_starts_at: startsAt,
-    requested_idempotency_key: randomUUID(),
-    requested_internal_notes: notes.data || null,
+    requested_idempotency_key: parsed.data.idempotencyKey,
+    requested_internal_notes: parsed.data.internalNotes || null,
   });
   if (error) redirect(`/admin/paquetes?packageError=${error.message.includes("slot_not_available") ? "slot" : error.message.includes("no_sessions") ? "sessions" : "save"}`);
   revalidatePath("/admin");

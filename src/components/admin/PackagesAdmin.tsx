@@ -1,6 +1,7 @@
-import { CalendarPlus, CheckCircle2, PackageCheck, RotateCcw } from "lucide-react";
-import { decidePackageConsumption, extendPackageValidity, schedulePackageSession } from "@/app/admin/paquetes/actions";
+import { CheckCircle2, PackageCheck, RotateCcw } from "lucide-react";
+import { decidePackageConsumption, extendPackageValidity } from "@/app/admin/paquetes/actions";
 import { AdminSubmitButton } from "@/components/admin/AdminSubmitButton";
+import { PackageSessionScheduler } from "@/components/admin/PackageSessionScheduler";
 import { formatPrice } from "@/lib/format";
 
 interface PackageBooking { id: string; booking_code: string; starts_at: string; status: string; consumed: boolean; restored: boolean }
@@ -39,7 +40,7 @@ export function PackagesAdmin({ packages, feedback, referenceTime }: { packages:
       const effectiveStatus = item.status === "active" && new Date(item.expires_at).getTime() <= referenceTimestamp ? "expired" : item.status;
       const statusLabel = effectiveStatus === "active" ? "Activo" : effectiveStatus === "completed" ? "Completado" : effectiveStatus === "cancelled" ? "Cancelado" : "Vencido";
       return <article key={item.id} className="package-admin-item"><header><div><span className={`status-badge status-${effectiveStatus === "active" ? "confirmed" : "expired"}`}>{statusLabel}</span><h3>{item.combo_name_snapshot}</h3><p>{item.customer?.full_name ?? "Cliente"} · {item.customer?.phone}</p></div><dl className="numeric"><div><dt>Sin consumir</dt><dd>{remaining} de {item.total_sessions}</dd></div><div><dt>Vence</dt><dd>{dateTime.format(new Date(item.expires_at))}</dd></div><div><dt>Contratado</dt><dd>{formatPrice(item.fixed_price_snapshot_cents)}</dd></div></dl></header>
-        {effectiveStatus === "active" && remaining > 0 ? <form action={schedulePackageSession} className="admin-form admin-form--booking-action"><input type="hidden" name="packageId" value={item.id} /><div><CalendarPlus aria-hidden="true" /><h4>Asignar próxima sesión</h4></div><label>Fecha y hora<input type="datetime-local" name="startsAt" required /></label><label>Nota interna<input name="internalNotes" maxLength={1000} /></label><AdminSubmitButton pendingLabel="Asignando…">Asignar sesión</AdminSubmitButton></form> : null}
+        {effectiveStatus === "active" && remaining > 0 ? <PackageSessionScheduler packageId={item.id} expiresAt={item.expires_at} referenceTime={referenceTime} /> : null}
         <div className="package-session-list"><h4>Sesiones vinculadas</h4>{item.bookings.map((booking) => <div key={booking.id} className="package-session-row"><span><strong>{booking.booking_code}</strong><small>{dateTime.format(new Date(booking.starts_at))} · {booking.status}</small></span>{booking.status === "completed" || booking.status === "no_show" ? <PackageConsumptionDecision booking={booking} /> : <span className="status-badge status-awaiting_deposit">Pendiente de resultado</span>}</div>)}</div>
         <details className="admin-disclosure"><summary><span>Extender vigencia</span></summary><form action={extendPackageValidity} className="admin-form"><input type="hidden" name="packageId" value={item.id} /><label>Nueva fecha<input type="datetime-local" name="expiresAt" required /></label><label>Motivo<textarea name="reason" minLength={3} maxLength={500} required /></label><AdminSubmitButton className="button button--quiet" pendingLabel="Guardando…">Guardar extensión</AdminSubmitButton></form></details>
       </article>;

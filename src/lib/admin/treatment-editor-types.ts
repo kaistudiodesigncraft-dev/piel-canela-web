@@ -24,6 +24,7 @@ export interface AdminProfessionalRow {
 
 export interface AdminTreatmentRow {
   id: string;
+  updated_at?: string;
   category_id: string;
   specialty_id: string;
   professional_id: string | null;
@@ -50,5 +51,6 @@ export interface AdminTreatmentRow {
   is_active: boolean;
   display_order: number;
   future_booking_count: number;
+  has_active_combo?: boolean;
   future_booking_count_available?: boolean;
 }

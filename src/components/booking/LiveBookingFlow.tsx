@@ -317,10 +317,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, messageTempl
             {step === "review" && "Revisá antes de crear la pre-reserva."}
           </h2>
         </div>
-        <div className="demo-badge">
-          <ShieldCheck aria-hidden="true" strokeWidth={1.75} />
-          Disponibilidad verificada
-        </div>
+        <p className="booking-step-caption">Paso {currentStepIndex + 1} de 3</p>
       </div>
 
       <ol className="booking-progress" aria-label="Progreso de la reserva">
