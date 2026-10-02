@@ -4,6 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/admin/require-admin";
+import {
+  isTreatmentDeleteCodeConfigured,
+  verifyTreatmentDeleteCode,
+} from "@/lib/admin/treatment-delete-code";
 
 const professionalSchema = z.object({
   professionalId: z.string().uuid().optional(),
@@ -15,6 +19,12 @@ const professionalSchema = z.object({
   bio: z.string().trim().max(1400).optional(),
   internalNotes: z.string().trim().max(1400).optional(),
   displayOrder: z.coerce.number().int().min(0).max(999),
+});
+
+const deleteProfessionalSchema = z.object({
+  professionalId: z.string().uuid(),
+  confirmationCode: z.string().trim().min(4).max(128),
+  confirmDeletion: z.literal("on"),
 });
 
 function professionalRedirect(params: string): never {
@@ -85,4 +95,41 @@ export async function saveProfessional(formData: FormData) {
   revalidatePath("/admin/catalogo");
   revalidatePath("/admin/profesionales");
   professionalRedirect("professionalSaved=1");
+}
+
+export async function deleteProfessional(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const parsed = deleteProfessionalSchema.safeParse({
+    professionalId: formData.get("professionalId"),
+    confirmationCode: formData.get("confirmationCode"),
+    confirmDeletion: formData.get("confirmDeletion"),
+  });
+  if (!parsed.success) professionalRedirect("professionalError=deleteConfirmation");
+  if (!isTreatmentDeleteCodeConfigured()) professionalRedirect("professionalError=deleteNotConfigured");
+
+  const attempt = await supabase.rpc("register_admin_protected_action_attempt", {
+    requested_action: "delete_professional",
+  });
+  if (attempt.error || attempt.data !== true) professionalRedirect("professionalError=deleteRateLimited");
+  if (!verifyTreatmentDeleteCode(parsed.data.confirmationCode)) professionalRedirect("professionalError=deleteCode");
+
+  const guardSecret = process.env.BOOKING_GUARD_SECRET;
+  if (!guardSecret || guardSecret.length < 32) professionalRedirect("professionalError=deleteNotConfigured");
+
+  const { error } = await supabase.rpc("delete_professional_if_unlinked", {
+    requested_professional_id: parsed.data.professionalId,
+    request_guard_secret: guardSecret,
+  });
+  if (error) {
+    professionalRedirect(`professionalError=${error.code === "23503" ? "deleteLinked" : error.code === "P0002" ? "missing" : error.code === "42501" ? "deleteNotConfigured" : "deleteFailed"}`);
+  }
+
+  await supabase.rpc("clear_admin_protected_action_attempts", {
+    requested_action: "delete_professional",
+  });
+  revalidatePath("/admin");
+  revalidatePath("/admin/catalogo");
+  revalidatePath("/admin/profesionales");
+  revalidatePath("/tratamientos");
+  professionalRedirect("professionalDeleted=1");
 }

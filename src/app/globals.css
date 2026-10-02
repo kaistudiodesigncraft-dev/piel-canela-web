@@ -4698,6 +4698,35 @@ svg {
   gap: 0.3rem;
 }
 
+.admin-professional-delete-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-professional-delete-form > div {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.admin-professional-delete-form > label:not(.admin-check) {
+  max-width: 18rem;
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.admin-professional-delete-form input[type="password"] {
+  min-height: 2.9rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.55rem;
+  color: var(--color-ink);
+  background: var(--color-white);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
 .admin-delete-treatment__form p {
   max-width: 65ch;
   color: var(--color-text-muted);

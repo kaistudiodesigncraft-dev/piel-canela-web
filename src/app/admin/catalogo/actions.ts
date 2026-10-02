@@ -103,7 +103,7 @@ function treatmentConstraintFailure(message: string): SaveTreatmentState | null 
   if (message.includes("published_treatment_requires_positive_price")) {
     return treatmentFailure("publishable", { pricePesos: ["Ingresá un precio mayor que cero para publicar tratamientos simples."] });
   }
-  if (message.includes("treatment_image_requires_accessible_description")) {
+  if (message.includes("treatment_image_requires_accessible_description") || message.includes("treatment_image_accessible_when_present")) {
     return treatmentFailure("image", { imageAlt: ["Describí la imagen con al menos 3 caracteres."] });
   }
   if (message.includes("published_treatment_requires_active_category")) {
@@ -232,12 +232,30 @@ async function saveTreatmentImpl(
     ...(parsed.data.professionalId ? [parsed.data.professionalId] : []),
   ])];
   if (selectedProfessionalIds.length > 0) {
-    const { data: professionals } = await supabase.from("professionals")
-      .select("id,is_active")
-      .in("id", selectedProfessionalIds);
+    const [{ data: professionals, error: professionalsError }, { data: specialtyRelations, error: relationsError }] = await Promise.all([
+      supabase.from("professionals")
+        .select("id,is_active,specialty_id")
+        .in("id", selectedProfessionalIds),
+      supabase.from("professional_specialties")
+        .select("professional_id,specialty_id")
+        .in("professional_id", selectedProfessionalIds)
+        .eq("specialty_id", parsed.data.specialtyId),
+    ]);
+    if (professionalsError || relationsError) {
+      return operationalFailure("validate_professionals", professionalsError?.code ?? relationsError?.code);
+    }
     const activeIds = new Set((professionals ?? []).filter((item) => item.is_active || !isActive).map((item) => item.id));
     if (activeIds.size !== selectedProfessionalIds.length) {
       return treatmentFailure("professional", { professionalIds: ["Elegí profesionales activos para publicar."] });
+    }
+    const relatedIds = new Set((specialtyRelations ?? []).map((item) => item.professional_id));
+    const incompatibleProfessional = (professionals ?? []).some((item) =>
+      item.specialty_id !== parsed.data.specialtyId && !relatedIds.has(item.id),
+    );
+    if (incompatibleProfessional) {
+      return treatmentFailure("professional", {
+        professionalIds: ["Uno de los profesionales no está habilitado para la especialidad elegida. Revisá la selección."],
+      });
     }
   }
   if (isActive && parsed.data.requiresProfessionalAssignment && selectedProfessionalIds.length === 0) {
@@ -298,13 +316,15 @@ async function saveTreatmentImpl(
     }
     imagePath = finalizedUpload.final_path;
   }
+  if (imagePath && (!parsed.data.imageAlt || parsed.data.imageAlt.length < 3)) {
+    return treatmentFailure("image", {
+      imageAlt: ["Describí brevemente lo que se ve en la imagen para poder guardarla."],
+    });
+  }
   if (isActive) {
     const publicationErrors: Record<string, string[]> = {};
     if (parsed.data.shortDescription.length < 10) publicationErrors.shortDescription = ["Escribí al menos 10 caracteres para publicar."];
     if (parsed.data.description.length < 20) publicationErrors.description = ["Escribí al menos 20 caracteres para publicar."];
-    if (imagePath && (!parsed.data.imageAlt || parsed.data.imageAlt.length < 3)) {
-      publicationErrors.imageAlt = ["Describí la imagen con al menos 3 caracteres."];
-    }
     if (parsed.data.selectionMode === "simple" && parsed.data.pricePesos <= 0) publicationErrors.pricePesos = ["Ingresá un precio mayor que cero para publicar."];
     if (Object.keys(publicationErrors).length > 0) return treatmentFailure("publishable", publicationErrors);
   }

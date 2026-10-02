@@ -1,6 +1,6 @@
 import { ProfessionalNameFields } from "./ProfessionalNameFields";
-import { ChevronDown, Plus, UserRound } from "lucide-react";
-import { saveProfessional } from "@/app/admin/profesionales/actions";
+import { ChevronDown, Plus, Trash2, UserRound } from "lucide-react";
+import { deleteProfessional, saveProfessional } from "@/app/admin/profesionales/actions";
 
 interface SpecialtyRow {
   id: string;
@@ -20,6 +20,7 @@ interface ProfessionalRow {
   is_active: boolean;
   display_order: number;
   assigned_treatment_count: number;
+  booking_count: number;
 }
 
 function feedbackMessage(error?: string) {
@@ -28,6 +29,12 @@ function feedbackMessage(error?: string) {
     assigned: "No se puede cambiar la especialidad mientras tenga tratamientos asignados.",
     impact: "La persona tiene tratamientos asignados. Confirmá el impacto antes de desactivarla.",
     specialty: "La especialidad seleccionada no está activa.",
+    deleteConfirmation: "Confirmá la eliminación y completá el código de seguridad.",
+    deleteCode: "El código de eliminación no es correcto.",
+    deleteLinked: "Este profesional tiene tratamientos asignados o turnos registrados. Para conservar el historial, desactivalo en lugar de eliminarlo.",
+    deleteNotConfigured: "La eliminación protegida no está configurada. Contactá a Kai Studio.",
+    deleteRateLimited: "Se alcanzó el límite de intentos. Esperá antes de volver a probar.",
+    deleteFailed: "No pudimos eliminar el profesional. No se modificó ningún dato.",
   };
   return messages[error ?? ""] ?? "No se pudieron guardar los cambios. Revisá los campos e intentá nuevamente.";
 }
@@ -38,6 +45,7 @@ export function ProfessionalsAdmin({ specialties, professionals, feedback }: { s
     <section className="live-admin__section" id="equipo" aria-labelledby="professionals-title">
       <div className="admin-section-heading"><div><h2 id="professionals-title">Equipo profesional</h2><p>Usá un único perfil por persona y asignale todas sus especialidades. Los horarios de la especialidad habilitan turnos; la agenda del profesional evita superposiciones.</p></div><span className="admin-count numeric">{professionals.length} perfiles</span></div>
       {feedback.professionalSaved === "1" ? <p className="form-message" role="status">Perfil profesional guardado.</p> : null}
+      {feedback.professionalDeleted === "1" ? <p className="form-message" role="status">Perfil profesional eliminado.</p> : null}
       {feedback.professionalError ? <p className="form-message form-message--error" role="alert">{feedbackMessage(feedback.professionalError)}</p> : null}
       <details className="admin-disclosure admin-create-disclosure"><summary><span><Plus aria-hidden="true" strokeWidth={1.75} />Agregar profesional</span><ChevronDown aria-hidden="true" strokeWidth={1.75} /></summary><ProfessionalForm specialties={specialties} existingNames={professionals.flatMap((person) => [person.full_name, person.public_name ?? ""])} /></details>
       {professionals.length === 0 ? <div className="admin-empty"><UserRound aria-hidden="true" strokeWidth={1.75} /><h3>Todavía no hay profesionales.</h3><p>Creá el primer perfil para poder asignarlo a tratamientos.</p></div> : (
@@ -51,11 +59,37 @@ export function ProfessionalsAdmin({ specialties, professionals, feedback }: { s
                 <ChevronDown aria-hidden="true" strokeWidth={1.75} />
               </summary>
               <ProfessionalForm specialties={specialties} professional={professional} />
+              <DeleteProfessionalForm professional={professional} />
             </details>
           ))}
         </div>
       )}
     </section>
+  );
+}
+
+function DeleteProfessionalForm({ professional }: { professional: ProfessionalRow }) {
+  const isLinked = professional.assigned_treatment_count > 0 || professional.booking_count > 0;
+  return (
+    <details className="admin-delete-treatment admin-delete-professional">
+      <summary><span><Trash2 aria-hidden="true" strokeWidth={1.75} />Eliminar profesional</span></summary>
+      <div className="admin-delete-treatment__form">
+        {isLinked ? (
+          <div>
+            <strong>No se puede eliminar este perfil.</strong>
+            <p>Tiene {professional.assigned_treatment_count} tratamientos asignados y {professional.booking_count} turnos registrados. Desactivalo para impedir nuevas reservas sin perder el historial.</p>
+          </div>
+        ) : (
+          <form action={deleteProfessional} className="admin-professional-delete-form">
+            <input type="hidden" name="professionalId" value={professional.id} />
+            <div><strong>Esta acción elimina el perfil.</strong><p>Solo está disponible porque no tiene tratamientos ni turnos vinculados. La operación quedará registrada en Historial.</p></div>
+            <label htmlFor={`professional-delete-code-${professional.id}`}>Código de eliminación<input id={`professional-delete-code-${professional.id}`} name="confirmationCode" type="password" inputMode="numeric" pattern="[0-9]{4}" minLength={4} maxLength={128} autoComplete="off" required /></label>
+            <label className="admin-check" htmlFor={`professional-delete-confirm-${professional.id}`}><input id={`professional-delete-confirm-${professional.id}`} name="confirmDeletion" type="checkbox" required /><span>Confirmo que quiero eliminar “{professional.public_name || professional.full_name}”.</span></label>
+            <button className="button button--danger" type="submit"><Trash2 aria-hidden="true" strokeWidth={1.75} />Eliminar definitivamente</button>
+          </form>
+        )}
+      </div>
+    </details>
   );
 }
 

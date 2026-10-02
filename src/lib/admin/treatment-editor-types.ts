@@ -17,6 +17,7 @@ export interface AdminSpecialtyRow {
 export interface AdminProfessionalRow {
   id: string;
   specialty_id: string;
+  specialty_ids?: string[];
   full_name: string;
   public_name: string | null;
   is_active: boolean;
