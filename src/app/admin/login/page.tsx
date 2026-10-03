@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signInAdmin } from "../actions";
@@ -36,6 +37,14 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
   return (
     <section className="admin-login-section">
       <div className="admin-login-panel">
+        <Image
+          className="admin-login-brand"
+          src="/brand/logo-primary.webp"
+          alt="Piel Canela, estética y bienestar"
+          width={578}
+          height={216}
+          priority
+        />
         <p className="eyebrow">Administración Piel Canela</p>
         <h1>Ingresá al panel</h1>
         <p>Acceso exclusivo para el equipo autorizado.</p>

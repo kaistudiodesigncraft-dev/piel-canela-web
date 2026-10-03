@@ -23,13 +23,13 @@ El producto reduce consultas repetitivas, expone información comercial básica 
 
 ## Brand Personality
 
-Clara, cálida y profesional. La experiencia pública debe transmitir cuidado y calidad sin lujo teatral; el panel debe transmitir control, confianza y rapidez operativa.
+Clara, fresca, cálida y profesional. La experiencia pública debe sentirse liviana como una brisa: superficies luminosas, aire, movimiento breve y la geometría orgánica del símbolo oficial. El panel comparte la identidad, pero prioriza control, confianza y rapidez operativa.
 
 ## Anti-references
 
 - Plantillas genéricas de spa, wellness o generadores de landing pages.
 - AgendaPro o Ágora usados como modelos visuales o como excusa para ampliar el alcance.
-- Beige, rosa empolvado, dorado, serif ornamental, lotos, flores, piedras, velas y stock aspiracional como identidad automática.
+- Beige, rosa empolvado, dorado, serif ornamental, lotos, flores, piedras, velas y stock aspiracional como identidad automática. El símbolo foliar oficial de Piel Canela sí puede utilizarse como recurso de marca, sin reemplazarlo por ilustraciones botánicas genéricas.
 - Carruseles automáticos o infinitos, glassmorphism y títulos tratados como índices numerados.
 - Cards repetitivas de icono, título y descripción cuando el contenido requiere una pieza editorial o una herramienta operativa.
 - Un panel administrativo expuesto en la navegación pública, envuelto por el header/footer institucional o presentado como demostración.
@@ -40,11 +40,12 @@ Clara, cálida y profesional. La experiencia pública debe transmitir cuidado y 
 2. Claridad antes que persuasión: precio, duración, estado y condiciones deben ser explícitos.
 3. Catálogo antes que contacto: WhatsApp cierra y resuelve excepciones, pero no reemplaza la información ni la disponibilidad.
 4. Producto pequeño, operación sólida: evitar un ERP sin sacrificar seguridad, estados, trazabilidad ni consistencia.
-5. Identidad reconocible sin clichés: Materia Clara utiliza la marca existente con criterio funcional y mantiene una interfaz propia.
+5. Identidad reconocible sin clichés: el sistema 2026 utiliza el logotipo y símbolo oficiales, blanco, petróleo, aquamarine y celeste con criterio funcional y una interfaz propia.
+6. Iconografía con dos funciones: los territorios de marca toman el trazo bicolor y las hojas de `Destacadas.pdf`; las acciones mantienen pictogramas literales, redondeados y consistentes para no sacrificar comprensión.
 
-## Excepción visual aprobada (sprint 5)
+## Movimiento y ambientación aprobados
 
-El pedido posterior autoriza parallax de recorrido corto, velo de humo y hojas finas exclusivamente como acompañamiento de la portada pública. No invade textos ni controles, no altera el scroll nativo y queda estático con reducción de movimiento o en móvil. No se aplica a administración ni turnero, ni implica reemplazar fotografías o contenido del cliente. Mantener el sistema cromático y tipográfico vigente.
+El parallax debe tener recorrido corto y nunca alterar el scroll nativo. La ambientación utiliza prioritariamente las formas del símbolo oficial; cualquier velo atmosférico debe ser casi imperceptible, quedar detrás del contenido y desactivarse con reducción de movimiento. El turnero y la administración mantienen un movimiento más funcional y contenido.
 
 ## Accessibility & Inclusion
 

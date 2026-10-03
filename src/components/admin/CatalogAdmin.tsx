@@ -1,11 +1,11 @@
 "use client";
 
 import { ArrowRight, ImageIcon, Plus, Search } from "lucide-react";
-import { FlowerLotus, PersonArmsSpread, UserFocus } from "@phosphor-icons/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { updateTreatmentCategory } from "@/app/admin/catalogo/actions";
+import { BrandCategoryIcon } from "@/components/icons/BrandCategoryIcon";
 import { focalPointToPercentage, getTreatmentPublicationState } from "@/lib/admin/catalog";
 import type { AdminCategoryRow, AdminProfessionalRow, AdminSpecialtyRow, AdminTreatmentRow } from "@/lib/admin/treatment-editor-types";
 import { formatDuration, formatPrice } from "@/lib/format";
@@ -25,8 +25,7 @@ interface CatalogAdminProps {
 const publicationLabels = { published: "Publicado", ready: "Listo para publicar", draft: "Borrador incompleto" } as const;
 
 function CategoryIcon({ name }: { name: string }) {
-  const Icon = name === "FlowerLotus" ? FlowerLotus : name === "PersonArmsSpread" ? PersonArmsSpread : UserFocus;
-  return <Icon aria-hidden="true" weight="regular" />;
+  return <BrandCategoryIcon icon={name} aria-hidden="true" />;
 }
 
 function Feedback({ success, error }: { success?: boolean; error?: string }) {

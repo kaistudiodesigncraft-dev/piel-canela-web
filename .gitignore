@@ -43,6 +43,11 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Local source package supplied by the client. Curated web assets live in public/brand.
+branding-source/
+PIEL CANELA - BRANDING-*.zip
+tmp/pdfs/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

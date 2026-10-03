@@ -1,0 +1,465 @@
+/*
+ * Piel Canela brand system 2026
+ * Source of truth: client brand manual supplied 2026-10-03.
+ * This file is loaded after the legacy styles so the functional product can
+ * adopt the new identity without rewriting booking or administrative logic.
+ */
+
+:root {
+  --color-petrol: #377a86;
+  --color-deep-petrol: #2d6872;
+  --color-petrol-ink: #1f555e;
+  --color-aquamarine: #35d4b1;
+  --color-aquamarine-soft: #e1f8f3;
+  --color-celeste: #8ccccc;
+  --color-celeste-soft: #e7f5f5;
+  --color-graphite: #393939;
+  --color-ink: #263b3e;
+  --color-deep-green: #2d6872;
+  --color-white: #ffffff;
+  --color-bone: #f8fbfa;
+  --color-cloud: #f1f7f6;
+  --color-green-mist: #e4f3f0;
+  --color-leaf: #74e1c9;
+  --color-sky: #8ccccc;
+  --color-border: #cfe1df;
+  --color-text-secondary: #52686a;
+  --color-text-muted: #52686a;
+  --color-surface-soft: #f1f7f6;
+  --color-action: #2d6872;
+  --color-focus: #0f606f;
+
+  --font-title: var(--font-heading), Arial, sans-serif;
+  --font-copy: var(--font-heading), Arial, sans-serif;
+
+  --radius-sm: .5rem;
+  --radius-md: .75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+
+  --shadow-soft: 0 .65rem 1.4rem rgb(27 82 88 / 10%);
+  --shadow-raised: 0 .35rem .75rem rgb(27 82 88 / 12%);
+  --shadow-floating: 0 1rem 2.25rem rgb(27 82 88 / 16%);
+
+  --motion-instant: 100ms;
+  --motion-fast: 180ms;
+  --motion-base: 260ms;
+  --motion-slow: 420ms;
+  --ease-enter: cubic-bezier(.22, 1, .36, 1);
+  --ease-standard: cubic-bezier(.65, .05, .36, 1);
+  --ease-exit: cubic-bezier(.4, 0, 1, 1);
+}
+
+body {
+  color: var(--color-ink);
+  background: var(--color-white);
+  font-family: var(--font-copy);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--color-petrol-ink);
+  font-family: var(--font-title);
+  font-weight: 560;
+  letter-spacing: -.028em;
+}
+
+p,
+li,
+dd { text-wrap: pretty; }
+
+::selection { color: var(--color-graphite); background: var(--color-aquamarine); }
+
+:focus-visible {
+  outline: .1875rem solid var(--color-white);
+  outline-offset: .1875rem;
+  box-shadow: 0 0 0 .375rem var(--color-focus);
+}
+
+.site-container { width: min(100% - 2rem, 78rem); }
+
+/* Global actions */
+.button {
+  position: relative;
+  overflow: hidden;
+  border-radius: .7rem;
+  box-shadow: none;
+  font-weight: 680;
+  transition:
+    color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    transform var(--motion-instant) ease-out,
+    box-shadow var(--motion-fast) ease;
+}
+
+.button::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 25%, rgb(255 255 255 / 15%) 50%, transparent 75%);
+  content: "";
+  pointer-events: none;
+  transform: translateX(-120%);
+  transition: transform 520ms var(--ease-enter);
+}
+
+.button:not(:disabled):hover::after { transform: translateX(120%); }
+.button:not(:disabled):hover { transform: translateY(-1px); }
+.button:not(:disabled):active { transform: scale(.975); }
+.button svg { transition: transform var(--motion-fast) var(--ease-enter); }
+.button:hover svg { transform: translateX(.14rem); }
+
+.button--primary {
+  color: var(--color-white);
+  background: var(--color-deep-petrol);
+  box-shadow: 0 .4rem .75rem rgb(45 104 114 / 18%);
+}
+.button--primary:not(:disabled):hover { background: var(--color-petrol); box-shadow: 0 .55rem .9rem rgb(45 104 114 / 22%); }
+.button--secondary,
+.button--quiet { border-color: var(--color-border); color: var(--color-petrol-ink); background: var(--color-white); }
+.button--secondary:hover,
+.button--quiet:hover { border-color: var(--color-celeste); background: var(--color-aquamarine-soft); }
+.button--light { color: var(--color-petrol-ink); background: var(--color-white); }
+
+.text-link,
+.icon-text-link { color: var(--color-petrol-ink); text-decoration-color: var(--color-celeste); }
+.text-link svg,
+.icon-text-link svg { transition: transform var(--motion-fast) var(--ease-enter); }
+.text-link:hover svg,
+.icon-text-link:hover svg { transform: translateX(.18rem); }
+
+/* Public chrome */
+.beta-notice { color: var(--color-petrol-ink); background: var(--color-celeste-soft); }
+.site-header {
+  border-bottom-color: rgb(55 122 134 / 14%);
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 .25rem 1rem rgb(31 85 94 / 4%);
+}
+.site-header__inner { min-height: 5.4rem; }
+.wordmark { width: clamp(9.5rem, 18vw, 13.5rem); color: var(--color-petrol); }
+.wordmark__image { width: 100%; height: auto; }
+.site-nav__link { border-radius: .55rem; color: var(--color-text-secondary); font-weight: 620; }
+.site-nav__link:hover { color: var(--color-petrol-ink); background: var(--color-aquamarine-soft); }
+
+.section { position: relative; isolation: isolate; background: var(--color-white); }
+.section-heading { gap: .85rem; }
+.section-heading > p:last-child { color: var(--color-text-secondary); }
+.eyebrow {
+  color: var(--color-petrol);
+  font-size: .95rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.4;
+  text-transform: none;
+}
+
+/* Official leaf geometry appears as quiet atmosphere, never as clip-art. */
+.section--categories::before,
+.section--faq::after,
+.page-hero::after,
+.site-footer::after {
+  position: absolute;
+  z-index: -1;
+  width: clamp(12rem, 22vw, 23rem);
+  aspect-ratio: 78 / 87;
+  background: url("/brand/symbol.webp") center / contain no-repeat;
+  content: "";
+  opacity: .055;
+  pointer-events: none;
+}
+
+.section--categories { overflow: clip; background: var(--color-white); }
+.section--categories::before { top: -6rem; right: -5rem; rotate: 20deg; }
+.category-entry-grid { gap: 1rem; }
+.category-entry {
+  min-height: 15rem;
+  align-content: space-between;
+  border: 0;
+  border-radius: var(--radius-lg);
+  box-shadow: none;
+  transition: transform var(--motion-base) var(--ease-enter), box-shadow var(--motion-base) var(--ease-enter);
+}
+.category-entry:hover { border-color: transparent; box-shadow: var(--shadow-soft); transform: translateY(-.3rem); }
+.category-entry--estetica { color: var(--color-white); background: var(--color-petrol); }
+.category-entry--bienestar { color: var(--color-graphite); background: var(--color-aquamarine); }
+.category-entry--recuperacion { color: var(--color-graphite); background: var(--color-celeste); }
+.category-entry :is(h3, p, .text-link, .category-entry__icon) { color: inherit; }
+.category-entry--estetica .text-link { text-decoration-color: var(--color-celeste); }
+.category-entry__icon {
+  --brand-icon-field: var(--color-petrol);
+  --brand-icon-line: var(--color-white);
+  --brand-icon-accent: var(--color-aquamarine);
+  width: 4.5rem;
+  height: 4.5rem;
+  overflow: visible;
+  transition: transform var(--motion-base) var(--ease-enter);
+}
+.category-entry__icon .brand-icon__field { fill: var(--brand-icon-field); stroke: none; }
+.category-entry__icon .brand-icon__line { stroke: var(--brand-icon-line); }
+.category-entry__icon .brand-icon__accent { fill: var(--brand-icon-accent); stroke: none; }
+.category-entry--estetica .category-entry__icon {
+  --brand-icon-field: var(--color-aquamarine);
+  --brand-icon-accent: var(--color-celeste-soft);
+}
+.category-entry--bienestar .category-entry__icon {
+  --brand-icon-field: var(--color-petrol);
+  --brand-icon-accent: var(--color-aquamarine);
+}
+.category-entry--recuperacion .category-entry__icon {
+  --brand-icon-field: var(--color-petrol);
+  --brand-icon-accent: var(--color-aquamarine);
+}
+.category-entry:hover .category-entry__icon { transform: translateY(-.18rem) rotate(-2deg); }
+
+/* The brand PDF defines rounded, open strokes with small leaf accents. */
+.public-site :is(svg, .category-entry__icon),
+.admin-product-shell svg {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.admin-category-editor-grid__identity svg {
+  --brand-icon-field: var(--color-petrol);
+  --brand-icon-line: var(--color-white);
+  --brand-icon-accent: var(--color-aquamarine);
+}
+.admin-category-editor-grid__identity .brand-icon__field { fill: var(--brand-icon-field); stroke: none; }
+.admin-category-editor-grid__identity .brand-icon__line { stroke: var(--brand-icon-line); }
+.admin-category-editor-grid__identity .brand-icon__accent { fill: var(--brand-icon-accent); stroke: none; }
+
+.section--approach {
+  overflow: clip;
+  color: var(--color-white);
+  background: var(--color-petrol);
+}
+.section--approach::before {
+  position: absolute;
+  z-index: -1;
+  inset: -20% -5% -25% 52%;
+  background: url("/brand/symbol.webp") center / contain no-repeat;
+  content: "";
+  opacity: .1;
+  rotate: -12deg;
+}
+.section--approach :is(h2, .eyebrow) { color: var(--color-white); }
+.section--approach p { color: rgb(255 255 255 / 88%); }
+
+.section--steps { background: var(--color-aquamarine-soft); }
+.booking-steps { gap: 0; border-top-color: rgb(55 122 134 / 24%); }
+.booking-steps li { border-bottom-color: rgb(55 122 134 / 24%); }
+.booking-steps li::before { color: var(--color-petrol); }
+.booking-steps span { color: var(--color-petrol-ink); }
+
+.section--faq { overflow: clip; background: var(--color-white); }
+.section--faq::after { right: -7rem; bottom: -8rem; rotate: -35deg; }
+.faq-list details { border-color: var(--color-border); background: var(--color-white); }
+.faq-list details[open] { border-color: var(--color-celeste); background: var(--color-celeste-soft); }
+.faq-list summary { color: var(--color-petrol-ink); }
+
+/* Catalog and treatment surfaces */
+.page-hero {
+  overflow: clip;
+  color: var(--color-white);
+  background: var(--color-petrol);
+}
+.page-hero::after { right: -5rem; bottom: -9rem; opacity: .11; rotate: -18deg; }
+.page-hero::before { background: linear-gradient(90deg, rgb(31 85 94 / 96%), rgb(55 122 134 / 78%)); }
+.page-hero :is(h1, .eyebrow) { color: var(--color-white); }
+.page-hero p { color: rgb(255 255 255 / 88%); }
+.section--catalog { background: var(--color-white); }
+
+.catalog-search input,
+.catalog-filters .filter-chip { background: var(--color-white); }
+.filter-chip { border-color: var(--color-border); color: var(--color-petrol-ink); }
+.filter-chip:hover { border-color: var(--color-celeste); background: var(--color-celeste-soft); }
+.filter-chip.is-active { border-color: var(--color-petrol); color: var(--color-white); background: var(--color-petrol); }
+
+.treatment-editorial-grid { gap: 1.25rem; }
+.treatment-editorial-card {
+  border-color: var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+  box-shadow: none;
+  transition: transform var(--motion-base) var(--ease-enter), box-shadow var(--motion-base) var(--ease-enter), border-color var(--motion-fast) ease;
+}
+.treatment-editorial-card:hover { border-color: var(--color-celeste); box-shadow: var(--shadow-floating); transform: translateY(-.3rem); }
+.treatment-editorial-card__image img { transition: transform 700ms var(--ease-enter), filter 300ms ease; }
+.treatment-editorial-card:hover .treatment-editorial-card__image img { transform: scale(1.025); filter: saturate(1.03); }
+.treatment-editorial-card__content { background: linear-gradient(180deg, rgb(255 255 255 / 2%), var(--color-white) 38%); }
+.treatment-editorial-card__content h3 { color: var(--color-petrol-ink); }
+.treatment-editorial-card__footer { color: var(--color-white); background: var(--color-petrol); }
+.treatment-editorial-card__footer strong,
+.treatment-editorial-card__footer span { color: inherit; }
+.treatment-editorial-card__arrow { color: var(--color-ink); background: var(--color-aquamarine); font-weight: 650; }
+.treatment-editorial-card__arrow svg { transition: transform var(--motion-fast) var(--ease-enter); }
+.treatment-editorial-card:hover .treatment-editorial-card__arrow svg { transform: translateX(.15rem); }
+
+.treatment-detail { color: var(--color-ink); background: var(--color-white); }
+.treatment-detail__hero { background: var(--color-celeste-soft); }
+.treatment-detail__intro h1 { color: var(--color-petrol-ink); }
+.treatment-detail__booking { color: var(--color-white); background: var(--color-petrol); }
+.treatment-detail__booking .button--light { color: var(--color-petrol-ink); background: var(--color-aquamarine); }
+.feature-list svg { color: var(--color-petrol); }
+
+/* Booking: familiar product UI, not a marketing set piece. */
+.booking-demo-page { background: var(--color-white); }
+.booking-flow,
+.booking-selection-rail,
+.booking-step-panel { border-color: var(--color-border); background: var(--color-white); box-shadow: none; }
+.booking-progress li.is-active,
+.booking-progress li.is-complete { color: var(--color-petrol-ink); }
+.date-choice,
+.time-choice { border-color: var(--color-border); background: var(--color-white); }
+.date-choice:hover,
+.time-choice:hover { border-color: var(--color-celeste); background: var(--color-celeste-soft); }
+.date-choice.is-selected,
+.time-choice.is-selected { border-color: var(--color-petrol); color: var(--color-white); background: var(--color-petrol); }
+.date-choice.is-selected :is(span, strong, small),
+.time-choice.is-selected :is(span, strong, small) { color: var(--color-white); }
+
+/* Footer */
+.site-footer {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  color: var(--color-white);
+  background: var(--color-petrol-ink);
+}
+.site-footer::after { right: -6rem; bottom: -9rem; opacity: .1; }
+.site-footer__logo { width: min(100%, 12rem); height: auto; }
+.site-footer :is(h2, h3, a, p, span, address, button) { color: inherit; }
+.site-footer a { text-decoration-color: var(--color-celeste); }
+.site-footer__legal { border-top-color: rgb(255 255 255 / 18%); }
+.privacy-preferences-button { color: var(--color-white); }
+
+.cookie-consent { border-color: var(--color-celeste); background: var(--color-white); box-shadow: var(--shadow-floating); }
+
+/* Admin: branded but task-first. */
+.admin-product-shell {
+  min-height: 100vh;
+  color: var(--color-ink);
+  background: var(--color-cloud);
+  font-family: var(--font-copy);
+}
+.admin-product-shell h1 { font-size: clamp(2rem, 4vw, 3.25rem); }
+.admin-product-shell h2 { font-size: clamp(1.45rem, 2.5vw, 2.1rem); }
+.admin-product-shell h3 { font-size: 1.2rem; }
+.admin-product-shell .eyebrow { color: var(--color-petrol); font-size: .86rem; }
+.admin-login-brand { width: 12rem; height: auto; margin: 0 auto 1.25rem; }
+.admin-login-panel { position: relative; overflow: hidden; }
+.admin-login-panel::after {
+  position: absolute;
+  z-index: 0;
+  right: -4rem;
+  bottom: -5rem;
+  width: 11rem;
+  aspect-ratio: 78 / 87;
+  background: url("/brand/symbol.webp") center / contain no-repeat;
+  content: "";
+  opacity: .045;
+  pointer-events: none;
+}
+.admin-login-panel > * { position: relative; z-index: 1; }
+
+.admin-editor-page-header,
+.admin-topbar,
+.admin-section-heading,
+.admin-section__heading { border-color: var(--color-border); }
+
+.live-admin__section,
+.admin-section,
+.admin-item,
+.admin-disclosure,
+.admin-customer-item,
+.admin-activity-item,
+.admin-treatment-manager-item,
+.admin-treatment-editor-side,
+.admin-manual-card,
+.admin-login-panel {
+  border-color: var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+  box-shadow: none;
+}
+
+.admin-disclosure[open],
+.admin-activity-item[open],
+.admin-treatment-manager-item[open] { border-color: var(--color-celeste); }
+.admin-disclosure > summary,
+.admin-activity-item > summary,
+.admin-treatment-manager-item > summary { transition: background-color var(--motion-fast) ease; }
+.admin-disclosure > summary:hover,
+.admin-activity-item > summary:hover,
+.admin-treatment-manager-item > summary:hover { background: var(--color-aquamarine-soft); }
+
+.admin-form :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="range"]), select, textarea),
+.admin-search input,
+.admin-search select {
+  border-color: var(--color-border);
+  border-radius: .6rem;
+  color: var(--color-ink);
+  background: var(--color-white);
+  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, background-color var(--motion-fast) ease;
+}
+.admin-form :is(input, select, textarea):hover,
+.admin-search :is(input, select):hover { border-color: var(--color-celeste); }
+.admin-form :is(input, select, textarea):focus,
+.admin-search :is(input, select):focus { border-color: var(--color-petrol); box-shadow: 0 0 0 .2rem rgb(140 204 204 / 32%); }
+
+.admin-tabs a,
+.admin-date-switcher button,
+.admin-filters button { border-radius: .55rem; }
+.admin-tabs a:hover,
+.admin-date-switcher button:hover,
+.admin-filters button:hover { background: var(--color-aquamarine-soft); }
+.admin-tabs a[aria-current="page"],
+.admin-date-switcher button.is-active,
+.admin-filters button.is-active { color: var(--color-white); background: var(--color-petrol); }
+
+.status-badge { border-radius: 999px; }
+.status-confirmed { color: #195b4d; background: #dcf8ef; }
+.status-pending { color: #755014; background: #fff2ca; }
+.status-cancelled { color: #84323a; background: #fde6e8; }
+.admin-count { color: var(--color-petrol-ink); background: var(--color-aquamarine-soft); }
+
+.admin-empty { border-color: var(--color-border); background: var(--color-celeste-soft); }
+.admin-empty svg { color: var(--color-petrol); }
+.form-message { border-color: var(--color-celeste); background: var(--color-celeste-soft); }
+
+/* High-specificity contrast safeguards for dark branded surfaces. */
+.public-site .section--approach .eyebrow,
+.public-site .section--approach :is(h1, h2, h3, p, li, a),
+.public-site .page-hero .eyebrow,
+.public-site .page-hero .page-hero__content > :is(h1, h2, p) {
+  color: var(--color-white);
+}
+
+.public-site .section--approach .eyebrow,
+.public-site .page-hero .eyebrow {
+  opacity: .82;
+}
+
+.public-site .section--approach p,
+.public-site .page-hero .page-hero__content > p {
+  color: rgb(255 255 255 / 86%);
+}
+
+@media (max-width: 767px) {
+  .site-header__inner { min-height: 4.8rem; }
+  .wordmark { width: 9.75rem; }
+  .category-entry { min-height: 0; }
+  .page-hero::after { opacity: .07; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  .button::after { display: none; }
+}

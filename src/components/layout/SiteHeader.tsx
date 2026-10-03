@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const navigation = [
@@ -11,8 +12,14 @@ export function SiteHeader() {
     <header className="site-header">
       <div className="site-container site-header__inner">
         <Link className="wordmark" href="/" aria-label="Piel Canela, inicio">
-          <span className="wordmark__main">Piel Canela</span>
-          <span className="wordmark__sub">bienestar y cuidado</span>
+          <Image
+            className="wordmark__image"
+            src="/brand/logo-horizontal.webp"
+            alt="Piel Canela, estética y bienestar"
+            width={474}
+            height={94}
+            priority
+          />
         </Link>
 
         <nav className="site-nav" aria-label="Navegación principal">

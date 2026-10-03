@@ -1,35 +1,22 @@
 "use client";
 
-import {
-  FlowerLotus,
-  PersonArmsSpread,
-  UserFocus,
-  type Icon,
-} from "@phosphor-icons/react";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { BrandCategoryIcon } from "@/components/icons/BrandCategoryIcon";
 import type { TreatmentCategory } from "@/domain/treatment";
 import { buildCatalogHref } from "@/lib/treatments";
-
-const icons: Record<TreatmentCategory["icon"], Icon> = {
-  UserFocus,
-  FlowerLotus,
-  PersonArmsSpread,
-};
 
 interface CategoryEntryCardProps {
   category: TreatmentCategory;
 }
 
 export function CategoryEntryCard({ category }: CategoryEntryCardProps) {
-  const CategoryIcon = icons[category.icon];
-
   return (
     <article className={`category-entry category-entry--${category.slug}`}>
-      <CategoryIcon
+      <BrandCategoryIcon
         className="category-entry__icon"
+        icon={category.icon}
         aria-hidden="true"
-        weight="regular"
       />
       <div className="category-entry__body">
         <h3>{category.name}</h3>

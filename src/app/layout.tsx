@@ -3,21 +3,13 @@ import localFont from "next/font/local";
 import { ConsentManagedInsights } from "@/components/layout/ConsentManagedInsights";
 import "./globals.css";
 import "./ux-refinements.css";
+import "./brand-system.css";
 
 const monaSans = localFont({
   src: "./fonts/MonaSans-Variable.woff2",
   variable: "--font-heading",
   display: "swap",
   weight: "200 900",
-  fallback: ["Arial", "sans-serif"],
-  preload: true,
-});
-
-const atkinson = localFont({
-  src: "./fonts/AtkinsonHyperlegibleNext-Variable.ttf",
-  variable: "--font-body",
-  display: "swap",
-  weight: "200 800",
   fallback: ["Arial", "sans-serif"],
   preload: true,
 });
@@ -30,6 +22,11 @@ export const metadata: Metadata = {
   },
   description:
     "Conocé los tratamientos de Piel Canela, compará duración y precio, y comenzá tu pre-reserva.",
+  icons: {
+    icon: "/brand/favicon.webp",
+    shortcut: "/brand/favicon.webp",
+    apple: "/brand/favicon.webp",
+  },
   alternates: { canonical: "/" },
   openGraph: {
     title: "Piel Canela",
@@ -39,9 +36,9 @@ export const metadata: Metadata = {
     siteName: "Piel Canela",
     url: "/",
     images: [{
-      url: "/images/treatment-massage-concept.png",
-      width: 1086,
-      height: 1449,
+      url: "/brand/key-visual-care.jpg",
+      width: 2554,
+      height: 946,
       alt: "Piel Canela, bienestar, estética y recuperación",
     }],
   },
@@ -49,13 +46,13 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Piel Canela",
     description: "Bienestar, estética y recuperación con información clara.",
-    images: ["/images/treatment-massage-concept.png"],
+    images: ["/brand/key-visual-care.jpg"],
   },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className={`${monaSans.variable} ${atkinson.variable}`}>
+    <html lang="es" className={monaSans.variable}>
       <body>{children}<ConsentManagedInsights /></body>
     </html>
   );

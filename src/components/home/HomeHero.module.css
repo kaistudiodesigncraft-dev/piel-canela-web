@@ -1,8 +1,31 @@
 .hero {
   position: relative;
   overflow: clip;
-  padding-block: clamp(2.5rem, 6vw, 5.75rem) clamp(3.5rem, 7vw, 6.5rem);
-  background: var(--color-bone);
+  isolation: isolate;
+  padding-block: clamp(3.5rem, 7vw, 7rem) clamp(4.5rem, 9vw, 8rem);
+  background: var(--color-white);
+}
+
+.hero::before {
+  position: absolute;
+  z-index: -1;
+  top: -10rem;
+  left: -11rem;
+  width: clamp(24rem, 42vw, 42rem);
+  aspect-ratio: 1;
+  background: url("/brand/symbol.webp") center / contain no-repeat;
+  content: "";
+  opacity: 0.045;
+  rotate: -16deg;
+  animation: motif-arrival 900ms var(--ease-enter) both;
+}
+
+.hero::after {
+  position: absolute;
+  z-index: -2;
+  inset: 0 0 0 54%;
+  background: color-mix(in srgb, var(--color-aquamarine) 7%, var(--color-white));
+  content: "";
 }
 
 .grid {
@@ -11,24 +34,25 @@
   gap: 2.5rem;
 }
 
-.copy { min-width: 0; }
+.copy { min-width: 0; padding-block: 1rem; }
 
 .introduction {
   margin-bottom: 1.5rem;
-  color: var(--color-deep-green);
+  color: var(--color-petrol);
   font-family: var(--font-title);
   font-size: 1rem;
-  font-weight: 550;
+  font-weight: 600;
   line-height: 1.5;
   text-wrap: balance;
 }
 
 .title {
-  max-width: 13ch;
-  font-size: clamp(2.5rem, 5.8vw, 5.25rem);
-  font-weight: 550;
-  line-height: 1.06;
-  letter-spacing: -0.04em;
+  max-width: 12ch;
+  color: var(--color-petrol);
+  font-size: clamp(2.7rem, 5.6vw, 5.65rem);
+  font-weight: 510;
+  line-height: 0.99;
+  letter-spacing: -0.035em;
   overflow-wrap: anywhere;
   text-wrap: balance;
 }
@@ -36,7 +60,7 @@
 .lead {
   max-width: 39ch;
   margin-top: 1.75rem;
-  color: var(--color-text-secondary);
+  color: var(--color-graphite);
   font-size: clamp(1.0625rem, 1.5vw, 1.25rem);
   line-height: 1.6;
   text-wrap: pretty;
@@ -55,7 +79,7 @@
 }
 
 .assurances li { display: flex; align-items: start; gap: 0.5rem; }
-.assurances svg { flex-shrink: 0; width: 1rem; height: 1.5rem; color: var(--color-deep-green); }
+.assurances svg { flex-shrink: 0; width: 1rem; height: 1.5rem; color: var(--color-petrol); }
 
 .visual { min-width: 0; margin: 0; }
 
@@ -64,24 +88,38 @@
   isolation: isolate;
   overflow: hidden;
   aspect-ratio: 5 / 5.5;
-  background: var(--color-green-mist);
-  /* A single open curve gives the photograph its silhouette, not another card. */
-  border-radius: 38% 0 0 0;
+  background: var(--color-celeste-soft);
+  /* The asymmetric silhouette borrows the geometry of the official leaf symbol. */
+  border-radius: 48% 48% 15% 48% / 38% 46% 18% 56%;
+  box-shadow: 0 1.25rem 2rem rgb(55 122 134 / 12%);
 }
 
 .imageFrame[data-surface="soft"] { background: var(--color-cloud); }
 .imageFrame[data-surface="contrast"] { background: var(--color-deep-green); }
-.imageMotion { position: absolute; inset: -1.75rem 0; }
+.imageMotion { position: absolute; inset: -1.75rem 0; transition: transform 700ms var(--ease-enter); }
+.imageFrame:hover .imageMotion { transform: scale(1.018); }
 .imageMotion img { object-fit: cover; }
 .overlay { position: absolute; inset: 0; pointer-events: none; background: var(--color-white); opacity: 0; }
 .overlay[data-level="light"] { opacity: 0.12; }
 .overlay[data-level="medium"] { opacity: 0.25; }
 .overlay[data-level="strong"] { opacity: 0.42; }
 .atmosphere { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.atmosphere::before {
+  position: absolute;
+  right: 7%;
+  bottom: 6%;
+  width: 4.25rem;
+  aspect-ratio: 78 / 87;
+  background: url("/brand/symbol.webp") center / contain no-repeat;
+  content: "";
+  filter: drop-shadow(0 .35rem .6rem rgb(28 77 84 / 18%));
+}
 
 .caption {
   max-width: 43ch;
-  padding-top: 1rem;
+  margin-inline: auto;
+  padding-top: 1.15rem;
+  text-align: center;
   color: var(--color-text-secondary);
   font-size: 0.9375rem;
   line-height: 1.5;
@@ -89,17 +127,24 @@
 }
 
 @media (min-width: 768px) {
-  .grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: clamp(2rem, 4vw, 4.5rem); }
+  .grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(2.5rem, 5vw, 5.5rem); }
   .visual { padding-top: 1.5rem; }
   .grid[data-with-image="false"] { grid-template-columns: minmax(0, 1fr); }
   .grid[data-with-image="false"] .title { max-width: 20ch; }
 }
 
 @media (max-width: 479px) {
+  .hero::after { inset: 58% 0 0; }
   .actions { align-items: stretch; flex-direction: column; }
   .imageFrame { aspect-ratio: 5 / 4.7; }
 }
 
+@keyframes motif-arrival {
+  from { opacity: 0; transform: translate3d(-1rem, -1rem, 0) scale(.96); }
+  to { opacity: .045; transform: translate3d(0, 0, 0) scale(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .imageMotion { transform: none !important; }
+  .hero::before { animation: none; }
 }

@@ -1,6 +1,7 @@
 "use client";
 import { BookOpenText, CalendarDays, ContactRound, FilePenLine, HandHeart, History, PackageCheck, Settings, ShieldCheck, UsersRound, PanelLeftClose, PanelLeftOpen, Menu, X, Clock3, Sparkles, UserRound, MessageCircle } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import styles from "./AdminShell.module.css";
@@ -56,7 +57,7 @@ export function AdminRouteNav({ current, canManageAccess = false }: { current: A
   </nav>;
   return <>
     <aside className={`${styles.sidebar} ${compact ? styles.compact : ""}`} data-admin-sidebar="true">
-      <Link className={styles.brand} href="/admin?module=today" aria-label="Piel Canela, inicio del panel"><span>PC</span><strong>Piel Canela<small>Recepción</small></strong></Link>
+      <Link className={styles.brand} href="/admin?module=today" aria-label="Piel Canela, inicio del panel"><span><Image src="/brand/monogram.webp" alt="" width={124} height={98} priority /></span><strong>Piel Canela<small>Recepción</small></strong></Link>
       <button className={styles.collapse} type="button" aria-label={compact ? "Expandir menú" : "Contraer menú"} aria-expanded={!compact} onClick={() => setCompact(!compact)}>{compact ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}</button>
       {navigation()}<Link className={styles.publicLink} href="/" target="_blank" rel="noreferrer">Ver web pública</Link>
     </aside>

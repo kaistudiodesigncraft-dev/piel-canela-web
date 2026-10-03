@@ -21,6 +21,9 @@ describe("CategoryEntryCard", () => {
     expect(links[0]).toHaveAttribute("href", "/tratamientos?category=estetica#catalogo");
     expect(links[1]).toHaveAttribute("href", "/tratamientos?category=bienestar#catalogo");
     expect(links[2]).toHaveAttribute("href", "/tratamientos?category=recuperacion#catalogo");
+    expect(document.querySelector('[data-brand-icon="estetica"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-brand-icon="bienestar"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-brand-icon="recuperacion"]')).toBeInTheDocument();
   });
 });
 

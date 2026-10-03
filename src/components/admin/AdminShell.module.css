@@ -18,3 +18,20 @@
 @keyframes enter { from { transform:translateX(-18px); opacity:0; } to { transform:translateX(0); opacity:1; } }
 @media(max-width:1099px) { .sidebar { display:none; }.mobileTrigger { display:inline-flex; margin-bottom:18px; }:global(.admin-product-shell):has(.sidebar),:global(.admin-product-shell):has(.compact) { padding-left:0; } }
 @media(prefers-reduced-motion:reduce) { .drawer { animation:none; }.links a:active { transform:none; } }
+
+/* Brand system 2026: calm, restrained product surface. */
+.sidebar { width:256px; padding:18px 12px; background:var(--color-white); }
+.groupLabel { color:var(--color-petrol); }
+.brand>span { width:42px; height:42px; overflow:hidden; border:0; border-radius:12px; background:var(--color-petrol); }
+.brand>span img { width:100%; height:100%; object-fit:cover; }
+.collapse:hover,.drawerHeading button:hover { color:var(--color-petrol); background:var(--color-aquamarine-soft); }
+.links a { transition:color 160ms ease,background-color 160ms ease,transform 120ms ease; }
+.links a:hover { color:var(--color-petrol); background:var(--color-aquamarine-soft); }
+.links a[aria-current=page] { color:white; background:var(--color-petrol); }
+.links a:active { transform:scale(.985); }
+.publicLink { color:var(--color-petrol); font-weight:650; }
+.drawer { background:var(--color-white); animation-timing-function:var(--ease-enter); }
+.drawer::backdrop { background:rgb(23 61 66 / 48%); }
+:global(.admin-product-shell):has(.sidebar) { padding-left:256px; }
+:global(.admin-product-shell):has(.compact) { padding-left:82px; }
+@media(max-width:1099px) { :global(.admin-product-shell):has(.sidebar),:global(.admin-product-shell):has(.compact) { padding-left:0; } }

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { PrivacyPreferencesButton } from "./PrivacyPreferencesButton";
 import { publicEmailLink, publicInstagramLink, publicWhatsAppLink } from "./public-contact";
@@ -24,10 +25,13 @@ export function SiteFooter({ settings, hasMonthlySpecials = false }: SiteFooterP
     <footer className={`site-footer ${styles.footer}`} id="contacto">
       <div className="site-container site-footer__grid">
         <div>
-          <p className="wordmark wordmark--footer">
-            <span className="wordmark__main">Piel Canela</span>
-            <span className="wordmark__sub">bienestar y cuidado</span>
-          </p>
+          <Image
+            className="site-footer__logo"
+            src="/brand/logo-white.webp"
+            alt="Piel Canela, estética y bienestar"
+            width={475}
+            height={240}
+          />
           <p className="site-footer__intro">
             Un espacio para elegir cuidados con información clara y atención profesional.
           </p>
