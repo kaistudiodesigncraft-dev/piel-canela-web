@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminRouteNav } from "@/components/admin/AdminRouteNav";
 import { DepilationComboAdmin } from "@/components/admin/DepilationComboAdmin";
+import { treatmentUsesCombos, type TreatmentSelectionMode } from "@/domain/treatment";
 import { requireAdmin } from "@/lib/admin/require-admin";
 
 export const metadata: Metadata = { title: "Combos de depilación" };
@@ -25,7 +26,7 @@ export default async function TreatmentCombosPage({ params, searchParams }: { pa
   const error = treatmentResult.error ?? zonesResult.error ?? combosResult.error ?? linksResult.error ?? extrasResult.error ?? allowedExtrasResult.error ?? settingsResult.error;
   if (error) throw new Error(`No se pudo cargar la configuración de combos: ${error.code ?? "query"}`);
   if (!treatmentResult.data) notFound();
-  if (treatmentResult.data.selection_mode !== "closed_combo") notFound();
+  if (!treatmentUsesCombos(treatmentResult.data.selection_mode as TreatmentSelectionMode)) notFound();
   const linksByCombo = new Map<string, string[]>();
   const extrasByCombo = new Map<string, string[]>();
   const linkCountsByZone = new Map<string, number>();

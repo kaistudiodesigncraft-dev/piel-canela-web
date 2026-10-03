@@ -13,6 +13,7 @@ import {
 import { ADMIN_IMAGE_MAX_BYTES, ADMIN_IMAGE_TYPES, hasExpectedImageSignature } from "@/lib/admin/image-upload";
 import { isOperationalAdminRole, requireAdmin } from "@/lib/admin/require-admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { treatmentUsesCombos, type TreatmentSelectionMode } from "@/domain/treatment";
 
 const loginSchema = z.object({ email: z.string().email(), password: z.string().min(8) });
 const weeklyAvailabilityRuleSchema = z.object({
@@ -322,7 +323,7 @@ export async function saveMonthlySpecial(formData: FormData) {
   const { data: selectedTreatment } = await supabase.from("treatments")
     .select("selection_mode").eq("id", parsed.data.treatmentId).single();
   if (!selectedTreatment) redirect("/admin?specialError=treatment#especiales-mes");
-  const pricingMode = selectedTreatment.selection_mode === "closed_combo" ? "combo_catalog" : "special_price";
+  const pricingMode = treatmentUsesCombos(selectedTreatment.selection_mode as TreatmentSelectionMode) ? "combo_catalog" : "special_price";
   const specialPrice = pricingMode === "combo_catalog" ? 0 : pesosToCents(parsed.data.specialPricePesos);
   const referencePrice = pricingMode === "combo_catalog" ? null : parsed.data.referencePricePesos ? pesosToCents(parsed.data.referencePricePesos) : null;
   if ((pricingMode === "special_price" && specialPrice <= 0) || (referencePrice !== null && referencePrice <= specialPrice)) {

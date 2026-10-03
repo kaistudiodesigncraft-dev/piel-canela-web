@@ -39,6 +39,10 @@ export interface TreatmentImage {
 }
 
 export type TreatmentSelectionMode = "simple" | "closed_combo" | "combo_with_extras";
+
+export function treatmentUsesCombos(mode: TreatmentSelectionMode) {
+  return mode === "closed_combo" || mode === "combo_with_extras";
+}
 export type DepilationAudience = "women" | "men" | "shared";
 export type ComboMode = "single_session" | "package";
 export type MonthlySpecialPricingMode = "special_price" | "combo_catalog";

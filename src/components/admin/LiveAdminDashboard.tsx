@@ -37,7 +37,7 @@ import {
   toggleSpecialty,
 } from "@/app/admin/actions";
 import { getBookingRescheduleSlots, rescheduleBooking, saveBookingNotes } from "@/app/admin/reservas/actions";
-import type { BookingStatus } from "@/domain/treatment";
+import { treatmentUsesCombos, type BookingStatus, type TreatmentSelectionMode } from "@/domain/treatment";
 import type { MessageTemplates } from "@/domain/whatsapp";
 import {
   buildAdminWhatsAppMessage,
@@ -90,7 +90,7 @@ interface TreatmentRow {
   duration_minutes: number;
   buffer_minutes: number;
   start_interval_minutes: number;
-  selection_mode: "simple" | "closed_combo";
+  selection_mode: TreatmentSelectionMode;
   price_cents: number;
   is_active: boolean;
 }
@@ -543,7 +543,7 @@ export function LiveAdminDashboard({
 function MonthlySpecialForm({ treatments, special }: { treatments: TreatmentRow[]; special?: MonthlySpecialRow }) {
   const [treatmentId, setTreatmentId] = useState(special?.treatment_id ?? "");
   const selectedTreatment = treatments.find((treatment) => treatment.id === treatmentId);
-  const promotesCombos = selectedTreatment?.selection_mode === "closed_combo";
+  const promotesCombos = selectedTreatment ? treatmentUsesCombos(selectedTreatment.selection_mode) : false;
 
   return <form action={saveMonthlySpecial} className="admin-form admin-form--special">
     {special ? <input type="hidden" name="specialId" value={special.id} /> : null}

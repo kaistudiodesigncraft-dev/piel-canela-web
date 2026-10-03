@@ -269,7 +269,7 @@ async function saveTreatmentImpl(
     duration_minutes: number;
     buffer_minutes: number;
     start_interval_minutes: number;
-    selection_mode: "simple" | "closed_combo";
+    selection_mode: "simple" | "closed_combo" | "combo_with_extras";
     is_active: boolean;
   } | null = null;
   let futureBookings = 0;
