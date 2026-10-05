@@ -131,7 +131,6 @@ dd { text-wrap: pretty; }
 .icon-text-link:hover svg { transform: translateX(.18rem); }
 
 /* Public chrome */
-.beta-notice { color: var(--color-petrol-ink); background: var(--color-celeste-soft); }
 .site-header {
   border-bottom-color: rgb(55 122 134 / 14%);
   background: rgb(255 255 255 / 92%);

@@ -10,7 +10,7 @@ import {
 } from "@/lib/admin/treatment-delete-code";
 
 const professionalSchema = z.object({
-  professionalId: z.string().uuid().optional(),
+  professionalId: z.string().uuid(),
   specialtyId: z.string().uuid(),
   specialtyIds: z.array(z.string().uuid()).default([]),
   fullName: z.string().trim().min(2).max(100),
@@ -31,7 +31,7 @@ function professionalRedirect(params: string): never {
   redirect(`/admin/profesionales?${params}#equipo`);
 }
 
-export async function saveProfessional(formData: FormData) {
+export async function saveProfessional(_previous: { error?: string; saved?: boolean }, formData: FormData): Promise<{ error?: string; saved?: boolean }> {
   const { supabase } = await requireAdmin();
   const parsed = professionalSchema.safeParse({
     professionalId: formData.get("professionalId") || undefined,
@@ -44,29 +44,10 @@ export async function saveProfessional(formData: FormData) {
     internalNotes: formData.get("internalNotes") || undefined,
     displayOrder: formData.get("displayOrder"),
   });
-  if (!parsed.success) professionalRedirect("professionalError=invalid");
+  if (!parsed.success) return { error: "Revisá nombre, especialidades y orden. Los datos escritos se conservaron." };
   const specialtyIds = [...new Set([parsed.data.specialtyId, ...parsed.data.specialtyIds])];
 
   const isActive = formData.get("isActive") === "on";
-  const { data: specialties } = await supabase.from("specialties")
-    .select("id,is_active").in("id", specialtyIds);
-  if ((specialties ?? []).filter((item) => item.is_active).length !== specialtyIds.length) professionalRedirect("professionalError=specialty");
-
-  let assignedTreatments = 0;
-  if (parsed.data.professionalId) {
-    const [{ data: existing }, { count }] = await Promise.all([
-      supabase.from("professionals").select("specialty_id,is_active")
-        .eq("id", parsed.data.professionalId).single(),
-      supabase.from("treatment_professionals").select("treatment_id", { count: "exact", head: true })
-        .eq("professional_id", parsed.data.professionalId)
-        .eq("is_active", true),
-    ]);
-    if (!existing) professionalRedirect("professionalError=missing");
-    assignedTreatments = count ?? 0;
-    if (existing.is_active && !isActive && assignedTreatments > 0 && formData.get("confirmImpact") !== "on") {
-      professionalRedirect("professionalError=impact");
-    }
-  }
 
   const payload = {
     specialty_id: parsed.data.specialtyId,
@@ -78,18 +59,22 @@ export async function saveProfessional(formData: FormData) {
     is_active: isActive,
     display_order: parsed.data.displayOrder,
   };
-  const result = parsed.data.professionalId
-    ? await supabase.from("professionals").update(payload).eq("id", parsed.data.professionalId).select("id").single()
-    : await supabase.from("professionals").insert(payload).select("id").single();
+  const result = await supabase.rpc("save_admin_professional", {
+    requested_id: parsed.data.professionalId,
+    payload,
+    specialty_ids: specialtyIds,
+    expected_updated_at: formData.get("expectedUpdatedAt") || null,
+    confirm_impact: formData.get("confirmImpact") === "on",
+  });
   if (result.error) {
-    professionalRedirect(`professionalError=${result.error.code === "23505" ? "duplicate" : "save"}`);
+    const messages: Record<string, string> = {
+      stale_professional: "Otra persona actualizó este perfil. Copiá tus cambios y recargá antes de volver a guardar.",
+      invalid_specialties: "Seleccioná especialidades activas.",
+      specialty_in_use: "No podés retirar una especialidad con tratamientos asignados. Revisá primero esas asignaciones.",
+      impact_confirmation_required: "Confirmá el impacto antes de desactivar. Los turnos existentes no se cancelarán.",
+    };
+    return { error: messages[result.error.message] ?? (result.error.code === "23505" ? "Ya existe ese perfil. Revisá los profesionales registrados." : "No pudimos guardar. No se aplicaron cambios; tus datos siguen en el formulario.") };
   }
-  const professionalId = result.data.id;
-  await supabase.from("professional_specialties").delete().eq("professional_id", professionalId);
-  const specialtyResult = await supabase.from("professional_specialties").insert(
-    specialtyIds.map((specialtyId) => ({ professional_id: professionalId, specialty_id: specialtyId })),
-  );
-  if (specialtyResult.error) professionalRedirect("professionalError=save");
 
   revalidatePath("/tratamientos");
   revalidatePath("/admin/catalogo");

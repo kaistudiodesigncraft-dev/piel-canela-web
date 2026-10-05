@@ -15,11 +15,11 @@ export default async function ProfessionalsPage({ searchParams }: { searchParams
   const { supabase, profile } = await requireAdmin();
   const [specialtiesResult, professionalsResult, professionalSpecialtiesResult, usageResult] = await Promise.all([
     supabase.from("specialties").select("id,name,is_active").order("display_order"),
-    supabase.from("professionals").select("id,specialty_id,full_name,public_name,phone,bio,internal_notes,is_active,display_order").order("display_order").order("full_name"),
+    supabase.from("professionals").select("id,specialty_id,full_name,public_name,phone,bio,internal_notes,is_active,display_order,updated_at").order("display_order").order("full_name"),
     supabase.from("professional_specialties").select("professional_id,specialty_id"),
     supabase.rpc("get_professional_usage_counts"),
   ]);
-  const firstError = specialtiesResult.error ?? professionalsResult.error ?? professionalSpecialtiesResult.error ?? usageResult.error;
+  const firstError = specialtiesResult.error ?? professionalsResult.error ?? professionalSpecialtiesResult.error;
   if (firstError) throw new Error(`No se pudo cargar el equipo profesional: ${firstError.message}`);
   const assignmentCounts = new Map<string, number>();
   const bookingCounts = new Map<string, number>();
@@ -36,11 +36,13 @@ export default async function ProfessionalsPage({ searchParams }: { searchParams
     specialty_ids: specialtiesByProfessional.get(item.id) ?? [item.specialty_id],
     assigned_treatment_count: assignmentCounts.get(item.id) ?? 0,
     booking_count: bookingCounts.get(item.id) ?? 0,
+    usage_available: !usageResult.error,
   }));
   return (
     <div className="live-admin site-container">
       <header className="live-admin__header"><div><h1>Profesionales</h1><p>Un perfil por persona, con sus tratamientos y especialidades.</p></div><div className="live-admin__actions"><Link className="button button--quiet" href="/tratamientos" target="_blank" rel="noreferrer"><ExternalLink aria-hidden="true" strokeWidth={1.75} />Ver catálogo</Link><form action={signOutAdmin}><button className="button button--quiet" type="submit"><LogOut aria-hidden="true" strokeWidth={1.75} />Cerrar sesión</button></form></div></header>
       <AdminRouteNav current="professionals" canManageAccess={profile.role === "admin"} />
+      {usageResult.error ? <p role="alert">No pudimos consultar las vinculaciones. Los perfiles siguen disponibles; la eliminación está bloqueada. Recargá para reintentar.</p> : null}
       <ProfessionalsAdmin specialties={specialtiesResult.data ?? []} professionals={professionals} feedback={await searchParams} />
     </div>
   );

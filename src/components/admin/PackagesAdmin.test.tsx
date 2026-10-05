@@ -22,11 +22,14 @@ const packageRow = {
 };
 
 describe("PackagesAdmin", () => {
-  it("requires an explicit consume-or-return decision for a no-show", () => {
+  it("requires an explicit consume-or-return decision for a no-show", async () => {
     render(<PackagesAdmin packages={[packageRow]} feedback={{}} referenceTime="2026-09-08T12:00:00.000Z" />);
 
     expect(screen.getByText("¿La ausencia consume esta sesión?")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Consumir sesión" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "No consumir" })).toBeInTheDocument();
+    // The scheduler also resolves availability on mount. Waiting for its
+    // explicit fallback keeps the async state update inside the test.
+    expect(await screen.findByText(/No pudimos consultar horarios/i)).toBeInTheDocument();
   });
 });

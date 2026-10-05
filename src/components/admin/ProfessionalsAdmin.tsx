@@ -1,6 +1,8 @@
 import { ProfessionalNameFields } from "./ProfessionalNameFields";
 import { ChevronDown, Plus, Trash2, UserRound } from "lucide-react";
-import { deleteProfessional, saveProfessional } from "@/app/admin/profesionales/actions";
+import { deleteProfessional } from "@/app/admin/profesionales/actions";
+import { ProfessionalSaveForm } from "./ProfessionalSaveForm";
+import { randomUUID } from "node:crypto";
 
 interface SpecialtyRow {
   id: string;
@@ -21,6 +23,8 @@ interface ProfessionalRow {
   display_order: number;
   assigned_treatment_count: number;
   booking_count: number;
+  updated_at?: string;
+  usage_available?: boolean;
 }
 
 function feedbackMessage(error?: string) {
@@ -69,7 +73,7 @@ export function ProfessionalsAdmin({ specialties, professionals, feedback }: { s
 }
 
 function DeleteProfessionalForm({ professional }: { professional: ProfessionalRow }) {
-  const isLinked = professional.assigned_treatment_count > 0 || professional.booking_count > 0;
+  const isLinked = professional.usage_available === false || professional.assigned_treatment_count > 0 || professional.booking_count > 0;
   return (
     <details className="admin-delete-treatment admin-delete-professional">
       <summary><span><Trash2 aria-hidden="true" strokeWidth={1.75} />Eliminar profesional</span></summary>
@@ -77,7 +81,7 @@ function DeleteProfessionalForm({ professional }: { professional: ProfessionalRo
         {isLinked ? (
           <div>
             <strong>No se puede eliminar este perfil.</strong>
-            <p>Tiene {professional.assigned_treatment_count} tratamientos asignados y {professional.booking_count} turnos registrados. Desactivalo para impedir nuevas reservas sin perder el historial.</p>
+            <p>{professional.usage_available === false ? "No se pudieron verificar sus vinculaciones. Recargá la página para reintentar; no eliminaremos el perfil sin esa comprobación." : <>Tiene {professional.assigned_treatment_count} tratamientos asignados y {professional.booking_count} turnos registrados. Desactivalo para impedir nuevas reservas sin perder el historial.</>}</p>
           </div>
         ) : (
           <form action={deleteProfessional} className="admin-professional-delete-form">
@@ -95,16 +99,17 @@ function DeleteProfessionalForm({ professional }: { professional: ProfessionalRo
 
 function ProfessionalForm({ specialties, professional, existingNames = [] }: { specialties: SpecialtyRow[]; professional?: ProfessionalRow; existingNames?: string[] }) {
   return (
-    <form action={saveProfessional} className="admin-form admin-form--professional">
-      {professional ? <input type="hidden" name="professionalId" value={professional.id} /> : null}
+    <ProfessionalSaveForm>
+      <input type="hidden" name="professionalId" value={professional?.id ?? randomUUID()} />
+      <input type="hidden" name="expectedUpdatedAt" value={professional?.updated_at ?? ""} />
       <div className="admin-form-grid admin-form-grid--3"><ProfessionalNameFields fullName={professional?.full_name} publicName={professional?.public_name ?? ""} existingNames={existingNames} /><label>Teléfono interno opcional<input name="phone" defaultValue={professional?.phone ?? ""} maxLength={40} /></label></div>
       <label>Especialidad principal<select name="specialtyId" defaultValue={professional?.specialty_id ?? ""} required><option value="">Seleccionar</option>{specialties.filter((item) => item.is_active || item.id === professional?.specialty_id).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       <fieldset className="depilation-zone-picker"><legend>También puede atender</legend>{specialties.filter((item) => item.is_active || professional?.specialty_ids?.includes(item.id)).map((item) => <label className="admin-check" key={item.id}><input type="checkbox" name="specialtyIds" value={item.id} defaultChecked={professional?.specialty_ids?.includes(item.id) ?? false} /><span>{item.name}</span></label>)}</fieldset>
       <label>Presentación opcional<textarea name="bio" defaultValue={professional?.bio ?? ""} rows={4} maxLength={1400} /></label>
       <label>Notas internas<textarea name="internalNotes" defaultValue={professional?.internal_notes ?? ""} rows={3} maxLength={1400} /></label>
       <div className="admin-form-grid"><label>Orden<input name="displayOrder" type="number" min="0" max="999" defaultValue={professional?.display_order ?? 0} required /></label><label className="admin-check"><input name="isActive" type="checkbox" defaultChecked={professional?.is_active ?? true} /><span>Disponible para asignar y mostrar</span></label></div>
-      {professional && professional.assigned_treatment_count > 0 ? <label className="admin-impact-check"><input type="checkbox" name="confirmImpact" /><span><strong>{professional.assigned_treatment_count} tratamientos asignados.</strong> Confirmo que, si lo desactivo, no recibirá nuevas reservas. Los turnos existentes se conservan y deben revisarse.</span></label> : null}
-      <div className="admin-form-footer"><p>El nombre interno organiza el panel; el nombre público es el que verá la persona.</p><button className="button button--primary" type="submit">Guardar profesional</button></div>
-    </form>
+      {professional ? <label className="admin-impact-check"><input type="checkbox" name="confirmImpact" /><span>Confirmo que, si lo desactivo, no recibirá nuevas reservas. Los turnos existentes se conservan y deben revisarse.</span></label> : null}
+      <p>El nombre interno organiza el panel; el nombre público es el que verá la persona.</p>
+    </ProfessionalSaveForm>
   );
 }

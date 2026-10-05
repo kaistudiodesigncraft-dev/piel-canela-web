@@ -52,7 +52,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className={monaSans.variable}>
+    <html lang="es" className={monaSans.variable} data-scroll-behavior="smooth">
       <body>{children}<ConsentManagedInsights /></body>
     </html>
   );

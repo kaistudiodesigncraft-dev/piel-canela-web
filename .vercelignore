@@ -1,0 +1,11 @@
+/tmp/
+/sources/
+/operations/
+/supabase/
+/design/
+/codex-handoff/
+/presentation/
+/branding-source/
+PIEL CANELA - BRANDING-*.zip
+.env*
+!.env.example

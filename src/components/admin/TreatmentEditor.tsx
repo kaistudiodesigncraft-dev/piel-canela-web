@@ -3,6 +3,7 @@
 import { AlertCircle, Check, Eye, ImageIcon, LoaderCircle, Trash2, UploadCloud } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { preserveSubmittedForm } from "@/lib/admin/preserve-form";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
@@ -139,6 +140,8 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
   const [focalY, setFocalY] = useState(focalPointToPercentage(treatment?.image_focal_y ?? 0.5));
   const [imagePath, setImagePath] = useState(treatment?.image_path ?? "");
   const [imagePreview, setImagePreview] = useState(treatment?.image_url ?? null);
+  const acceptedPreview = useRef<string | null>(treatment?.image_url ?? null);
+  const previewUrls = useRef(new Set<string>());
   const [mediaStage, setMediaStage] = useState<TreatmentMediaStage>(treatment?.image_path ? "completed" : "idle");
   const [mediaIssue, setMediaIssue] = useState<string | null>(null);
   const [mediaMetadata, setMediaMetadata] = useState<string | null>(null);
@@ -154,9 +157,10 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
   const mediaBusy = mediaStage === "preparing" || mediaStage === "uploading" || mediaStage === "processing";
   const fieldError = (name: string) => actionState.fieldErrors?.[name];
 
-  useEffect(() => () => {
-    if (imagePreview?.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
-  }, [imagePreview]);
+  useEffect(() => {
+    const urls = previewUrls.current;
+    return () => { urls.forEach((url) => URL.revokeObjectURL(url)); };
+  }, []);
 
   useEffect(() => {
     isDirtyRef.current = isDirty;
@@ -196,8 +200,9 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
     setMediaIssue(null);
     if (!file) return;
     const localPreview = URL.createObjectURL(file);
+    previewUrls.current.add(localPreview);
     setImagePreview((current) => {
-      if (current?.startsWith("blob:")) URL.revokeObjectURL(current);
+      if (current?.startsWith("blob:") && current !== acceptedPreview.current) URL.revokeObjectURL(current);
       return localPreview;
     });
     try {
@@ -244,6 +249,8 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
       }
       if (sequence !== uploadSequence.current) return;
       setImagePath(finalized.imagePath);
+      if (acceptedPreview.current?.startsWith("blob:")) URL.revokeObjectURL(acceptedPreview.current);
+      acceptedPreview.current = localPreview;
       setMediaStage("completed");
       setIsDirty(true);
     } catch (error) {
@@ -274,7 +281,13 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
                         return `${stage === "intent" ? "La preparación" : "La finalización"} falló (${reason}). Código de soporte: ${support}`;
                       })()
                     : "No pudimos preparar la imagen. Intentá nuevamente o contactá a soporte.";
-      input.setCustomValidity(message);
+      // Media is optional: a failed candidate must not invalidate the treatment.
+      input.setCustomValidity("");
+      input.value = "";
+      setImagePreview((current) => {
+        if (current?.startsWith("blob:")) URL.revokeObjectURL(current);
+        return acceptedPreview.current;
+      });
       setMediaIssue(message);
       setMediaStage("failed");
     }
@@ -282,7 +295,7 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
 
   return (
     <div className="admin-treatment-editor-shell">
-      <form action={formAction} className="admin-form admin-form--treatment admin-treatment-editor" onInput={() => setIsDirty(true)}>
+      <form action={formAction} className="admin-form admin-form--treatment admin-treatment-editor" onSubmit={(event) => preserveSubmittedForm(event.currentTarget)} onInput={() => setIsDirty(true)}>
         <input type="hidden" name="treatmentId" value={treatmentId} />
         <input type="hidden" name="isNew" value={String(isNew)} />
         <input type="hidden" name="expectedUpdatedAt" value={treatment?.updated_at ?? ""} />
@@ -339,12 +352,12 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
             {selectionMode === "simple" ? <label htmlFor={`${formId}-pricePesos`}>Precio en pesos<input id={`${formId}-pricePesos`} name="pricePesos" type="number" min="0" step="1" defaultValue={treatment ? treatment.price_cents / 100 : ""} aria-invalid={Boolean(fieldError("pricePesos")) || undefined} aria-describedby={fieldError("pricePesos") ? `${formId}-pricePesos-error` : undefined} /><FieldError id={`${formId}-pricePesos-error`} messages={fieldError("pricePesos")} /></label> : <input type="hidden" name="pricePesos" value="0" />}
           </div>
           <input type="hidden" name="requiresProfessionalAssignment" value="true" />
-          <fieldset className="depilation-zone-picker" aria-describedby={`${formId}-professionalIds-error`}>
+          <fieldset id={`${formId}-professionalIds`} tabIndex={-1} className="depilation-zone-picker" aria-describedby={`${formId}-professionalIds-error`}>
             <legend>Profesionales que pueden atenderlo</legend>
             {!selectedSpecialty ? <p className="admin-field-note">Elegí una especialidad para ver solamente los profesionales habilitados.</p> : availableProfessionals.length === 0 ? <p className="admin-field-note">No hay profesionales activos habilitados para esta especialidad. Configuralos en Profesionales antes de publicar.</p> : availableProfessionals.map((item) => {
               const compatible = supportsSelectedSpecialty(item);
               const selected = selectedProfessionals.includes(item.id);
-              return <label className="admin-check" key={item.id}><input type="checkbox" name="professionalIds" value={item.id} checked={selected} disabled={!item.is_active || (!compatible && !selected)} onChange={(event) => setSelectedProfessionals((current) => event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id))} /><span><strong>{item.public_name || item.full_name}</strong><small>{!compatible ? "No está habilitado para esta especialidad; desmarcalo para continuar" : item.is_active ? "Activo" : "Inactivo"}</small></span></label>;
+              return <label className="admin-check" key={item.id}><input type="checkbox" name="professionalIds" value={item.id} checked={selected} disabled={(!item.is_active || !compatible) && !selected} onChange={(event) => setSelectedProfessionals((current) => event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id))} /><span><strong>{item.public_name || item.full_name}</strong><small>{!compatible ? "No está habilitado para esta especialidad; desmarcalo para continuar" : item.is_active ? "Activo" : "Inactivo; desmarcalo y elegí un reemplazo antes de publicar"}</small></span></label>;
             })}
             <FieldError id={`${formId}-professionalIds-error`} messages={fieldError("professionalIds")} />
           </fieldset>
@@ -366,6 +379,7 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
             <div className="admin-treatment-image-fields">
               <label htmlFor={`${formId}-imageFile`}>Subir o reemplazar imagen <small>opcional</small><input id={`${formId}-imageFile`} type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={mediaBusy} aria-invalid={Boolean(mediaIssue || fieldError("imagePath")) || undefined} aria-describedby={`${formId}-imageFile-help${mediaIssue || fieldError("imagePath") ? ` ${formId}-imagePath-error` : ""}`} onChange={(event) => void uploadImage(event.target.files?.[0], event.currentTarget)} /><small id={`${formId}-imageFile-help`}>Podés guardar o publicar el tratamiento sin imagen y agregarla después. JPG, PNG, WebP o AVIF; mínimo 640 × 640 px y máximo 4 MB.</small><FieldError id={`${formId}-imagePath-error`} messages={mediaIssue ? [mediaIssue] : fieldError("imagePath")} /></label>
               <div className={`admin-media-status admin-media-status--${mediaStage}`} role="status" aria-live="polite">{mediaBusy ? <LoaderCircle aria-hidden="true" className="admin-media-status__spinner" /> : mediaStage === "completed" ? <Check aria-hidden="true" /> : mediaStage === "failed" ? <AlertCircle aria-hidden="true" /> : <UploadCloud aria-hidden="true" />}<span>{mediaStageLabels[mediaStage]}{mediaMetadata ? <small>{mediaMetadata}</small> : null}</span></div>
+              {mediaIssue ? <p role="status">El intento fallido se descartó. Podés guardar conservando la imagen anterior o continuar sin imagen. Para reintentar, seleccioná el archivo otra vez.</p> : null}
               <label htmlFor={`${formId}-imageAlt`}>Descripción accesible<input id={`${formId}-imageAlt`} name="imageAlt" defaultValue={treatment?.image_alt ?? ""} minLength={3} maxLength={240} aria-invalid={Boolean(fieldError("imageAlt")) || undefined} aria-describedby={fieldError("imageAlt") ? `${formId}-imageAlt-error` : undefined} /><small>Describí lo visible sin repetir el nombre.</small><FieldError id={`${formId}-imageAlt-error`} messages={fieldError("imageAlt")} /></label>
             </div>
           </div>

@@ -93,4 +93,17 @@ describe("TreatmentEditor", () => {
     expect(finalizeUpload).toHaveBeenCalledTimes(1);
     expect(container.querySelector('input[name="imagePath"]')).toHaveValue("treatments/40000000-0000-4000-8000-000000000001/image.webp");
   });
+
+  it("does not invalidate publication when optional media fails", async () => {
+    const { normalizeTreatmentImage } = await import("@/lib/admin/treatment-media");
+    vi.mocked(normalizeTreatmentImage).mockRejectedValueOnce(new Error("image_decode_failed"));
+    const user = userEvent.setup();
+    render(<TreatmentEditor treatmentId="40000000-0000-4000-8000-000000000001" isNew categories={[category]} specialties={[specialty]} professionals={[]} />);
+    const input = screen.getByLabelText(/subir o reemplazar imagen/i) as HTMLInputElement;
+    await user.upload(input, new File(["invalid"], "foto.jpg", { type: "image/jpeg" }));
+    expect(await screen.findByText(/el intento fallido se descartó/i)).toBeInTheDocument();
+    expect(input.validity.customError).toBe(false);
+    expect(input.value).toBe("");
+    expect(screen.getByRole("button", { name: "Publicar tratamiento" })).toBeEnabled();
+  });
 });

@@ -1,6 +1,12 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
+test.beforeEach(async ({ context }) => {
+  await context.addInitScript(() => {
+    window.localStorage.setItem("piel-canela-cookie-consent", "essential");
+  });
+});
+
 test("catalog filters, opens a shareable detail and restores focus", async ({ page }) => {
   await page.goto("/tratamientos");
 

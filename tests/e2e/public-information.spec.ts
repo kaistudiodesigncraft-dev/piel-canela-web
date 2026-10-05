@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
 
+test.beforeEach(async ({ context }) => {
+  await context.addInitScript(() => {
+    window.localStorage.setItem("piel-canela-cookie-consent", "essential");
+  });
+});
+
 test("home remains readable across viewports with reduced motion", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   for (const width of [320, 390, 768, 1024, 1440]) {
