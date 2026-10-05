@@ -53,6 +53,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" className={monaSans.variable} data-scroll-behavior="smooth">
+      <head>
+        <link rel="preconnect" href="https://use.typekit.net" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://p.typekit.net" crossOrigin="anonymous" />
+        <link rel="stylesheet" href="https://use.typekit.net/kvl3xtg.css" />
+      </head>
       <body>{children}<ConsentManagedInsights /></body>
     </html>
   );

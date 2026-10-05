@@ -29,8 +29,9 @@
   --color-action: #2d6872;
   --color-focus: #0f606f;
 
-  --font-title: var(--font-heading), Arial, sans-serif;
+  --font-title: "sweet-sans-pro", var(--font-heading), Arial, sans-serif;
   --font-copy: var(--font-heading), Arial, sans-serif;
+  --font-accent: "fiona", "sweet-sans-pro", var(--font-heading), Arial, sans-serif;
 
   --radius-sm: .5rem;
   --radius-md: .75rem;
@@ -62,8 +63,17 @@ h3,
 h4 {
   color: var(--color-petrol-ink);
   font-family: var(--font-title);
-  font-weight: 560;
-  letter-spacing: -.028em;
+  font-weight: 400;
+  letter-spacing: -.018em;
+}
+
+/* Fiona is an expressive brand accent, never a reading or operational face. */
+.public-site .eyebrow,
+.public-site .brand-accent {
+  font-family: var(--font-accent);
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: .01em;
 }
 
 p,
