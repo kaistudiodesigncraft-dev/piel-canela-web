@@ -40,7 +40,7 @@ export function BusinessSettingsAdmin({ settings, feedback, publicDetailsAvailab
         </fieldset>
         <fieldset>
           <legend>Seña y cancelación</legend>
-          <div className="admin-settings-context"><MessageCircle aria-hidden="true" strokeWidth={1.75} /><p>La transferencia sigue coordinándose por WhatsApp. No se publican alias ni datos bancarios sensibles en el catálogo.</p></div>
+          <div className="admin-settings-context"><MessageCircle aria-hidden="true" strokeWidth={1.75} /><p>Al finalizar una pre-reserva, la persona abre un mensaje preparado para avisar por WhatsApp. Recepción responde con los datos de transferencia y confirma el turno después de verificar la seña.</p></div>
           <label>Instrucción de seña<textarea name="depositText" rows={4} maxLength={1000} defaultValue={settings.deposit_text ?? ""} /></label>
           <label>Política de cancelación<textarea name="cancellationPolicy" rows={5} maxLength={2000} defaultValue={settings.cancellation_policy ?? ""} /></label>
           <label>Política de ausencias<small>Indicá qué ocurre si la persona no asiste. Este texto informa; no descuenta sesiones automáticamente.</small><textarea name="noShowPolicy" rows={4} maxLength={2000} defaultValue={settings.no_show_policy ?? ""} disabled={!publicDetailsAvailable} /></label>

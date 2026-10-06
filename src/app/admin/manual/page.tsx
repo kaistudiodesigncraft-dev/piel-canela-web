@@ -87,9 +87,9 @@ const sections = [
   {
     title: "Mensajes de WhatsApp",
     steps: [
-      "En Mensajes podés personalizar textos por evento y tratamiento.",
-      "Usá variables del sistema para nombre, fecha, tratamiento y resumen.",
-      "No incluyas diagnósticos, datos de salud ni notas internas en mensajes automáticos.",
+      "Cuando una persona termina la pre-reserva, la web prepara un mensaje con su nombre, tratamiento, fecha, horario y código.",
+      "La persona abre WhatsApp y decide enviarlo. La web no manda mensajes automáticos ni promociones.",
+      "El número que recibe las consultas se modifica en Configuración. El mensaje es único para todos los tratamientos.",
     ],
   },
   {
@@ -134,7 +134,7 @@ export default async function AdminManualPage() {
           </div>
           <span className="admin-count numeric">{sections.length} temas</span>
         </div>
-<SearchableManual sections={sections.map((section, index) => ({ ...section, href: ["/admin/mi-cuenta", "/admin/catalogo/nuevo", "/admin/catalogo", "/admin/catalogo", "/admin/profesionales", "/admin?module=availability", "/admin?module=agenda#asignar", "/admin/catalogo", "/admin/mensajes", "/admin/contenido", "/admin/historial"][index] }))} />
+<SearchableManual sections={sections.map((section, index) => ({ ...section, href: ["/admin/mi-cuenta", "/admin/catalogo/nuevo", "/admin/catalogo", "/admin/catalogo", "/admin/profesionales", "/admin?module=availability", "/admin?module=agenda#asignar", "/admin/catalogo", "/admin/configuracion", "/admin/contenido", "/admin/historial"][index] }))} />
       </section>
     </div>
   );

@@ -338,7 +338,6 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
             </label>
             {!isNew && selectionMode !== "simple" && treatment?.selection_mode !== "simple" ? <Link className="button button--quiet" href={`/admin/catalogo/${treatmentId}/combos`}>Configurar zonas, combos y extras</Link> : null}
             {selectionMode !== "simple" && (isNew || treatment?.selection_mode === "simple") ? <p className="admin-field-note">Guardá primero el tratamiento con esta forma de reserva para poder configurar sus zonas, combos y extras.</p> : null}
-            {!isNew ? <Link className="button button--quiet" href={`/admin/mensajes?treatmentId=${treatmentId}`}>Personalizar mensajes de WhatsApp</Link> : null}
           </div>
           <div className={`admin-form-grid ${selectionMode === "simple" ? "admin-form-grid--3" : ""}`}>
             <label htmlFor={`${formId}-specialtyId`}>Especialidad<select id={`${formId}-specialtyId`} name="specialtyId" value={selectedSpecialty} onChange={(event) => {

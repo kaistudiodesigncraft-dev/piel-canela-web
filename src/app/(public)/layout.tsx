@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { LocationMap } from "@/components/layout/LocationMap";
 import { getPublicBookingSettings, getPublicCatalogSnapshot } from "@/lib/supabase/public-catalog";
 import { getPublicMonthlySpecials } from "@/lib/treatments";
 import { isBetaRelease } from "../../../scripts/release-environment.mjs";
@@ -32,6 +33,7 @@ export default async function PublicLayout({ children }: Readonly<{ children: Re
       <a className="skip-link" href="#main-content">Saltar al contenido</a>
       <SiteHeader />
       <main id="main-content">{children}</main>
+      <LocationMap />
       <SiteFooter settings={settings} hasMonthlySpecials={hasMonthlySpecials} />
     </div>
   );

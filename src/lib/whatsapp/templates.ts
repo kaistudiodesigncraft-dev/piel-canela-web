@@ -1,10 +1,22 @@
 import { MESSAGE_VARIABLES, type MessageEvent, type MessageTemplates, type MessageValues } from "@/domain/whatsapp";
 
 export const DEFAULT_MESSAGE_TEMPLATES: Record<MessageEvent, string> = {
-  pre_reservation: "Hola, quiero confirmar mi pre-reserva en Piel Canela.\nNombre: {{nombre}}\nTratamiento: {{tratamiento}}\nCombo: {{combo}}\nFecha: {{fecha}} a las {{hora}}\nDuración: {{duracion}}\nCódigo: {{codigo}}\n{{sena}}",
+  pre_reservation: "¡Hola! 😊 Acabo de hacer una pre-reserva en Piel Canela.\n\nTe dejo los datos de mi turno:\n\nNombre: {{nombre}}\nTratamiento: {{tratamiento}}\nCombo: {{combo}}\nFecha: {{fecha}}\nHorario: {{hora}}\nCódigo de reserva: {{codigo}}\n\nEspero los datos para transferir la seña y confirmar mi turno.",
   confirmation: "Hola {{nombre}}, tu turno en Piel Canela está confirmado.\n{{tratamiento}} · {{combo}}\n{{fecha}} a las {{hora}} · {{duracion}}\nReserva: {{codigo}}\nDirección: {{direccion}}",
   preparation: "Hola {{nombre}}, te recordamos tu turno de {{tratamiento}} en Piel Canela.\n{{fecha}} a las {{hora}}\nCódigo: {{codigo}}\nDirección: {{direccion}}",
 };
+
+export function buildManualPreReservationMessage(values: {
+  name: string;
+  treatment: string;
+  combo?: string | null;
+  date: string;
+  time: string;
+  bookingCode: string;
+}) {
+  const comboLine = values.combo?.trim() ? `\nCombo: ${values.combo.trim()}` : "";
+  return `¡Hola! 😊 Acabo de hacer una pre-reserva en Piel Canela.\n\nTe dejo los datos de mi turno:\n\nNombre: ${values.name}\nTratamiento: ${values.treatment}${comboLine}\nFecha: ${values.date}\nHorario: ${values.time}\nCódigo de reserva: ${values.bookingCode}\n\nEspero los datos para transferir la seña y confirmar mi turno.`;
+}
 
 export function validateTemplate(body: string): string | null {
   if (body.trim().length < 10 || body.length > 1800) return "Usá entre 10 y 1800 caracteres.";

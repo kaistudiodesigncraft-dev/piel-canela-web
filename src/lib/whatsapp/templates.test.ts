@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeWhatsAppPhone, resolveWhatsAppMessage, validateTemplate } from "./templates";
+import { buildManualPreReservationMessage, normalizeWhatsAppPhone, resolveWhatsAppMessage, validateTemplate } from "./templates";
 import { createHmac } from "node:crypto";
 import { secretsMatch, validWebhookSignature } from "./security";
 const values = { nombre: "Ana", tratamiento: "Masaje", combo: "Compartido", fecha: "20/09", hora: "15:00", duracion: "60 min", codigo: "PC-123", direccion: "Dirección", sena: "A confirmar" };
@@ -20,6 +20,19 @@ describe("WhatsApp message safety", () => {
     expect(normalizeWhatsAppPhone("+54 9 (351) 123-4567")).toBe("5493511234567");
     expect(normalizeWhatsAppPhone("011 abc 1234")).toBeNull();
     expect(normalizeWhatsAppPhone("123")).toBeNull();
+  });
+  it("builds the universal manual pre-reservation message and omits an empty combo", () => {
+    const message = buildManualPreReservationMessage({
+      name: "Ana",
+      treatment: "Masaje",
+      date: "lunes, 20 de septiembre",
+      time: "15:00",
+      bookingCode: "PC-123",
+    });
+    expect(message).toContain("¡Hola! 😊 Acabo de hacer una pre-reserva en Piel Canela.");
+    expect(message).toContain("Nombre: Ana\nTratamiento: Masaje\nFecha:");
+    expect(message).not.toContain("Combo:");
+    expect(message).toContain("Espero los datos para transferir la seña y confirmar mi turno.");
   });
   it("rejects missing secrets and tampered webhook signatures", () => {
     expect(secretsMatch(null, undefined)).toBe(false);

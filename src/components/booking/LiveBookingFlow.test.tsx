@@ -75,7 +75,7 @@ describe("LiveBookingFlow", () => {
 
   it("loads availability and creates a real pre-booking", async () => {
     const user = userEvent.setup();
-    render(<LiveBookingFlow selection={selection} dates={dates} whatsappNumber="5493515550000" messageTemplates={{ pre_reservation: "Mi consulta personalizada: {{tratamiento}}. Código {{codigo}}" }} />);
+    render(<LiveBookingFlow selection={selection} dates={dates} whatsappNumber="5493515550000" />);
 
     const slot = await screen.findByRole("button", { name: "12:30" });
     await user.click(slot);
@@ -95,8 +95,9 @@ describe("LiveBookingFlow", () => {
       expect.stringContaining("https://wa.me/5493515550000"),
     );
     const messageUrl = new URL(screen.getByRole("link", { name: /continuar por whatsapp/i }).getAttribute("href")!);
-    expect(messageUrl.searchParams.get("text")).toBe("Mi consulta personalizada: Relajación profunda. Código PC-ABC12345");
-    expect(createPublicBookingMock).toHaveBeenCalledWith(expect.objectContaining({ whatsappOptIn: false }));
+    expect(messageUrl.searchParams.get("text")).toBe(
+      "¡Hola! 😊 Acabo de hacer una pre-reserva en Piel Canela.\n\nTe dejo los datos de mi turno:\n\nNombre: Laura Gómez\nTratamiento: Relajación profunda\nFecha: lunes, 17 de agosto\nHorario: 12:30\nCódigo de reserva: PC-ABC12345\n\nEspero los datos para transferir la seña y confirmar mi turno.",
+    );
   });
 
   it("keeps the confirmation usable when the business WhatsApp is not configured", async () => {

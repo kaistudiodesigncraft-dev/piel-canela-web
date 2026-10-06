@@ -15,6 +15,7 @@ const contentSecurityPolicy = [
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline' https://use.typekit.net https://p.typekit.net",
   "img-src 'self' data: blob: https://dlrdlwjighvcyhirwgfu.supabase.co",
+  "frame-src 'self' https://www.google.com",
   "font-src 'self' data: https://use.typekit.net",
   "connect-src 'self' https://dlrdlwjighvcyhirwgfu.supabase.co wss://dlrdlwjighvcyhirwgfu.supabase.co",
   "worker-src 'self' blob:",

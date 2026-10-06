@@ -25,8 +25,7 @@ import {
   type BookingDateOption,
 } from "@/lib/booking";
 import { formatDuration, formatPrice } from "@/lib/format";
-import type { MessageTemplates } from "@/domain/whatsapp";
-import { normalizeWhatsAppPhone, resolveWhatsAppMessage } from "@/lib/whatsapp/templates";
+import { buildManualPreReservationMessage, normalizeWhatsAppPhone } from "@/lib/whatsapp/templates";
 
 type BookingStep = "schedule" | "details" | "review" | "success";
 
@@ -41,10 +40,6 @@ interface LiveBookingFlowProps {
   selection: ResolvedBookingSelection;
   dates: readonly BookingDateOption[];
   whatsappNumber: string | null;
-  messageTemplates?: MessageTemplates;
-  address?: string;
-  depositText?: string;
-  whatsappAutomationEnabled?: boolean;
 }
 
 const initialCustomer: CustomerForm = { fullName: "", phone: "", email: "", notes: "" };
@@ -52,7 +47,7 @@ const stepOrder: BookingStep[] = ["schedule", "details", "review", "success"];
 const INITIAL_VISIBLE_SLOTS = 12;
 const INITIAL_VISIBLE_DATES = 14;
 
-export function LiveBookingFlow({ selection, dates, whatsappNumber, messageTemplates = {}, address = "", depositText = "", whatsappAutomationEnabled = false }: LiveBookingFlowProps) {
+export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookingFlowProps) {
   const [step, setStep] = useState<BookingStep>("schedule");
   const [date, setDate] = useState(dates[0]?.value ?? "");
   const [slots, setSlots] = useState<{ startsAt: string; endsAt: string }[]>([]);
@@ -68,7 +63,6 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, messageTempl
   const [submissionUncertain, setSubmissionUncertain] = useState(false);
   const [booking, setBooking] = useState<{ id: string; code: string } | null>(null);
   const [website, setWebsite] = useState("");
-  const [whatsappOptIn, setWhatsappOptIn] = useState(false);
   const idempotencyKey = useRef<string | null>(null);
   const submissionInFlight = useRef(false);
   const initialStepRender = useRef(true);
@@ -171,18 +165,17 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, messageTempl
 
   const whatsappMessage = useMemo(() => {
     if (!booking || !selectedDate || !selectedTime) return "";
-    return resolveWhatsAppMessage("pre_reservation", messageTemplates, {
-      nombre: customer.fullName,
-      tratamiento: selection.monthlySpecialTitle ?? selection.treatmentName,
-      combo: selection.comboName ? `${selection.comboName} (${selection.sessionCount ?? 1} sesiones)` : "No aplica",
-      fecha: selectedDate.longLabel,
-      hora: selectedTime,
-      duracion: formatDuration(selection.durationMinutes),
-      codigo: booking.code,
-      direccion: address,
-      sena: depositText,
+    return buildManualPreReservationMessage({
+      name: customer.fullName,
+      treatment: selection.monthlySpecialTitle ?? selection.treatmentName,
+      combo: selection.comboName
+        ? `${selection.comboName} (${selection.sessionCount ?? 1} sesiones)`
+        : null,
+      date: selectedDate.longLabel,
+      time: selectedTime,
+      bookingCode: booking.code,
     });
-  }, [booking, customer.fullName, selectedDate, selectedTime, selection, messageTemplates, address, depositText]);
+  }, [booking, customer.fullName, selectedDate, selectedTime, selection]);
 
   function updateCustomer(field: keyof CustomerForm, value: string) {
     setCustomer((current) => ({ ...current, [field]: value }));
@@ -190,10 +183,6 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, messageTempl
 
   function continueFromDetails(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (whatsappOptIn && !normalizeWhatsAppPhone(customer.phone)) {
-      setSubmitError("Para recibir mensajes automáticos, ingresá WhatsApp con código de país, por ejemplo +54 9 351 555 0000.");
-      return;
-    }
     if (customer.fullName.trim().length >= 2 && customer.phone.trim().length >= 8) {
       setSubmitError(null);
       setStep("review");
@@ -216,7 +205,6 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, messageTempl
       startsAt: selectedSlot,
       idempotencyKey: idempotencyKey.current,
       website,
-      whatsappOptIn: whatsappAutomationEnabled && whatsappOptIn,
       ...customer,
     });
 
@@ -474,10 +462,6 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, messageTempl
                 <ShieldCheck aria-hidden="true" strokeWidth={1.75} />
                 <span>Usamos estos datos únicamente para identificar y coordinar tu solicitud. Consultá nuestra <Link href="/privacidad">política de privacidad</Link>.</span>
               </p>
-              {whatsappAutomationEnabled ? <label className="admin-check">
-                <input type="checkbox" name="whatsappOptIn" checked={whatsappOptIn} onChange={(event) => setWhatsappOptIn(event.target.checked)} />
-                <span>Acepto recibir por WhatsApp confirmaciones e indicaciones de esta reserva. Es opcional y no incluye promociones. Usá un número con código de país.</span>
-              </label> : null}
               <div className="booking-step-actions">
                 <button className="button button--quiet" type="button" onClick={() => setStep("schedule")}><ArrowLeft aria-hidden="true" strokeWidth={1.75} />Volver</button>
                 <button className="button button--primary" type="submit">Revisar reserva<ArrowRight aria-hidden="true" strokeWidth={1.75} /></button>

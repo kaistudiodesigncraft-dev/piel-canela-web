@@ -5,7 +5,6 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { usesSupabaseDataSource } from "@/lib/supabase/env";
 import { createSupabasePublicServerClient } from "@/lib/supabase/public-server";
-import { normalizeWhatsAppPhone } from "@/lib/whatsapp/templates";
 
 const availabilitySchema = z.object({
   treatmentId: z.string().uuid(),
@@ -26,7 +25,6 @@ const bookingSchema = z.object({
   phone: z.string().trim().min(8).max(30),
   email: z.union([z.string().trim().email().max(180), z.literal("")]),
   notes: z.string().trim().max(240),
-  whatsappOptIn: z.boolean().optional().default(false),
 });
 
 export type AvailabilityResult =
@@ -83,10 +81,6 @@ export async function createPublicBooking(input: unknown): Promise<CreateBooking
   if (!parsed.success) return { ok: false, reason: "invalid" };
 
   const guardSecret = process.env.BOOKING_GUARD_SECRET;
-  const communicationEnabled = process.env.WHATSAPP_AUTOMATION_ENABLED === "true";
-  if (communicationEnabled && parsed.data.whatsappOptIn && !normalizeWhatsAppPhone(parsed.data.phone)) {
-    return { ok: false, reason: "invalid" };
-  }
   if (!guardSecret || guardSecret.length < 32) {
     return { ok: false, reason: "server" };
   }
@@ -97,7 +91,7 @@ export async function createPublicBooking(input: unknown): Promise<CreateBooking
   const guard = createBookingGuard({ secret: guardSecret, fingerprintSource });
 
   const supabase = createSupabasePublicServerClient();
-  const { data, error } = await supabase.rpc(communicationEnabled ? "create_booking_with_communication_v2" : "create_booking_for_selection_v2", {
+  const { data, error } = await supabase.rpc("create_booking_for_selection_v2", {
     requested_treatment_id: parsed.data.treatmentId,
     requested_combo_id: parsed.data.comboId,
     requested_monthly_special_id: parsed.data.monthlySpecialId,
@@ -111,7 +105,6 @@ export async function createPublicBooking(input: unknown): Promise<CreateBooking
     request_guard_fingerprint: guard.fingerprint,
     request_guard_secret: guardSecret,
     requested_extra_ids: parsed.data.extraIds,
-    ...(communicationEnabled ? { requested_whatsapp_opt_in: parsed.data.whatsappOptIn } : {}),
   });
 
   if (error) {

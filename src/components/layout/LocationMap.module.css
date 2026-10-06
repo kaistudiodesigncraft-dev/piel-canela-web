@@ -1,0 +1,67 @@
+.section {
+  padding-block: clamp(3.5rem, 8vw, 7rem);
+  background: var(--color-bone);
+}
+
+.layout {
+  display: grid;
+  gap: clamp(1.75rem, 5vw, 4.5rem);
+  align-items: center;
+}
+
+.copy {
+  display: grid;
+  gap: 1rem;
+  align-content: center;
+}
+
+.copy h2 {
+  max-width: 14ch;
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+.copy > p:not(:first-child) {
+  max-width: 48ch;
+  color: var(--color-text-secondary);
+}
+
+.copy a {
+  width: fit-content;
+  min-height: 44px;
+  gap: 0.5rem;
+}
+
+.copy a svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.frame {
+  position: relative;
+  min-height: 21rem;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: clamp(1.25rem, 3vw, 2.5rem);
+  background: var(--color-cloud);
+  box-shadow: var(--shadow-soft);
+}
+
+.frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+@media (min-width: 900px) {
+  .layout {
+    grid-template-columns: minmax(16rem, 0.72fr) minmax(30rem, 1.28fr);
+  }
+
+  .frame {
+    min-height: 31rem;
+  }
+}

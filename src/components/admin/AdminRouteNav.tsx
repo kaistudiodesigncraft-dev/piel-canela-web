@@ -17,7 +17,7 @@ const routes: readonly { id: AdminRoute; href: string; label: string; icon: type
   { id: "customers", href: "/admin/clientes", label: "Clientes", icon: ContactRound },
   { id: "availability", href: "/admin?module=availability", label: "Disponibilidad", icon: Clock3 },
   { id: "content", href: "/admin/contenido", label: "Contenido", icon: FilePenLine },
-  { id: "messages", href: "/admin/mensajes", label: "Mensajes", icon: MessageCircle },
+  { id: "messages", href: "/admin/mensajes", label: "Mensajes futuros", icon: MessageCircle },
   { id: "history", href: "/admin/historial", label: "Historial", icon: History },
   { id: "manual", href: "/admin/manual", label: "Manual", icon: BookOpenText },
   { id: "settings", href: "/admin/configuracion", label: "Configuración", icon: Settings },
@@ -27,7 +27,7 @@ const routes: readonly { id: AdminRoute; href: string; label: string; icon: type
 const groups: { label: string; ids: AdminRoute[] }[] = [
   { label: "Operación", ids: ["operations", "agenda", "availability", "packages", "customers"] },
   { label: "Tratamientos y equipo", ids: ["catalog", "professionals", "specials"] },
-  { label: "Web y comunicación", ids: ["content", "messages", "settings"] },
+  { label: "Web y comunicación", ids: ["content", "settings"] },
   { label: "Ayuda y cuenta", ids: ["history", "manual", "account", "governance"] },
 ];
 export function AdminRouteNav({ current, canManageAccess = false }: { current: AdminRoute; canManageAccess?: boolean }) {

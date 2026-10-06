@@ -9,7 +9,6 @@ import {
   getPublicCatalogSnapshot,
 } from "@/lib/supabase/public-catalog";
 import { getSiteContent } from "@/lib/supabase/site-content";
-import { getTreatmentMessageTemplates } from "@/lib/whatsapp/server";
 import {
   getMonthlySpecialForTreatment,
   getTreatmentCombo,
@@ -65,8 +64,6 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
   const combo = getTreatmentCombo(treatment, query.comboId);
   const requestedExtraIds = Array.isArray(query.extraId) ? query.extraId : query.extraId ? [query.extraId] : [];
   const selectedExtras = combo?.extras.filter((extra) => requestedExtraIds.includes(extra.id) && extra.isActive) ?? [];
-  const messageTemplates = catalog.source === "supabase" ? await getTreatmentMessageTemplates(treatment.id) : {};
-
   if (treatment.selectionMode !== "simple" && !combo) {
     return <><BookingHeader content={content} image={headerImage} /><div className="site-container route-state"><StatePanel kind="empty" title="Elegí un combo antes de reservar" description="La duración, el precio y la cantidad de sesiones dependen de la opción elegida." actionHref={`/tratamientos/${treatment.slug}`} actionLabel="Ver combos" /></div></>;
   }
@@ -79,10 +76,6 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
           selection={resolveBookingSelection(treatment, treatment.selectionMode === "simple" ? monthlySpecial : undefined, combo, selectedExtras)}
           dates={buildBookingDates(new Date(), settings.maximumAdvanceDays + 1)}
           whatsappNumber={settings.whatsappNumber}
-          messageTemplates={messageTemplates}
-          address={settings.address ?? ""}
-          depositText={settings.depositText ?? ""}
-          whatsappAutomationEnabled={process.env.WHATSAPP_AUTOMATION_ENABLED === "true"}
         />
       </div>
     </>
