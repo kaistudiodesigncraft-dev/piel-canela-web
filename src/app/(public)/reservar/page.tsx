@@ -65,7 +65,16 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
   const requestedExtraIds = Array.isArray(query.extraId) ? query.extraId : query.extraId ? [query.extraId] : [];
   const selectedExtras = combo?.extras.filter((extra) => requestedExtraIds.includes(extra.id) && extra.isActive) ?? [];
   if (treatment.selectionMode !== "simple" && !combo) {
-    return <><BookingHeader content={content} image={headerImage} /><div className="site-container route-state"><StatePanel kind="empty" title="Elegí un combo antes de reservar" description="La duración, el precio y la cantidad de sesiones dependen de la opción elegida." actionHref={`/tratamientos/${treatment.slug}`} actionLabel="Ver combos" /></div></>;
+    const hasPublicCombos = treatment.combos.some((item) => item.isActive);
+    return <><BookingHeader content={content} image={headerImage} /><div className="site-container route-state"><StatePanel
+      kind="empty"
+      title={query.comboId ? "Este combo no está disponible para reservar" : "Elegí un combo antes de reservar"}
+      description={hasPublicCombos
+        ? "Elegí una de las opciones publicadas para consultar su precio y disponibilidad."
+        : "Este tratamiento no tiene combos disponibles en este momento. Podés elegir otro tratamiento desde el catálogo."}
+      actionHref={hasPublicCombos ? `/tratamientos/${treatment.slug}` : "/tratamientos"}
+      actionLabel={hasPublicCombos ? "Elegir otro combo" : "Volver al catálogo"}
+    /></div></>;
   }
 
   return (

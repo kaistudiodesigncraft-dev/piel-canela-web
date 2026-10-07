@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { connection } from "next/server";
 import {
   monthlySpecials as fixtureMonthlySpecials,
   treatmentCategories as fixtureCategories,
@@ -39,6 +40,7 @@ export async function getPublicBookingSettings() {
     cancellationPolicy: null,
     maximumAdvanceDays: 13,
   };
+  await connection();
   const supabase = createSupabasePublicServerClient();
   // Optional additive fields must not suppress existing contact data before migration.
   const details = await supabase.from("business_settings")
@@ -232,6 +234,9 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
     };
   }
 
+  // Opt into request-time data before Supabase can catch Next's dynamic-fetch
+  // signal and turn it into a misleading catalog-query error during prerender.
+  await connection();
   const supabase = createSupabasePublicServerClient();
   let [categoriesResult, treatmentsResult, specialsResult, combosResult, treatmentProfessionalsResult, extrasResult, allowedExtrasResult] = await Promise.all([
     supabase

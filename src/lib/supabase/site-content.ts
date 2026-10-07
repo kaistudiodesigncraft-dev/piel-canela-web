@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import {
   getDefaultSiteContent,
   isSiteContentKey,
@@ -77,6 +78,7 @@ function resolveRows(rows: readonly SiteContentRow[], supabase: SiteContentQuery
 export async function getSiteContent(): Promise<SiteContentField[]> {
   if (!usesSupabaseDataSource()) return getDefaultSiteContent();
 
+  await connection();
   const supabase = createSupabasePublicServerClient();
   const { data, error } = await supabase
     .from("site_content")

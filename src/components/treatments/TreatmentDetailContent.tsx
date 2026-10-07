@@ -16,6 +16,7 @@ interface TreatmentDetailContentProps {
   monthlySpecial?: MonthlySpecial;
   compact?: boolean;
   preview?: boolean;
+  bookableComboIds?: readonly string[];
 }
 
 export function TreatmentDetailContent({
@@ -24,6 +25,7 @@ export function TreatmentDetailContent({
   monthlySpecial,
   compact = false,
   preview = false,
+  bookableComboIds,
 }: TreatmentDetailContentProps) {
   const activeSpecial = treatment.selectionMode === "simple" ? monthlySpecial : undefined;
   const price = activeSpecial?.specialPriceCents ?? treatment.priceCents;
@@ -119,7 +121,7 @@ export function TreatmentDetailContent({
       </div>
 
       {treatment.selectionMode !== "simple" ? (
-        treatment.combos.length > 0 ? <TreatmentComboSelector treatment={treatment} /> : <section className="combo-selector combo-selector--empty"><h2>Combos en preparación</h2><p>Piel Canela está terminando de configurar las opciones disponibles. Volvé a consultar pronto.</p></section>
+        treatment.combos.length > 0 ? <TreatmentComboSelector treatment={treatment} preview={preview} bookableComboIds={bookableComboIds} /> : <section className="combo-selector combo-selector--empty"><h2>No hay combos disponibles para reservar</h2><p>En este momento no hay opciones publicadas disponibles. Podés volver al catálogo para elegir otro tratamiento.</p><Link className="button button--quiet" href="/tratamientos">Ver tratamientos</Link></section>
       ) : null}
     </article>
   );

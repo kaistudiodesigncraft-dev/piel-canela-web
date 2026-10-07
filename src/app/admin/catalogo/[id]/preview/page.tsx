@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { TreatmentDetailContent } from "@/components/treatments/TreatmentDetailContent";
 import type { Treatment, TreatmentCategory, TreatmentCombo } from "@/domain/treatment";
 import { requireAdmin } from "@/lib/admin/require-admin";
+import { getPublicCatalogSnapshot } from "@/lib/supabase/public-catalog";
 
 export const metadata: Metadata = {
   title: "Vista previa de tratamiento",
@@ -34,7 +35,24 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
     isActive: categoryRaw.is_active,
   };
   let combos: TreatmentCombo[] = [];
+  let bookableComboIds: string[] = [];
+  let publicPreviewUnavailable = false;
   if (row.selection_mode !== "simple") {
+    // Public availability must be checked with the anonymous client. The admin
+    // client also sees drafts and cannot prove that a customer can book them.
+    const [extrasResult, allowedExtrasResult, publicCatalogResult] = await Promise.all([
+      supabase.from("treatment_combo_extras")
+        .select("id,treatment_id,name,description,audience,price_cents,duration_minutes,is_active,display_order")
+        .eq("treatment_id", id).eq("is_active", true).order("display_order"),
+      supabase.from("treatment_combo_allowed_extras").select("combo_id,extra_id"),
+      getPublicCatalogSnapshot().then((catalog) => ({ catalog, failed: false })).catch(() => ({ catalog: null, failed: true })),
+    ]);
+    if (extrasResult.error || allowedExtrasResult.error) {
+      throw new Error(`No se pudo preparar la vista previa de extras: ${extrasResult.error?.code ?? allowedExtrasResult.error?.code ?? "query"}`);
+    }
+    publicPreviewUnavailable = publicCatalogResult.failed;
+    bookableComboIds = publicCatalogResult.catalog?.treatments.find((item) => item.id === id && item.isActive)
+      ?.combos.filter((combo) => combo.isActive).map((combo) => combo.id) ?? [];
     const { data: comboRows, error: combosError } = await supabase.from("treatment_combos")
       .select("id,treatment_id,name,description,audience,mode,session_count,pricing_mode,discount_percent,tier_min_items,tier_discount_percent,allow_public_extras,fixed_price_cents,validity_days,is_active,display_order,zones:treatment_combo_zones(display_order,zone:depilation_zones(id,name,audience,reference_price_cents,duration_minutes,is_active,display_order))")
       .eq("treatment_id", id)
@@ -75,9 +93,15 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
         durationMinutes: zones.reduce((total, zone) => total + zone.durationMinutes, 0),
         validityDays: combo.validity_days,
         zones,
-        extras: [],
+        extras: (extrasResult.data ?? []).filter((extra) =>
+          (allowedExtrasResult.data ?? []).some((link) => link.combo_id === combo.id && link.extra_id === extra.id)
+        ).map((extra) => ({
+          id: extra.id, treatmentId: extra.treatment_id, name: extra.name, description: extra.description,
+          audience: extra.audience, priceCents: extra.price_cents, durationMinutes: extra.duration_minutes,
+          displayOrder: extra.display_order, isActive: extra.is_active,
+        })),
         displayOrder: combo.display_order,
-        isActive: true,
+        isActive: combo.is_active,
       } satisfies TreatmentCombo];
     });
   }
@@ -115,5 +139,9 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
-  return <div className="admin-preview-page"><div className="admin-preview-banner"><strong>Vista previa administrativa</strong><span>{row.is_active ? "Publicado" : "Todavía no visible en el catálogo público"}</span></div><TreatmentDetailContent treatment={treatment} category={category} preview /></div>;
+  return <div className="admin-preview-page"><div className="admin-preview-banner"><strong>Vista previa administrativa</strong><span>{row.is_active ? "Tratamiento publicado" : "Todavía no visible en el catálogo público"}</span></div>
+    {row.selection_mode !== "simple" && (publicPreviewUnavailable || bookableComboIds.length === 0) ? <p className="form-message form-message--error" role="alert">{publicPreviewUnavailable
+      ? "No pudimos verificar la disponibilidad pública. Podés revisar la propuesta, pero el acceso al turnero queda deshabilitado hasta volver a consultar."
+      : "Esta vista incluye borradores. Todavía no hay combos visibles para el público: revisá la publicación del tratamiento, de cada combo y el selector público. Si ya están habilitados, contactá a soporte para revisar los permisos del catálogo."}</p> : null}
+    <TreatmentDetailContent treatment={treatment} category={category} preview bookableComboIds={bookableComboIds} /></div>;
 }

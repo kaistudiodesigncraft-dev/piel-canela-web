@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { cleanup } from "@testing-library/react";
 import { treatments } from "@/data/fixtures";
 import type { Treatment } from "@/domain/treatment";
 import { TreatmentComboSelector } from "./TreatmentComboSelector";
@@ -54,6 +55,43 @@ const configurableTreatment: Treatment = {
 };
 
 describe("TreatmentComboSelector", () => {
+  afterEach(cleanup);
+
+  it("carries a mixed combo and authorized extras to the calendar with the updated quote", async () => {
+    const user = userEvent.setup();
+    render(<TreatmentComboSelector treatment={{ ...configurableTreatment, selectionMode: "combo_with_extras" }} />);
+    await user.click(screen.getByRole("radio", { name: /combo compartido/i }));
+    await user.click(screen.getByRole("checkbox", { name: /zona extra/i }));
+    const link = screen.getByRole("link", { name: /elegir fecha y horario/i });
+    const url = new URL(link.getAttribute("href")!, "https://example.test");
+    expect(url.searchParams.get("comboId")).toBe(configurableTreatment.combos[0]!.id);
+    expect(url.searchParams.getAll("extraId")).toEqual([configurableTreatment.combos[0]!.extras[0]!.id]);
+    expect(screen.getByText("$ 90.000")).toBeInTheDocument();
+    expect(screen.getByText("40 minutos")).toBeInTheDocument();
+  });
+
+  it("shows drafts only in preview without linking them to the public booking flow", async () => {
+    const user = userEvent.setup();
+    const draft = { ...configurableTreatment, combos: [{ ...configurableTreatment.combos[0]!, isActive: false }] };
+    render(<TreatmentComboSelector treatment={draft} preview />);
+    await user.click(screen.getByRole("radio", { name: /combo compartido/i }));
+    expect(screen.getByText(/Borrador · no visible/)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /elegir fecha/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /revisar publicación/i })).toHaveAttribute("href", `/admin/catalogo/${draft.id}/combos`);
+    cleanup();
+    render(<TreatmentComboSelector treatment={draft} />);
+    expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+  });
+
+  it("allows booking from preview only after anonymous visibility was verified", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<TreatmentComboSelector treatment={configurableTreatment} preview />);
+    await user.click(screen.getByRole("radio", { name: /combo compartido/i }));
+    expect(screen.queryByRole("link", { name: /elegir fecha/i })).not.toBeInTheDocument();
+    rerender(<TreatmentComboSelector treatment={configurableTreatment} preview bookableComboIds={[configurableTreatment.combos[0]!.id]} />);
+    expect(screen.getByRole("link", { name: /elegir fecha/i })).toBeInTheDocument();
+  });
+
   it("filters one unified list and requires one closed combo", async () => {
     const user = userEvent.setup();
     render(<TreatmentComboSelector treatment={configurableTreatment} />);

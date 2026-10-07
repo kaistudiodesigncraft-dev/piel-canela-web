@@ -116,6 +116,7 @@ export async function saveDepilationZoneResult(formData: FormData): Promise<Depi
   }
   revalidatePath(`/admin/catalogo/${parsed.data.treatmentId}/combos`);
   revalidatePath("/tratamientos");
+  revalidatePath("/tratamientos/[slug]", "page");
   return { status: "saved", zoneId: result.data.id, fieldErrors: {}, message: parsed.data.zoneId ? "Zona actualizada." : "Zona creada. Ya podés usarla en combos." };
 }
 
@@ -219,7 +220,8 @@ export async function saveTreatmentComboResult(formData: FormData): Promise<Comb
     };
   }
   revalidatePath(`/admin/catalogo/${parsed.data.treatmentId}/combos`);
-  revalidatePath(`/tratamientos`);
+  revalidatePath("/tratamientos");
+  revalidatePath("/tratamientos/[slug]", "page");
   revalidatePath(`/reservar`);
   return { status: "saved", comboId: String(savedId), fieldErrors: {}, message: publishing ? "Combo publicado. El selector global también debe estar habilitado." : "Borrador guardado. No se muestra al público." };
 }
@@ -258,6 +260,7 @@ export async function saveTreatmentComboExtra(formData: FormData) {
   if (result.error) redirect(feedbackPath(parsed.data.treatmentId, `extraError=${result.error.code === "23505" ? "duplicate" : "save"}`));
   revalidatePath(`/admin/catalogo/${parsed.data.treatmentId}/combos`);
   revalidatePath("/tratamientos");
+  revalidatePath("/tratamientos/[slug]", "page");
   redirect(feedbackPath(parsed.data.treatmentId, "extraSaved=1"));
 }
 
@@ -271,6 +274,7 @@ export async function toggleDepilationFeature(formData: FormData) {
   if (error) redirect(feedbackPath(treatmentId.data, `featureError=${error.message.includes("deactivate_combo_treatments") ? "activeTreatments" : "save"}`));
   revalidatePath("/");
   revalidatePath("/tratamientos");
+  revalidatePath("/tratamientos/[slug]", "page");
   revalidatePath("/reservar");
   revalidatePath(`/admin/catalogo/${treatmentId.data}/combos`);
   redirect(feedbackPath(treatmentId.data, "featureSaved=1"));
@@ -316,6 +320,7 @@ export async function deleteTreatmentCombo(formData: FormData) {
   });
   revalidatePath(`/admin/catalogo/${treatmentId}/combos`);
   revalidatePath("/tratamientos");
+  revalidatePath("/tratamientos/[slug]", "page");
   redirect(feedbackPath(treatmentId, "comboDeleted=1"));
 }
 
@@ -340,5 +345,7 @@ export async function deleteDepilationZone(formData: FormData) {
     requested_action: "delete_depilation_zone",
   });
   revalidatePath(`/admin/catalogo/${treatmentId}/combos`);
+  revalidatePath("/tratamientos");
+  revalidatePath("/tratamientos/[slug]", "page");
   redirect(feedbackPath(treatmentId, "zoneDeleted=1"));
 }
