@@ -77,6 +77,8 @@ jobs:
         run: pnpm supabase:reset
       - name: Lint the isolated database
         run: pnpm supabase:lint
+      - name: Run database integrity and RLS tests
+        run: pnpm supabase:test
       - name: Stop isolated Supabase services
         if: always()
         run: pnpm supabase:stop --no-backup

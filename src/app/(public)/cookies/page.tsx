@@ -18,7 +18,7 @@ export default function CookiesPage() {
 
       <section>
         <h2>Cookies necesarias</h2>
-        <p>El panel administrativo utiliza cookies de sesión de Supabase para mantener el acceso seguro de recepción, agencia y Kai Studio. Estas cookies son necesarias para iniciar sesión, cerrar sesión, recuperar contraseña y proteger rutas administrativas.</p>
+        <p>El panel administrativo utiliza cookies de sesión de Supabase para mantener el acceso seguro de recepción, agencia y WAZEXPERIENCE. Estas cookies son necesarias para iniciar sesión, cerrar sesión, recuperar contraseña y proteger rutas administrativas.</p>
         <p>Sin estas cookies, el panel no puede funcionar correctamente.</p>
       </section>
 

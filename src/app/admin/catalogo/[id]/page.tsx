@@ -12,6 +12,16 @@ export const metadata: Metadata = {
   description: "Editar un tratamiento de Piel Canela.",
 };
 
+const deleteErrorMessages: Record<string, string> = {
+  deleteConfirmation: "Marcá la confirmación e ingresá el código de eliminación.",
+  deleteNotConfigured: "La eliminación protegida no está disponible. Contactá al soporte de la agencia sin volver a intentar.",
+  deleteRateLimited: "Se alcanzó el límite de intentos. Por seguridad, esperá una hora antes de volver a probar.",
+  deleteCode: "El código de eliminación no es correcto.",
+  deleteMissing: "El tratamiento ya no existe o fue eliminado desde otra sesión.",
+  deleteLinked: "El tratamiento tiene reservas, paquetes o especiales vinculados. Desactivalo para ocultarlo sin perder el historial.",
+  deleteFailed: "No pudimos completar la eliminación. El tratamiento sigue intacto.",
+};
+
 export default async function EditTreatmentPage({
   params,
   searchParams,
@@ -44,6 +54,12 @@ export default async function EditTreatmentPage({
       <AdminRouteNav current="catalog" canManageAccess={profile.role === "admin"} />
       {feedback.saved === "1" ? <p className="form-message" role="status">El borrador quedó guardado.</p> : null}
       {feedback.published === "1" ? <p className="form-message" role="status">El tratamiento está publicado.</p> : null}
+      {feedback.deleteError ? (
+        <p className="form-message form-message--error" role="alert" id="delete-treatment" tabIndex={-1}>
+          <strong>{deleteErrorMessages[feedback.deleteError] ?? "No pudimos eliminar el tratamiento."}</strong>
+          {feedback.incident ? <small>Código de soporte: {feedback.incident}</small> : null}
+        </p>
+      ) : null}
       <TreatmentEditor treatmentId={id} isNew={false} treatment={treatment} {...data} />
     </div>
   );

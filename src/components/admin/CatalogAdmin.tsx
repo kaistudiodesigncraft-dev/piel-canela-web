@@ -52,6 +52,8 @@ export function CatalogAdmin({ categories, specialties, treatments, feedback, bo
           <div><h2 id="catalog-title">Tratamientos</h2><p>Buscá una ficha para editarla o empezá un tratamiento nuevo como borrador.</p></div>
           <Link className="button button--primary" href="/admin/catalogo/nuevo"><Plus aria-hidden="true" strokeWidth={1.75} />Nuevo tratamiento</Link>
         </div>
+        {feedback.treatmentDeleted === "1" ? <p className="form-message" role="status">El tratamiento sin historial fue eliminado correctamente.</p> : null}
+        {feedback.treatmentError ? <p className="form-message form-message--error" role="alert">No pudimos completar la eliminación. Abrí nuevamente el tratamiento para ver el motivo.</p> : null}
         {!bookingCountsAvailable ? <div className="form-message form-message--warning" role="status"><strong>El catálogo está disponible, pero no pudimos calcular el impacto sobre reservas.</strong><span>Podés editar textos e imágenes. Evitá cambios de agenda hasta recuperar ese dato.</span>{bookingCountsIncidentId ? <small>Código de soporte: {bookingCountsIncidentId}</small> : null}</div> : null}
         <div className="admin-booking-toolbar">
           <label className="admin-search"><Search aria-hidden="true" strokeWidth={1.75} /><span className="sr-only">Buscar tratamientos</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar tratamiento, categoría o especialidad" /></label>

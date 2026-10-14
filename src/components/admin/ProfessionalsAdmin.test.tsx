@@ -50,7 +50,7 @@ describe("ProfessionalsAdmin", () => {
     await user.click(screen.getByText("Laura"));
     await user.click(screen.getByText("Eliminar profesional"));
     expect(screen.getByText("No se puede eliminar este perfil.")).toBeInTheDocument();
-    expect(screen.getByText(/2 tratamientos asignados y 4 turnos registrados/i)).toBeInTheDocument();
+    expect(screen.getByText(/2 tratamientos activos asignados y 4 turnos registrados/i)).toBeInTheDocument();
     expect(screen.queryByLabelText("Código de eliminación")).not.toBeInTheDocument();
   });
 });

@@ -16,7 +16,8 @@
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status",
     "supabase:reset": "supabase db reset",
-    "supabase:lint": "supabase db lint --local"
+    "supabase:lint": "supabase db lint --local",
+    "supabase:test": "supabase test db"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -53,6 +54,5 @@
     "vite": "^6.4.3",
     "vitest": "^4.1.11"
   },
-  "packageManager": "pnpm@10.12.1",
-  "pnpm": {}
+  "packageManager": "pnpm@10.12.1"
 }

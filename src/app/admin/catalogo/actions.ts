@@ -145,6 +145,12 @@ function catalogRedirect(params: string, anchor = "tratamientos"): never {
   redirect(`/admin/catalogo?${params}#${anchor}`);
 }
 
+function treatmentDeleteRedirect(treatmentId: string, reason: string, incidentId?: string): never {
+  const params = new URLSearchParams({ deleteError: reason });
+  if (incidentId) params.set("incident", incidentId);
+  redirect(`/admin/catalogo/${treatmentId}?${params.toString()}#delete-treatment`);
+}
+
 function isNextRedirect(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
   const digest = (error as { digest?: unknown }).digest;
@@ -393,20 +399,24 @@ export async function updateTreatmentCategory(formData: FormData) {
 
 export async function deleteTreatment(formData: FormData) {
   const { supabase } = await requireAdmin();
+  const requestedTreatmentId = String(formData.get("treatmentId") ?? "");
   const parsed = deleteTreatmentSchema.safeParse({
-    treatmentId: formData.get("treatmentId"),
+    treatmentId: requestedTreatmentId,
     confirmationCode: formData.get("confirmationCode"),
     confirmDeletion: formData.get("confirmDeletion"),
   });
-  if (!parsed.success) catalogRedirect("treatmentError=deleteConfirmation");
-  if (!isTreatmentDeleteCodeConfigured()) catalogRedirect("treatmentError=deleteNotConfigured");
+  if (!parsed.success) {
+    if (z.string().uuid().safeParse(requestedTreatmentId).success) treatmentDeleteRedirect(requestedTreatmentId, "deleteConfirmation");
+    catalogRedirect("treatmentError=deleteConfirmation");
+  }
+  if (!isTreatmentDeleteCodeConfigured()) treatmentDeleteRedirect(parsed.data.treatmentId, "deleteNotConfigured");
   const attempt = await supabase.rpc("register_admin_protected_action_attempt", {
     requested_action: "delete_treatment",
   });
-  if (attempt.error || attempt.data !== true) catalogRedirect("treatmentError=deleteRateLimited");
-  if (!verifyTreatmentDeleteCode(parsed.data.confirmationCode)) catalogRedirect("treatmentError=deleteCode");
+  if (attempt.error || attempt.data !== true) treatmentDeleteRedirect(parsed.data.treatmentId, "deleteRateLimited");
+  if (!verifyTreatmentDeleteCode(parsed.data.confirmationCode)) treatmentDeleteRedirect(parsed.data.treatmentId, "deleteCode");
   const guardSecret = process.env.BOOKING_GUARD_SECRET;
-  if (!guardSecret || guardSecret.length < 32) catalogRedirect("treatmentError=deleteNotConfigured");
+  if (!guardSecret || guardSecret.length < 32) treatmentDeleteRedirect(parsed.data.treatmentId, "deleteNotConfigured");
 
   const [treatmentResult, bookingResult, specialResult] = await Promise.all([
     supabase.from("treatments").select("id,slug,image_path").eq("id", parsed.data.treatmentId).single(),
@@ -414,10 +424,18 @@ export async function deleteTreatment(formData: FormData) {
     supabase.from("monthly_specials").select("id", { count: "exact", head: true }).eq("treatment_id", parsed.data.treatmentId),
   ]);
   const treatment = treatmentResult.data;
-  if (!treatment) catalogRedirect("treatmentError=deleteMissing");
-  if (bookingResult.error || specialResult.error) catalogRedirect("treatmentError=deleteFailed");
+  if (!treatment) treatmentDeleteRedirect(parsed.data.treatmentId, "deleteMissing");
+  if (bookingResult.error || specialResult.error) {
+    const incidentId = newIncidentId();
+    console.error("admin_treatment_delete_preflight", {
+      incidentId,
+      bookingCode: bookingResult.error?.code ?? null,
+      specialCode: specialResult.error?.code ?? null,
+    });
+    treatmentDeleteRedirect(parsed.data.treatmentId, "deleteFailed", incidentId);
+  }
   if ((bookingResult.count ?? 0) > 0 || (specialResult.count ?? 0) > 0) {
-    catalogRedirect("treatmentError=deleteLinked");
+    treatmentDeleteRedirect(parsed.data.treatmentId, "deleteLinked");
   }
 
   const { error } = await supabase.rpc("delete_treatment_if_unlinked", {
@@ -425,7 +443,10 @@ export async function deleteTreatment(formData: FormData) {
     request_guard_secret: guardSecret,
   });
   if (error) {
-    catalogRedirect(`treatmentError=${error.code === "23503" ? "deleteLinked" : error.code === "42501" ? "deleteNotConfigured" : "deleteFailed"}`);
+    const reason = error.code === "23503" ? "deleteLinked" : error.code === "42501" ? "deleteNotConfigured" : "deleteFailed";
+    const incidentId = reason === "deleteFailed" ? newIncidentId() : undefined;
+    if (incidentId) console.error("admin_treatment_delete", { incidentId, code: error.code ?? "unknown" });
+    treatmentDeleteRedirect(parsed.data.treatmentId, reason, incidentId);
   }
   await supabase.rpc("clear_admin_protected_action_attempts", {
     requested_action: "delete_treatment",

@@ -81,12 +81,12 @@ function DeleteProfessionalForm({ professional }: { professional: ProfessionalRo
         {isLinked ? (
           <div>
             <strong>No se puede eliminar este perfil.</strong>
-            <p>{professional.usage_available === false ? "No se pudieron verificar sus vinculaciones. Recargá la página para reintentar; no eliminaremos el perfil sin esa comprobación." : <>Tiene {professional.assigned_treatment_count} tratamientos asignados y {professional.booking_count} turnos registrados. Desactivalo para impedir nuevas reservas sin perder el historial.</>}</p>
+            <p>{professional.usage_available === false ? "No se pudieron verificar sus vinculaciones. Recargá la página para reintentar; no eliminaremos el perfil sin esa comprobación." : <>Tiene {professional.assigned_treatment_count} tratamientos activos asignados y {professional.booking_count} turnos registrados. Desactivalo para impedir nuevas reservas sin perder el historial.</>}</p>
           </div>
         ) : (
           <form action={deleteProfessional} className="admin-professional-delete-form">
             <input type="hidden" name="professionalId" value={professional.id} />
-            <div><strong>Esta acción elimina el perfil.</strong><p>Solo está disponible porque no tiene tratamientos ni turnos vinculados. La operación quedará registrada en Historial.</p></div>
+            <div><strong>Esta acción elimina el perfil.</strong><p>Solo está disponible porque no tiene tratamientos activos ni turnos vinculados. Las asignaciones antiguas desactivadas se conservan en la auditoría y no bloquean esta corrección. La operación quedará registrada en Historial.</p></div>
             <label htmlFor={`professional-delete-code-${professional.id}`}>Código de eliminación<input id={`professional-delete-code-${professional.id}`} name="confirmationCode" type="password" inputMode="numeric" pattern="[0-9]{4}" minLength={4} maxLength={128} autoComplete="off" required /></label>
             <label className="admin-check" htmlFor={`professional-delete-confirm-${professional.id}`}><input id={`professional-delete-confirm-${professional.id}`} name="confirmDeletion" type="checkbox" required /><span>Confirmo que quiero eliminar “{professional.public_name || professional.full_name}”.</span></label>
             <button className="button button--danger" type="submit"><Trash2 aria-hidden="true" strokeWidth={1.75} />Eliminar definitivamente</button>

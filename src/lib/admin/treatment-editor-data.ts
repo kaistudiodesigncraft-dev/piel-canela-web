@@ -41,12 +41,16 @@ export async function loadTreatmentEditorTaxonomies(supabase: SupabaseServerClie
 }
 
 export async function loadTreatmentForEditor(supabase: SupabaseServerClient, treatmentId: string) {
-  const [treatmentResult, bookingsResult, treatmentProfessionalsResult] = await Promise.all([
+  const [treatmentResult, bookingsResult, totalBookingsResult, specialsResult, treatmentProfessionalsResult] = await Promise.all([
     supabase.from("treatments").select(treatmentSelect).eq("id", treatmentId).single(),
     supabase.from("bookings").select("id", { count: "exact", head: true })
       .eq("treatment_id", treatmentId)
       .in("status", [...OCCUPYING_BOOKING_STATUSES])
       .gte("starts_at", new Date().toISOString()),
+    supabase.from("bookings").select("id", { count: "exact", head: true })
+      .eq("treatment_id", treatmentId),
+    supabase.from("monthly_specials").select("id", { count: "exact", head: true })
+      .eq("treatment_id", treatmentId),
     supabase.from("treatment_professionals").select("professional_id").eq("treatment_id", treatmentId).eq("is_active", true),
   ]);
   if (treatmentResult.error) {
@@ -72,5 +76,8 @@ export async function loadTreatmentForEditor(supabase: SupabaseServerClient, tre
     image_url: imageUrl,
     future_booking_count: bookingsResult.count ?? 0,
     future_booking_count_available: !bookingsResult.error,
+    total_booking_count: totalBookingsResult.count ?? 0,
+    monthly_special_count: specialsResult.count ?? 0,
+    deletion_usage_available: !totalBookingsResult.error && !specialsResult.error,
   } as AdminTreatmentRow;
 }

@@ -113,16 +113,38 @@ function DeleteTreatmentButton() {
 }
 
 function DeleteTreatmentForm({ treatment }: { treatment: AdminTreatmentRow }) {
+  const usageAvailable = treatment.deletion_usage_available !== false;
+  const bookingCount = treatment.total_booking_count ?? 0;
+  const specialCount = treatment.monthly_special_count ?? 0;
+  const hasHistory = bookingCount > 0 || specialCount > 0;
+
   return (
     <details className="admin-delete-treatment">
       <summary><span><Trash2 aria-hidden="true" strokeWidth={1.75} />Eliminar tratamiento</span></summary>
-      <form action={deleteTreatment} className="admin-delete-treatment__form">
-        <input type="hidden" name="treatmentId" value={treatment.id} />
-        <div><strong>Esta acción no se puede deshacer.</strong><p>Solo se eliminará si no tiene reservas ni especiales asociados. Si tiene historial, desactivalo.</p></div>
-        <label htmlFor={`delete-code-${treatment.id}`}>Código de eliminación<input id={`delete-code-${treatment.id}`} name="confirmationCode" type="password" inputMode="numeric" pattern="[0-9]{4}" minLength={4} maxLength={128} autoComplete="off" required /></label>
-        <label className="admin-check" htmlFor={`delete-confirm-${treatment.id}`}><input id={`delete-confirm-${treatment.id}`} name="confirmDeletion" type="checkbox" required /><span>Confirmo que quiero eliminar “{treatment.name}”.</span></label>
-        <DeleteTreatmentButton />
-      </form>
+      {!usageAvailable ? (
+        <div className="admin-delete-treatment__form" role="status">
+          <strong>No podemos comprobar si es seguro eliminarlo.</strong>
+          <p>Recargá la página antes de intentarlo. El tratamiento y su historial siguen intactos.</p>
+        </div>
+      ) : hasHistory ? (
+        <div className="admin-delete-treatment__form" role="status">
+          <strong>Este tratamiento conserva historial y no puede eliminarse.</strong>
+          <p>
+            {bookingCount > 0 ? `${bookingCount} ${bookingCount === 1 ? "reserva asociada" : "reservas asociadas"}` : ""}
+            {bookingCount > 0 && specialCount > 0 ? " y " : ""}
+            {specialCount > 0 ? `${specialCount} ${specialCount === 1 ? "especial asociado" : "especiales asociados"}` : ""}.{" "}
+            Para quitarlo del catálogo, usá “Desactivar y guardar”.
+          </p>
+        </div>
+      ) : (
+        <form action={deleteTreatment} className="admin-delete-treatment__form">
+          <input type="hidden" name="treatmentId" value={treatment.id} />
+          <div><strong>Esta acción no se puede deshacer.</strong><p>Confirmamos que no tiene reservas ni especiales asociados.</p></div>
+          <label htmlFor={`delete-code-${treatment.id}`}>Código de eliminación<input id={`delete-code-${treatment.id}`} name="confirmationCode" type="password" inputMode="numeric" pattern="[0-9]{4}" minLength={4} maxLength={128} autoComplete="off" required /></label>
+          <label className="admin-check" htmlFor={`delete-confirm-${treatment.id}`}><input id={`delete-confirm-${treatment.id}`} name="confirmDeletion" type="checkbox" required /><span>Confirmo que quiero eliminar “{treatment.name}”.</span></label>
+          <DeleteTreatmentButton />
+        </form>
+      )}
     </details>
   );
 }

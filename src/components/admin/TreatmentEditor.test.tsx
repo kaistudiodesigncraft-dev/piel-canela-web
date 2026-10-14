@@ -41,6 +41,40 @@ const specialty = { id: "20000000-0000-4000-8000-000000000001", name: "Masoterap
 const otherSpecialty = { id: "20000000-0000-4000-8000-000000000002", name: "Estética corporal", is_active: true };
 const compatibleProfessional = { id: "30000000-0000-4000-8000-000000000001", specialty_id: specialty.id, specialty_ids: [specialty.id], full_name: "Profesional compatible", public_name: null, is_active: true };
 const incompatibleProfessional = { id: "30000000-0000-4000-8000-000000000002", specialty_id: otherSpecialty.id, specialty_ids: [otherSpecialty.id], full_name: "Profesional de otra especialidad", public_name: null, is_active: true };
+const savedTreatment = {
+  id: "40000000-0000-4000-8000-000000000001",
+  updated_at: "2026-10-14T12:00:00.000Z",
+  category_id: category.id,
+  specialty_id: specialty.id,
+  professional_id: compatibleProfessional.id,
+  professional_ids: [compatibleProfessional.id],
+  requires_professional_assignment: true,
+  name: "Relajación profunda",
+  slug: "relajacion-profunda",
+  short_description: "Una propuesta de relajación corporal.",
+  description: "Tratamiento corporal orientado a liberar tensiones y recuperar bienestar.",
+  expectations: [],
+  characteristics: [],
+  duration_minutes: 60,
+  buffer_minutes: 15,
+  start_interval_minutes: 30 as const,
+  selection_mode: "simple" as const,
+  price_cents: 6500000,
+  preparation: null,
+  contraindications: null,
+  image_path: null,
+  image_url: null,
+  image_alt: null,
+  image_focal_x: 0.5,
+  image_focal_y: 0.5,
+  is_active: true,
+  display_order: 1,
+  future_booking_count: 0,
+  future_booking_count_available: true,
+  deletion_usage_available: true,
+  total_booking_count: 0,
+  monthly_special_count: 0,
+};
 
 describe("TreatmentEditor", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -105,5 +139,17 @@ describe("TreatmentEditor", () => {
     expect(input.validity.customError).toBe(false);
     expect(input.value).toBe("");
     expect(screen.getByRole("button", { name: "Publicar tratamiento" })).toBeEnabled();
+  });
+
+  it("only offers permanent deletion when the treatment has no history", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<TreatmentEditor treatmentId={savedTreatment.id} isNew={false} categories={[category]} specialties={[specialty]} professionals={[compatibleProfessional]} treatment={savedTreatment} />);
+    await user.click(screen.getByText("Eliminar tratamiento"));
+    expect(screen.getByRole("button", { name: /eliminar definitivamente/i })).toBeInTheDocument();
+
+    rerender(<TreatmentEditor treatmentId={savedTreatment.id} isNew={false} categories={[category]} specialties={[specialty]} professionals={[compatibleProfessional]} treatment={{ ...savedTreatment, total_booking_count: 2 }} />);
+    expect(screen.queryByRole("button", { name: /eliminar definitivamente/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/2 reservas asociadas/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/desactivar y guardar/i)).toHaveLength(2);
   });
 });

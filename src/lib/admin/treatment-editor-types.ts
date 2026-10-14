@@ -52,6 +52,9 @@ export interface AdminTreatmentRow {
   is_active: boolean;
   display_order: number;
   future_booking_count: number;
+  total_booking_count?: number;
+  monthly_special_count?: number;
+  deletion_usage_available?: boolean;
   has_active_combo?: boolean;
   future_booking_count_available?: boolean;
 }
