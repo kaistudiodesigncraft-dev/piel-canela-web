@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { InstagramLogo, WhatsappLogo } from "@phosphor-icons/react/dist/ssr";
 import { PrivacyPreferencesButton } from "./PrivacyPreferencesButton";
 import { publicEmailLink, publicInstagramLink, publicWhatsAppLink } from "./public-contact";
 import styles from "./PublicInformation.module.css";
@@ -48,9 +49,27 @@ export function SiteFooter({ settings, hasMonthlySpecials = false }: SiteFooterP
           <h2 className="site-footer__title">Encontranos</h2>
           {settings.address?.trim() ? <address className={styles.address}>{settings.address}</address> : null}
           {settings.receptionHours?.trim() ? <div className={styles.address}><h3 className="site-footer__title">Horarios de recepción</h3><p>{settings.receptionHours}</p><p>La disponibilidad de turnos se consulta por tratamiento.</p></div> : null}
-          {whatsapp ? <p><a href={whatsapp}>WhatsApp {settings.whatsappNumber}</a></p> : null}
+          {whatsapp || instagram ? (
+            <ul className="site-footer__social-list" aria-label="Redes sociales y mensajería">
+              {whatsapp ? (
+                <li>
+                  <a className="site-footer__social-link" href={whatsapp} target="_blank" rel="noopener noreferrer" aria-label="Abrir WhatsApp de Piel Canela en otra pestaña" title="WhatsApp">
+                    <WhatsappLogo aria-hidden="true" size={26} weight="regular" />
+                    <span className="sr-only">WhatsApp</span>
+                  </a>
+                </li>
+              ) : null}
+              {instagram ? (
+                <li>
+                  <a className="site-footer__social-link" href={instagram} target="_blank" rel="noopener noreferrer" aria-label="Abrir Instagram de Piel Canela en otra pestaña" title="Instagram">
+                    <InstagramLogo aria-hidden="true" size={26} weight="regular" />
+                    <span className="sr-only">Instagram</span>
+                  </a>
+                </li>
+              ) : null}
+            </ul>
+          ) : null}
           {email ? <p><a href={email}>{settings.publicEmail}</a></p> : null}
-          {instagram ? <p><a href={instagram} target="_blank" rel="noopener noreferrer">Instagram <span className="sr-only">(abre en otra pestaña)</span></a></p> : null}
           {!settings.address?.trim() && !whatsapp && !email && !instagram ? <p>Los datos de contacto se están actualizando.</p> : null}
         </div>
       </div>

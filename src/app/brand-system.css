@@ -197,45 +197,25 @@ dd { text-wrap: pretty; }
 .category-entry :is(h3, p, .text-link, .category-entry__icon) { color: inherit; }
 .category-entry--estetica .text-link { text-decoration-color: var(--color-celeste); }
 .category-entry__icon {
-  --brand-icon-field: var(--color-petrol);
-  --brand-icon-line: var(--color-white);
-  --brand-icon-accent: var(--color-aquamarine);
-  width: 4.5rem;
-  height: 4.5rem;
+  display: inline-flex;
+  width: 4.75rem;
+  height: 4.75rem;
+  flex: none;
   overflow: visible;
+  border-radius: 50%;
+  filter: drop-shadow(0 .5rem 1rem rgb(16 85 91 / 12%));
   transition: transform var(--motion-base) var(--ease-enter);
 }
-.category-entry__icon .brand-icon__field { fill: var(--brand-icon-field); stroke: none; }
-.category-entry__icon .brand-icon__line { stroke: var(--brand-icon-line); }
-.category-entry__icon .brand-icon__accent { fill: var(--brand-icon-accent); stroke: none; }
-.category-entry--estetica .category-entry__icon {
-  --brand-icon-field: var(--color-aquamarine);
-  --brand-icon-accent: var(--color-celeste-soft);
-}
-.category-entry--bienestar .category-entry__icon {
-  --brand-icon-field: var(--color-petrol);
-  --brand-icon-accent: var(--color-aquamarine);
-}
-.category-entry--recuperacion .category-entry__icon {
-  --brand-icon-field: var(--color-petrol);
-  --brand-icon-accent: var(--color-aquamarine);
-}
-.category-entry:hover .category-entry__icon { transform: translateY(-.18rem) rotate(-2deg); }
+.brand-category-icon img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.category-entry:hover .category-entry__icon { transform: translateY(-.18rem) scale(1.025); }
 
-/* The brand PDF defines rounded, open strokes with small leaf accents. */
+/* Action icons share a stroke treatment; official category artwork remains untouched. */
 .public-site :is(svg, .category-entry__icon),
 .admin-product-shell svg {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.admin-category-editor-grid__identity svg {
-  --brand-icon-field: var(--color-petrol);
-  --brand-icon-line: var(--color-white);
-  --brand-icon-accent: var(--color-aquamarine);
-}
-.admin-category-editor-grid__identity .brand-icon__field { fill: var(--brand-icon-field); stroke: none; }
-.admin-category-editor-grid__identity .brand-icon__line { stroke: var(--brand-icon-line); }
-.admin-category-editor-grid__identity .brand-icon__accent { fill: var(--brand-icon-accent); stroke: none; }
+.admin-category-editor-grid__identity .brand-category-icon { width: 3rem; height: 3rem; }
 
 .section--approach {
   overflow: clip;
@@ -339,6 +319,38 @@ dd { text-wrap: pretty; }
 .site-footer__logo { width: min(100%, 12rem); height: auto; }
 .site-footer :is(h2, h3, a, p, span, address, button) { color: inherit; }
 .site-footer a { text-decoration-color: var(--color-celeste); }
+.site-footer__social-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin: 1rem 0 .35rem;
+  padding: 0;
+  list-style: none;
+}
+.site-footer .site-footer__social-link {
+  display: inline-flex;
+  width: 3rem;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: 50%;
+  color: var(--color-white);
+  background: rgb(255 255 255 / 6%);
+  text-decoration: none;
+  transition: color var(--motion-fast) ease, background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, transform var(--motion-fast) ease;
+}
+.site-footer .site-footer__social-link:hover {
+  border-color: var(--color-aquamarine);
+  color: var(--color-petrol-ink);
+  background: var(--color-aquamarine);
+  text-decoration: none;
+  transform: translateY(-.12rem);
+}
+.site-footer .site-footer__social-link:focus-visible {
+  outline-color: var(--color-aquamarine);
+  outline-offset: .22rem;
+}
 .site-footer__legal { border-top-color: rgb(255 255 255 / 18%); }
 .privacy-preferences-button { color: var(--color-white); }
 

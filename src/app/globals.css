@@ -4772,10 +4772,9 @@ svg {
   border-bottom: 1px solid var(--color-border);
 }
 
-.admin-category-editor-grid__identity svg {
+.admin-category-editor-grid__identity .brand-category-icon {
   width: 2.75rem;
   height: 2.75rem;
-  color: var(--color-deep-petrol);
 }
 
 .admin-category-editor-grid__identity small {

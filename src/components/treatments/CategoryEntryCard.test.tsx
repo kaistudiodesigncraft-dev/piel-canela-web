@@ -24,6 +24,9 @@ describe("CategoryEntryCard", () => {
     expect(document.querySelector('[data-brand-icon="estetica"]')).toBeInTheDocument();
     expect(document.querySelector('[data-brand-icon="bienestar"]')).toBeInTheDocument();
     expect(document.querySelector('[data-brand-icon="recuperacion"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-brand-icon="estetica"] img')).toHaveAttribute("src", "/brand/icons/category-estetica.svg");
+    expect(document.querySelector('[data-brand-icon="bienestar"] img')).toHaveAttribute("src", "/brand/icons/category-bienestar.svg");
+    expect(document.querySelector('[data-brand-icon="recuperacion"] img')).toHaveAttribute("src", "/brand/icons/category-recuperacion.svg");
   });
 });
 
