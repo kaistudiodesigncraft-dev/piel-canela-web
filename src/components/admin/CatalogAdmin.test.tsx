@@ -45,4 +45,12 @@ describe("CatalogAdmin", () => {
     expect(screen.getByText(/ABC123/)).toBeInTheDocument();
     expect(screen.queryByText(/reservas futuras/)).not.toBeInTheDocument();
   });
+
+  it("describes configurable treatments using their combo pricing and duration", () => {
+    render(<CatalogAdmin categories={categories} specialties={specialties} professionals={[]} treatments={[treatment({ selection_mode: "combo_with_extras", price_cents: 0, duration_minutes: 60, buffer_minutes: 15, has_active_combo: true })]} feedback={{}} />);
+
+    expect(screen.getByText("Según zonas + 15 min")).toBeInTheDocument();
+    expect(screen.getByText("Precio según combo")).toBeInTheDocument();
+    expect(screen.queryByText("$ 0")).not.toBeInTheDocument();
+  });
 });
