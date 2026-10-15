@@ -418,23 +418,25 @@ export async function deleteTreatment(formData: FormData) {
   const guardSecret = process.env.BOOKING_GUARD_SECRET;
   if (!guardSecret || guardSecret.length < 32) treatmentDeleteRedirect(parsed.data.treatmentId, "deleteNotConfigured");
 
-  const [treatmentResult, bookingResult, specialResult] = await Promise.all([
+  const [treatmentResult, bookingResult, specialResult, comboResult] = await Promise.all([
     supabase.from("treatments").select("id,slug,image_path").eq("id", parsed.data.treatmentId).single(),
     supabase.from("bookings").select("id", { count: "exact", head: true }).eq("treatment_id", parsed.data.treatmentId),
     supabase.from("monthly_specials").select("id", { count: "exact", head: true }).eq("treatment_id", parsed.data.treatmentId),
+    supabase.from("treatment_combos").select("id", { count: "exact", head: true }).eq("treatment_id", parsed.data.treatmentId),
   ]);
   const treatment = treatmentResult.data;
   if (!treatment) treatmentDeleteRedirect(parsed.data.treatmentId, "deleteMissing");
-  if (bookingResult.error || specialResult.error) {
+  if (bookingResult.error || specialResult.error || comboResult.error) {
     const incidentId = newIncidentId();
     console.error("admin_treatment_delete_preflight", {
       incidentId,
       bookingCode: bookingResult.error?.code ?? null,
       specialCode: specialResult.error?.code ?? null,
+      comboCode: comboResult.error?.code ?? null,
     });
     treatmentDeleteRedirect(parsed.data.treatmentId, "deleteFailed", incidentId);
   }
-  if ((bookingResult.count ?? 0) > 0 || (specialResult.count ?? 0) > 0) {
+  if ((bookingResult.count ?? 0) > 0 || (specialResult.count ?? 0) > 0 || (comboResult.count ?? 0) > 0) {
     treatmentDeleteRedirect(parsed.data.treatmentId, "deleteLinked");
   }
 

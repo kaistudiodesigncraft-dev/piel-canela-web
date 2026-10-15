@@ -74,6 +74,7 @@ const savedTreatment = {
   deletion_usage_available: true,
   total_booking_count: 0,
   monthly_special_count: 0,
+  treatment_combo_count: 0,
 };
 
 describe("TreatmentEditor", () => {
@@ -150,6 +151,17 @@ describe("TreatmentEditor", () => {
     rerender(<TreatmentEditor treatmentId={savedTreatment.id} isNew={false} categories={[category]} specialties={[specialty]} professionals={[compatibleProfessional]} treatment={{ ...savedTreatment, total_booking_count: 2 }} />);
     expect(screen.queryByRole("button", { name: /eliminar definitivamente/i })).not.toBeInTheDocument();
     expect(screen.getByText(/2 reservas asociadas/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/desactivar y guardar/i)).toHaveLength(2);
+  });
+
+  it("blocks permanent deletion when the treatment still has configured combos", async () => {
+    const user = userEvent.setup();
+    render(<TreatmentEditor treatmentId={savedTreatment.id} isNew={false} categories={[category]} specialties={[specialty]} professionals={[compatibleProfessional]} treatment={{ ...savedTreatment, treatment_combo_count: 3 }} />);
+
+    await user.click(screen.getByText("Eliminar tratamiento"));
+
+    expect(screen.queryByRole("button", { name: /eliminar definitivamente/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/3 combos configurados/i)).toBeInTheDocument();
     expect(screen.getAllByText(/desactivar y guardar/i)).toHaveLength(2);
   });
 });
