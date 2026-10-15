@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LiveAdminDashboard } from "./LiveAdminDashboard";
 const { getManualBookingSlotsMock } = vi.hoisted(() => ({ getManualBookingSlotsMock: vi.fn() }));
-vi.mock("@/app/admin/actions", () => ({ createAvailabilityException: vi.fn(), createManualBooking: vi.fn(), createSpecialty: vi.fn(), deleteAvailabilityException: vi.fn(), getManualBookingSlots: getManualBookingSlotsMock, saveMonthlySpecial: vi.fn(), signOutAdmin: vi.fn(), toggleSpecialty: vi.fn() }));
+vi.mock("@/app/admin/actions", () => ({ createAvailabilityException: vi.fn(), createManualBooking: vi.fn(), createSpecialty: vi.fn(), deleteAvailabilityException: vi.fn(), deleteTestBooking: vi.fn(), getManualBookingSlots: getManualBookingSlotsMock, saveMonthlySpecial: vi.fn(), signOutAdmin: vi.fn(), toggleSpecialty: vi.fn() }));
 vi.mock("@/app/admin/reservas/actions", () => ({ rescheduleBooking: vi.fn(), saveBookingNotes: vi.fn() }));
 vi.mock("@/components/admin/WeeklyAvailabilityEditor", () => ({ WeeklyAvailabilityEditor: () => <div>Editor semanal</div> }));
 vi.mock("@/components/admin/BookingStatusTransitionForm", () => ({ BookingStatusTransitionForm: () => null }));
@@ -48,5 +48,22 @@ describe("Reception modules", () => {
     expect(screen.getByRole("combobox", { name: /profesional/i })).toHaveTextContent("Autoasignar disponible");
     expect(screen.getByRole("option", { name: "Agustina Spertino" })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "Melina" })).not.toBeInTheDocument();
+  });
+  it("offers protected permanent deletion only for final test reservations", () => {
+    const booking = {
+      id: "70000000-0000-4000-8000-000000000001", treatment_id: "treatment", treatment_combo_id: null,
+      professional_id: null, professional: null, booking_code: "PC-TEST0001", status: "expired" as const,
+      starts_at: "2026-09-01T12:00:00Z", ends_at: "2026-09-01T13:00:00Z", duration_snapshot_minutes: 60,
+      applied_price_snapshot_cents: 100000, customer_notes: null, internal_notes: null, created_at: "2026-08-01T12:00:00Z",
+      rescheduled_at: null, reschedule_count: 0, status_reason: null, status_changed_at: null, deposit_confirmed_at: null,
+      completed_at: null, no_show_at: null, combo_name_snapshot: null, package_charge_kind: "standard" as const,
+      customer_package_id: null, history: [], customer: { full_name: "Prueba", phone: "3510000000", email: null },
+      treatment: { name: "Tratamiento" },
+    };
+    render(<LiveAdminDashboard {...props} feedback={{ module: "agenda" }} bookings={[booking]} agenda={{ ...props.agenda, total: 1 }} />);
+
+    screen.getByText("Detalle operativo").click();
+    expect(screen.getByRole("button", { name: /eliminar reserva de prueba/i })).toBeInTheDocument();
+    expect(screen.getByText(/confirmo que pc-test0001 es una reserva de prueba/i)).toBeInTheDocument();
   });
 });

@@ -14,6 +14,10 @@ import { ADMIN_IMAGE_MAX_BYTES, ADMIN_IMAGE_TYPES, hasExpectedImageSignature } f
 import { isOperationalAdminRole, requireAdmin } from "@/lib/admin/require-admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { treatmentUsesCombos, type TreatmentSelectionMode } from "@/domain/treatment";
+import {
+  isTreatmentDeleteCodeConfigured,
+  verifyTreatmentDeleteCode,
+} from "@/lib/admin/treatment-delete-code";
 
 const loginSchema = z.object({ email: z.string().email(), password: z.string().min(8) });
 const weeklyAvailabilityRuleSchema = z.object({
@@ -32,6 +36,11 @@ const specialtySchema = z.object({
 const bookingStatusSchema = z.enum([
   "pending", "awaiting_deposit", "confirmed", "completed", "cancelled", "no_show", "expired",
 ]);
+const deleteBookingSchema = z.object({
+  bookingId: z.string().uuid(),
+  confirmationCode: z.string().trim().min(4).max(128),
+  confirmTestReservation: z.literal("on"),
+});
 const initialBookingStatusSchema = z.enum(["pending", "awaiting_deposit", "confirmed"]);
 const manualBookingSchema = z.object({
   idempotencyKey: z.string().uuid(),
@@ -302,6 +311,61 @@ export async function updateBookingStatus(formData: FormData) {
   revalidatePath("/admin/clientes");
   revalidatePath("/admin/seguridad");
   redirect("/admin?bookingSaved=1#reservas");
+}
+
+function bookingDeleteRedirect(error?: string, incidentId?: string): never {
+  const params = new URLSearchParams({ module: "agenda", agendaView: "all" });
+  if (error) params.set("bookingDeleteError", error);
+  else params.set("bookingDeleted", "1");
+  if (incidentId) params.set("support", incidentId);
+  redirect(`/admin?${params.toString()}#reservas`);
+}
+
+export async function deleteTestBooking(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const parsed = deleteBookingSchema.safeParse({
+    bookingId: formData.get("bookingId"),
+    confirmationCode: formData.get("confirmationCode"),
+    confirmTestReservation: formData.get("confirmTestReservation"),
+  });
+  if (!parsed.success) bookingDeleteRedirect("confirmation");
+  if (!isTreatmentDeleteCodeConfigured()) bookingDeleteRedirect("configuration");
+
+  const attempt = await supabase.rpc("register_admin_protected_action_attempt", {
+    requested_action: "delete_booking",
+  });
+  if (attempt.error || attempt.data !== true) bookingDeleteRedirect("rateLimited");
+  if (!verifyTreatmentDeleteCode(parsed.data.confirmationCode)) bookingDeleteRedirect("code");
+
+  const guardSecret = process.env.BOOKING_GUARD_SECRET;
+  if (!guardSecret || guardSecret.length < 32) bookingDeleteRedirect("configuration");
+
+  const { error } = await supabase.rpc("delete_booking_if_safe", {
+    requested_booking_id: parsed.data.bookingId,
+    request_guard_secret: guardSecret,
+  });
+  if (error) {
+    const reason = error.message.includes("booking_must_be_final")
+      ? "active"
+      : error.message.includes("booking_has_package_history")
+        ? "package"
+        : error.code === "42501"
+          ? "configuration"
+          : error.code === "P0002"
+            ? "missing"
+            : "save";
+    const incidentId = reason === "save" ? randomUUID().slice(0, 8).toUpperCase() : undefined;
+    if (incidentId) console.error("admin_booking_delete", { incidentId, code: error.code ?? "unknown" });
+    bookingDeleteRedirect(reason, incidentId);
+  }
+
+  await supabase.rpc("clear_admin_protected_action_attempts", {
+    requested_action: "delete_booking",
+  });
+  revalidatePath("/admin");
+  revalidatePath("/admin/clientes");
+  revalidatePath("/admin/seguridad");
+  bookingDeleteRedirect();
 }
 
 export async function saveMonthlySpecial(formData: FormData) {

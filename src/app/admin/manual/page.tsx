@@ -73,6 +73,8 @@ const sections = [
       "La reserva asigna un profesional habilitado y disponible; revisá su nombre en la agenda después de guardar.",
       "Confirmá estado, horario y datos de contacto antes de guardar.",
       "Usá notas internas solo para información operativa, no para datos sensibles innecesarios.",
+      "Si generaste una reserva de prueba, cancelala o dejala vencer. Después abrí Detalle operativo y usá la eliminación protegida con el código correspondiente.",
+      "Nunca elimines una reserva real: cancelala para conservar el historial del cliente.",
     ],
   },
   {

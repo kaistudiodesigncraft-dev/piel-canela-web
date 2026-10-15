@@ -47,6 +47,7 @@ yarn-error.log*
 branding-source/
 PIEL CANELA - BRANDING-*.zip
 /tmp/
+/.tmp/
 
 # typescript
 *.tsbuildinfo

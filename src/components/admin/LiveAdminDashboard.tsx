@@ -23,6 +23,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useState } from "react";
+import { useFormStatus } from "react-dom";
 import { AdminRouteNav } from "@/components/admin/AdminRouteNav";
 import { BookingStatusTransitionForm } from "@/components/admin/BookingStatusTransitionForm";
 import { WeeklyAvailabilityEditor } from "@/components/admin/WeeklyAvailabilityEditor";
@@ -31,6 +32,7 @@ import {
   createManualBooking,
   createSpecialty,
   deleteAvailabilityException,
+  deleteTestBooking,
   getManualBookingSlots,
   saveMonthlySpecial,
   signOutAdmin,
@@ -233,6 +235,27 @@ function Feedback({ show, error, success, errorText }: { show: boolean; error?: 
   return null;
 }
 
+function DeleteBookingButton() {
+  const { pending } = useFormStatus();
+  return <button className="button button--danger" type="submit" disabled={pending}><Trash2 aria-hidden="true" strokeWidth={1.75} />{pending ? "Eliminando…" : "Eliminar reserva de prueba"}</button>;
+}
+
+function DeleteTestBookingForm({ booking }: { booking: AdminBookingRow }) {
+  if (!(["cancelled", "expired"] as BookingStatus[]).includes(booking.status)) return null;
+  if (booking.customer_package_id) {
+    return <div className="admin-delete-treatment__form" role="status"><strong>Esta reserva pertenece a un paquete.</strong><p>Conservála para no alterar sus sesiones e historial.</p></div>;
+  }
+  return (
+    <form action={deleteTestBooking} className="admin-delete-treatment__form booking-delete-form">
+      <input type="hidden" name="bookingId" value={booking.id} />
+      <div><strong>Eliminar únicamente si fue una prueba.</strong><p>La reserva, sus cambios de estado y sus comunicaciones operativas se eliminarán de forma permanente.</p></div>
+      <label htmlFor={`delete-booking-code-${booking.id}`}>Código de eliminación<input id={`delete-booking-code-${booking.id}`} name="confirmationCode" type="password" inputMode="numeric" pattern="[0-9]{4}" minLength={4} maxLength={128} autoComplete="off" required /></label>
+      <label className="admin-check" htmlFor={`delete-booking-confirm-${booking.id}`}><input id={`delete-booking-confirm-${booking.id}`} name="confirmTestReservation" type="checkbox" required /><span>Confirmo que {booking.booking_code} es una reserva de prueba.</span></label>
+      <DeleteBookingButton />
+    </form>
+  );
+}
+
 function BookingRescheduleForm({ booking }: { booking: AdminBookingRow }) {
   const [date, setDate] = useState(toArgentinaDateTimeInput(booking.starts_at).slice(0, 10));
   const [startsAt, setStartsAt] = useState("");
@@ -418,6 +441,7 @@ export function LiveAdminDashboard({
           <Link className="button button--primary" href="/admin?module=agenda#asignar">Nuevo turno</Link>
         </div>
         <Feedback show={feedback.bookingSaved === "1"} error={feedback.bookingError} success="Estado de la reserva actualizado y registrado." errorText={feedback.bookingError === "reason" ? "Indicá un motivo para cancelar o marcar una ausencia." : feedback.bookingError === "transition" ? "El estado cambió o esa transición ya no está permitida." : "No se pudo aplicar ese cambio de estado."} />
+        <Feedback show={feedback.bookingDeleted === "1"} error={feedback.bookingDeleteError} success="La reserva de prueba fue eliminada y quedó registrada en auditoría." errorText={feedback.bookingDeleteError === "code" ? "El código de eliminación no es correcto." : feedback.bookingDeleteError === "rateLimited" ? "Se alcanzó el límite de intentos. Probá nuevamente más tarde." : feedback.bookingDeleteError === "active" ? "Primero cancelá o dejá vencer la reserva antes de eliminarla." : feedback.bookingDeleteError === "package" ? "La reserva pertenece a un paquete y debe conservarse." : feedback.bookingDeleteError === "configuration" ? "La eliminación protegida no está disponible. Contactá a soporte." : "No pudimos eliminar la reserva. No se modificó ningún dato."} />
         <Feedback show={feedback.bookingDetailSaved === "1"} error={feedback.bookingDetailError} success="Notas de la reserva actualizadas." errorText="No se pudieron guardar las notas." />
         <Feedback show={feedback.rescheduleSaved === "1"} error={feedback.rescheduleError} success="Reserva reprogramada y agenda actualizada." errorText={feedback.rescheduleError === "conflict" ? "No hay un profesional disponible en ese horario para la especialidad." : feedback.rescheduleError === "status" ? "El estado actual no permite reprogramar." : "No se pudo reprogramar la reserva."} />
         <form className="admin-agenda-filters" action="/admin#reservas" method="get">
@@ -468,6 +492,7 @@ export function LiveAdminDashboard({
                       <h3>Historial de estados</h3>
                       {booking.history.length === 0 ? <p>Todavía no hay cambios de estado registrados.</p> : <ol>{booking.history.map((event) => <li key={event.id}><span className={`status-badge status-${event.next_status}`}>{BOOKING_STATUS_LABELS[event.next_status]}</span><div><strong>{event.previous_status ? `${BOOKING_STATUS_LABELS[event.previous_status]} → ${BOOKING_STATUS_LABELS[event.next_status]}` : BOOKING_STATUS_LABELS[event.next_status]}</strong><small>{bookingDate(event.created_at)} · {event.actor?.full_name ?? "Sistema"}</small>{event.reason ? <p>{event.reason}</p> : null}</div></li>)}</ol>}
                     </div>
+                    <DeleteTestBookingForm booking={booking} />
                   </div>
                 </details>
               </article>;
