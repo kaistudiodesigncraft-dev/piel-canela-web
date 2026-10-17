@@ -22,7 +22,6 @@ export default async function HomePage() {
   ]);
   const content = siteContentMap(siteFields);
   const text = (key: Parameters<typeof content.get>[0]) => content.get(key)?.value ?? "";
-  const heroImage = content.get("hero_image");
   const categoriesBackground = content.get("categories_background");
   const specialsBackground = content.get("specials_background");
   const approachBackground = content.get("approach_background");
@@ -37,7 +36,7 @@ export default async function HomePage() {
         title={text("hero_title")}
         lead={text("hero_lead")}
         caption={text("hero_image_caption")}
-        image={heroImage}
+        image={content.get("hero_image")}
       />
 
       <section className={editableSurfaceClassName("section section--categories", categoriesBackground)} aria-labelledby="categories-title">

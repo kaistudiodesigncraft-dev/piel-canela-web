@@ -1,4 +1,4 @@
-import { ArrowRight, Check, MessageCircleMore } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type { SiteContentField } from "@/domain/site-content";
@@ -17,19 +17,23 @@ export function HomeHero({ eyebrow, title, lead, caption, image }: HomeHeroProps
 
   return (
     <section className={styles.hero} aria-labelledby="home-title" data-hero>
-      <div className={`site-container ${styles.grid}`} data-with-image={showImage}>
+      <div className={styles.backgroundLayer} data-hero-background aria-hidden="true">
+        <Image className={styles.background} src="/brand/hero-background-original.jpg" alt="" fill preload unoptimized sizes="100vw" />
+      </div>
+      <div className={styles.shade} data-hero-shade aria-hidden="true" />
+      <div className={styles.intro} data-hero-intro aria-hidden="true">
+        <Image className={styles.logo} data-hero-logo src="/brand/hero-logo-original.webp"
+          alt="" width={475} height={240} preload unoptimized />
+      </div>
+      <div className={`site-container ${styles.grid}`} data-with-image={showImage} data-hero-copy>
         <div className={styles.copy}>
           {eyebrow && <p className={styles.introduction}>{eyebrow}</p>}
           <h1 id="home-title" className={styles.title}>{title}</h1>
           <p className={styles.lead}>{lead}</p>
           <div className={`button-row ${styles.actions}`}>
-            <Link className="button button--primary" href="/tratamientos">
-              Explorar tratamientos
+            <Link className="button button--light" href="/tratamientos">
+              Reservar tratamiento
               <ArrowRight aria-hidden="true" strokeWidth={1.75} />
-            </Link>
-            <Link className="button button--quiet" href="/#contacto">
-              <MessageCircleMore aria-hidden="true" strokeWidth={1.75} />
-              Consultar
             </Link>
           </div>
           <ul className={styles.assurances} aria-label="Información importante">

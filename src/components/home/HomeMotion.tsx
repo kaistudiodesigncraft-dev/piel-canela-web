@@ -12,15 +12,50 @@ export function HomeMotion({ children, className }: { children: ReactNode; class
   const root = useRef<HTMLDivElement>(null);
   useGSAP(() => {
     const media = gsap.matchMedia();
+    media.add("(prefers-reduced-motion: no-preference)", () => {
+      const logo = root.current?.querySelector<HTMLImageElement>("[data-hero-logo]");
+      const hero = root.current?.querySelector<HTMLElement>("[data-hero]");
+      const copy = root.current?.querySelector<HTMLElement>("[data-hero-copy]");
+      const intro = root.current?.querySelector<HTMLElement>("[data-hero-intro]");
+      const shade = root.current?.querySelector<HTMLElement>("[data-hero-shade]");
+      const background = root.current?.querySelector<HTMLElement>("[data-hero-background]");
+      if (!logo || !hero || !copy || !intro || !background || !shade) return;
+      let active = true;
+      // Wait for the original assets to decode; do not animate an empty image.
+      const entrance = gsap.timeline({ paused: true });
+      gsap.set(copy, { opacity: 0, y: 12 });
+      gsap.set(intro, { opacity: 1 });
+      gsap.set(shade, { opacity: 0 });
+      entrance.fromTo(logo,
+        { opacity: 0, scale: .96, y: 10 },
+        { opacity: 1, scale: 1, y: 0, duration: .7, ease: "power3.out" }, .15)
+        .to(logo, { opacity: 0, scale: .98, duration: .45, ease: "power2.inOut" }, 1.3)
+        .to(intro, { opacity: 0, duration: .7, ease: "power2.inOut" }, 1.3)
+        .to(shade, { opacity: .64, duration: .5, ease: "power2.inOut" }, 1.3)
+        .to(copy, { opacity: 1, y: 0, duration: .65, ease: "power3.out", clearProps: "transform,opacity" }, 1.65);
+
+      gsap.to(background, {
+        y: 28, ease: "none",
+        scrollTrigger: { trigger: hero, start: "top top", end: "bottom top", scrub: true },
+      });
+      // Keyboard access or early scrolling should never have to wait for the introduction.
+      const finishIntroduction = () => { entrance.progress(1).pause(); };
+      const onScroll = () => {
+        if (hero.getBoundingClientRect().top < -64) finishIntroduction();
+      };
+      copy.addEventListener("focusin", finishIntroduction);
+      window.addEventListener("scroll", onScroll, { passive: true });
+      const images = root.current?.querySelectorAll<HTMLImageElement>("[data-hero] img") ?? [];
+      void Promise.allSettled(Array.from(images, (image) => image.decode())).then(() => {
+        if (active && entrance.progress() < 1) entrance.play();
+      });
+      return () => {
+        active = false;
+        copy.removeEventListener("focusin", finishIntroduction);
+        window.removeEventListener("scroll", onScroll);
+      };
+    }, root);
     media.add("(min-width: 900px) and (prefers-reduced-motion: no-preference)", () => {
-      const hero = root.current?.querySelector("[data-hero]");
-      const visual = root.current?.querySelector("[data-hero-visual]");
-      if (hero && visual) {
-        gsap.to(visual, {
-          y: 18, ease: "none",
-          scrollTrigger: { trigger: hero, start: "top top", end: "bottom top", scrub: true },
-        });
-      }
       gsap.utils.toArray<HTMLElement>(".section").forEach((section) => {
         gsap.fromTo(section, { y: 14 }, {
           y: 0,

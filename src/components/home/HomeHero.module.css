@@ -3,29 +3,8 @@
   overflow: clip;
   isolation: isolate;
   padding-block: clamp(3.5rem, 7vw, 7rem) clamp(4.5rem, 9vw, 8rem);
-  background: var(--color-white);
-}
-
-.hero::before {
-  position: absolute;
-  z-index: -1;
-  top: -10rem;
-  left: -11rem;
-  width: clamp(24rem, 42vw, 42rem);
-  aspect-ratio: 1;
-  background: url("/brand/symbol.webp") center / contain no-repeat;
-  content: "";
-  opacity: 0.045;
-  rotate: -16deg;
-  animation: motif-arrival 900ms var(--ease-enter) both;
-}
-
-.hero::after {
-  position: absolute;
-  z-index: -2;
-  inset: 0 0 0 54%;
-  background: color-mix(in srgb, var(--color-aquamarine) 7%, var(--color-white));
-  content: "";
+  background: var(--color-petrol);
+  color: #ffffff;
 }
 
 .grid {
@@ -38,21 +17,21 @@
 
 .introduction {
   margin-bottom: 1.5rem;
-  color: var(--color-petrol);
+  color: #ffffff;
   font-family: var(--font-accent);
-  font-size: 1rem;
+  font-size: var(--font-size-brand-accent);
   font-weight: 400;
-  line-height: 1.5;
-  letter-spacing: .01em;
+  line-height: 1.35;
+  letter-spacing: 0;
   text-wrap: balance;
 }
 
 .title {
-  max-width: 12ch;
-  color: var(--color-petrol);
-  font-size: clamp(2.7rem, 5.6vw, 5.65rem);
+  max-width: 20ch;
+  color: #ffffff;
+  font-size: clamp(2rem, 3.4vw, 3.5rem);
   font-weight: 400;
-  line-height: 0.99;
+  line-height: 1.12;
   letter-spacing: -0.035em;
   overflow-wrap: anywhere;
   text-wrap: balance;
@@ -61,7 +40,7 @@
 .lead {
   max-width: 39ch;
   margin-top: 1.75rem;
-  color: var(--color-graphite);
+  color: #ffffff;
   font-size: clamp(1.0625rem, 1.5vw, 1.25rem);
   line-height: 1.6;
   text-wrap: pretty;
@@ -74,13 +53,13 @@
   gap: 0.5rem;
   margin-top: 1.5rem;
   padding: 0;
-  color: var(--color-text-secondary);
+  color: #ffffff;
   font-size: 0.9375rem;
   list-style: none;
 }
 
 .assurances li { display: flex; align-items: start; gap: 0.5rem; }
-.assurances svg { flex-shrink: 0; width: 1rem; height: 1.5rem; color: var(--color-petrol); }
+.assurances svg { flex-shrink: 0; width: 1rem; height: 1.5rem; color: inherit; }
 
 .visual { min-width: 0; margin: 0; }
 
@@ -121,7 +100,7 @@
   margin-inline: auto;
   padding-top: 1.15rem;
   text-align: center;
-  color: var(--color-text-secondary);
+  color: #ffffff;
   font-size: 0.9375rem;
   line-height: 1.5;
   text-wrap: pretty;
@@ -135,17 +114,33 @@
 }
 
 @media (max-width: 479px) {
-  .hero::after { inset: 58% 0 0; }
   .actions { align-items: stretch; flex-direction: column; }
   .imageFrame { aspect-ratio: 5 / 4.7; }
 }
 
-@keyframes motif-arrival {
-  from { opacity: 0; transform: translate3d(-1rem, -1rem, 0) scale(.96); }
-  to { opacity: .045; transform: translate3d(0, 0, 0) scale(1); }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .imageMotion { transform: none !important; }
-  .hero::before { animation: none; }
+}
+
+/* A decorative introduction over the approved hero, with no extra scroll height.
+   The final hero is available immediately without JS or with reduced motion. */
+.intro {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: clip;
+  opacity: 0;
+  pointer-events: none;
+}
+.backgroundLayer { position: absolute; z-index: -2; inset: -2.5rem 0; pointer-events: none; }
+.background { object-fit: cover; object-position: center; }
+.shade { position: absolute; z-index: -1; inset: 0; background: #173e45; opacity: .64; pointer-events: none; }
+.logo {
+  position: relative;
+  display: block;
+  width: min(calc(100% - 3rem), 29.6875rem);
+  height: auto;
+  opacity: 0;
 }
