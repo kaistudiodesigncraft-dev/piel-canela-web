@@ -12,11 +12,12 @@ type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient
 const treatmentSelect = "id,updated_at,category_id,specialty_id,professional_id,requires_professional_assignment,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order";
 
 export async function loadTreatmentEditorTaxonomies(supabase: SupabaseServerClient) {
-  const [categoriesResult, specialtiesResult, professionalsResult, professionalSpecialtiesResult] = await Promise.all([
+  const [categoriesResult, specialtiesResult, professionalsResult, professionalSpecialtiesResult, reassignmentResult] = await Promise.all([
     supabase.from("treatment_categories").select("id,name,slug,short_description,icon_name,display_order,is_active").order("display_order"),
     supabase.from("specialties").select("id,name,is_active").order("display_order"),
     supabase.from("professionals").select("id,specialty_id,full_name,public_name,is_active").order("display_order"),
     supabase.from("professional_specialties").select("professional_id,specialty_id"),
+    supabase.from("treatments").select("id,name,selection_mode").order("name"),
   ]);
   const error = categoriesResult.error ?? specialtiesResult.error ?? professionalsResult.error ?? professionalSpecialtiesResult.error;
   if (error) throw new Error(`treatment_editor_taxonomies:${error.code ?? "query"}`);
@@ -37,6 +38,7 @@ export async function loadTreatmentEditorTaxonomies(supabase: SupabaseServerClie
     categories: (categoriesResult.data ?? []) as AdminCategoryRow[],
     specialties: (specialtiesResult.data ?? []) as AdminSpecialtyRow[],
     professionals: professionals as AdminProfessionalRow[],
+    specialReassignmentTargets: reassignmentResult.error ? [] : reassignmentResult.data ?? [],
   };
 }
 
@@ -49,7 +51,7 @@ export async function loadTreatmentForEditor(supabase: SupabaseServerClient, tre
       .gte("starts_at", new Date().toISOString()),
     supabase.from("bookings").select("id", { count: "exact", head: true })
       .eq("treatment_id", treatmentId),
-    supabase.from("monthly_specials").select("id", { count: "exact", head: true })
+    supabase.from("monthly_specials").select("id,updated_at", { count: "exact" })
       .eq("treatment_id", treatmentId),
     supabase.from("treatment_combos").select("id", { count: "exact", head: true })
       .eq("treatment_id", treatmentId),
@@ -80,6 +82,7 @@ export async function loadTreatmentForEditor(supabase: SupabaseServerClient, tre
     future_booking_count_available: !bookingsResult.error,
     total_booking_count: totalBookingsResult.count ?? 0,
     monthly_special_count: specialsResult.count ?? 0,
+    special_versions: (specialsResult.data ?? []).map(special => ({ id: special.id, updatedAt: special.updated_at })),
     treatment_combo_count: combosResult.count ?? 0,
     deletion_usage_available: !totalBookingsResult.error && !specialsResult.error && !combosResult.error,
   } as AdminTreatmentRow;

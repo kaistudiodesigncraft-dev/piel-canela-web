@@ -4,12 +4,20 @@ import {
   buildBookingHref,
   buildCatalogHref,
   filterTreatmentsByCategory,
+  getActiveTreatments,
   getMonthlySpecialForTreatment,
   getPublicMonthlySpecials,
   resolveBookingSelection,
 } from "./treatments";
 
 describe("treatment domain helpers", () => {
+  it("keeps unpriced public treatments hidden without hiding a combo parent priced by its proposals", () => {
+    const simple = treatments.find(treatment => treatment.selectionMode === "simple")!;
+    expect(getActiveTreatments([{ ...simple, isActive: true, priceCents: 0 }])).toHaveLength(0);
+    expect(getActiveTreatments([{ ...simple, isActive: true, priceCents: Number.NaN }])).toHaveLength(0);
+    const combo = treatments.find(treatment => treatment.selectionMode !== "simple" && treatment.combos.length > 0);
+    if (combo) expect(getActiveTreatments([{ ...combo, isActive: true, priceCents: 0 }])).toHaveLength(1);
+  });
   it("filters only active treatments from the selected category", () => {
     const result = filterTreatmentsByCategory(treatments, "category-bienestar");
 

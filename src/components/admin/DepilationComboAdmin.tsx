@@ -84,7 +84,8 @@ export function DepilationComboAdmin({ treatmentId, treatmentName, treatmentBuff
   return <div className="depilation-admin">
     {combos.some((combo) => combo.booking_count < 0 || combo.package_count < 0) ? <p className="form-message form-message--error" role="alert">No pudimos verificar todo el historial. Podés editar los combos, pero su eliminación queda bloqueada hasta volver a consultar la página.</p> : null}
     <p className="admin-field-note">Orden correcto de carga: 1) cargá zonas, 2) armá combos con esas zonas, 3) publicá cada combo y 4) habilitá el selector público. No cargues cada combo como tratamiento separado: Depilación es el tratamiento padre.</p>
-    <p className="admin-field-note">Las zonas se comparten entre combos. Cambiar su precio o duración afecta los cálculos de próximas reservas; no modifica los paquetes ni los turnos ya contratados.</p>
+    <p className="admin-field-note">Acá se muestra todo lo guardado: Mujeres, Hombres y Compartido, incluso elementos pausados. Podés completar hombres después sin afectar lo que ya cargaste.</p>
+    <p className="admin-field-note">Las zonas se comparten entre combos. Su valor de referencia cambia el ahorro informado y los precios calculados por descuento. Los combos de precio fijo y los extras tienen su propio precio: actualizalos por separado. Las reservas y paquetes históricos se conservan.</p>
     {extras.some((extra) => extra.is_active) && !combos.some((combo) => combo.is_active && combo.allow_public_extras && combo.extra_ids.some((id) => extras.some((extra) => extra.id === id && extra.is_active))) ? <p className="form-message" role="status">Tenés extras cargados, pero ningún combo publicado los ofrece todavía. Abrí un combo, activá “Permitir que el público sume extras habilitados”, seleccioná los que correspondan y publicá los cambios.</p> : null}
     <section className="live-admin__section depilation-feature-control">
       <div><p className="eyebrow">Publicación controlada</p><h2>Combos de {treatmentName}</h2><p>Podés preparar zonas y combos sin mostrarlos. Cada turno suma {treatmentBufferMinutes} min de preparación y puede comenzar cada {startIntervalMinutes} min.</p></div>
@@ -93,7 +94,7 @@ export function DepilationComboAdmin({ treatmentId, treatmentName, treatmentBuff
     <nav className="depilation-admin-tabs" aria-label="Configuración de depilación">
       <a href="#zonas-depilacion">Zonas</a>
       <a href="#extras-depilacion">Extras</a>
-      <a href="#combos-depilacion">Combos publicados</a>
+      <a href="#combos-depilacion">Todos los combos</a>
     </nav>
     {feedback.zoneSaved === "1" || feedback.extraSaved === "1" || feedback.comboSaved === "1" || feedback.featureSaved === "1" ? <p className="form-message" role="status">Los cambios quedaron guardados.</p> : null}
     {feedback.zoneDeleted === "1" || feedback.comboDeleted === "1" ? <p className="form-message" role="status">El elemento sin historial fue eliminado.</p> : null}

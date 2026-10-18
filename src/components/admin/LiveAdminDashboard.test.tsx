@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LiveAdminDashboard } from "./LiveAdminDashboard";
+vi.mock("@/app/admin/removal-actions", () => ({ removeCatalogEntry: vi.fn() }));
 const { getManualBookingSlotsMock } = vi.hoisted(() => ({ getManualBookingSlotsMock: vi.fn() }));
 vi.mock("@/app/admin/actions", () => ({ createAvailabilityException: vi.fn(), createManualBooking: vi.fn(), createSpecialty: vi.fn(), deleteAvailabilityException: vi.fn(), deleteTestBooking: vi.fn(), getManualBookingSlots: getManualBookingSlotsMock, saveMonthlySpecial: vi.fn(), signOutAdmin: vi.fn(), toggleSpecialty: vi.fn() }));
 vi.mock("@/app/admin/reservas/actions", () => ({ rescheduleBooking: vi.fn(), saveBookingNotes: vi.fn() }));

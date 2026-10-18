@@ -18,6 +18,7 @@ vi.mock("@/app/admin/catalogo/actions", () => ({
   saveTreatment: vi.fn(),
   deleteTreatment: vi.fn(),
 }));
+vi.mock("@/app/admin/removal-actions", () => ({ removeCatalogEntry: vi.fn() }));
 vi.mock("@/app/admin/catalogo/media-actions", () => ({
   createTreatmentMediaUploadIntent: (treatmentId: string) => createIntent(treatmentId),
   finalizeTreatmentMediaUpload: (uploadId: string) => finalizeUpload(uploadId),
@@ -142,26 +143,8 @@ describe("TreatmentEditor", () => {
     expect(screen.getByRole("button", { name: "Publicar tratamiento" })).toBeEnabled();
   });
 
-  it("only offers permanent deletion when the treatment has no history", async () => {
-    const user = userEvent.setup();
-    const { rerender } = render(<TreatmentEditor treatmentId={savedTreatment.id} isNew={false} categories={[category]} specialties={[specialty]} professionals={[compatibleProfessional]} treatment={savedTreatment} />);
-    await user.click(screen.getByText("Eliminar tratamiento"));
-    expect(screen.getByRole("button", { name: /eliminar definitivamente/i })).toBeInTheDocument();
-
-    rerender(<TreatmentEditor treatmentId={savedTreatment.id} isNew={false} categories={[category]} specialties={[specialty]} professionals={[compatibleProfessional]} treatment={{ ...savedTreatment, total_booking_count: 2 }} />);
-    expect(screen.queryByRole("button", { name: /eliminar definitivamente/i })).not.toBeInTheDocument();
-    expect(screen.getByText(/2 reservas asociadas/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/desactivar y guardar/i)).toHaveLength(2);
-  });
-
-  it("blocks permanent deletion when the treatment still has configured combos", async () => {
-    const user = userEvent.setup();
-    render(<TreatmentEditor treatmentId={savedTreatment.id} isNew={false} categories={[category]} specialties={[specialty]} professionals={[compatibleProfessional]} treatment={{ ...savedTreatment, treatment_combo_count: 3 }} />);
-
-    await user.click(screen.getByText("Eliminar tratamiento"));
-
-    expect(screen.queryByRole("button", { name: /eliminar definitivamente/i })).not.toBeInTheDocument();
-    expect(screen.getByText(/3 combos configurados/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/desactivar y guardar/i)).toHaveLength(2);
+  it("offers the protected removal workflow from an existing treatment", () => {
+    render(<TreatmentEditor treatmentId={savedTreatment.id} isNew={false} categories={[category]} specialties={[specialty]} professionals={[compatibleProfessional]} treatment={savedTreatment} />);
+    expect(screen.getByRole("button", { name: "Eliminar o archivar tratamiento" })).toBeInTheDocument();
   });
 });

@@ -1,13 +1,12 @@
 "use client";
 
-import { AlertCircle, Check, Eye, ImageIcon, LoaderCircle, Trash2, UploadCloud } from "lucide-react";
+import { AlertCircle, Check, Eye, ImageIcon, LoaderCircle, UploadCloud } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { preserveSubmittedForm } from "@/lib/admin/preserve-form";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
-  deleteTreatment,
   saveTreatment,
 } from "@/app/admin/catalogo/actions";
 import {
@@ -31,6 +30,8 @@ import type {
   AdminSpecialtyRow,
   AdminTreatmentRow,
 } from "@/lib/admin/treatment-editor-types";
+import { CatalogRemovalDialog } from "./CatalogRemovalDialog";
+import type { SpecialReassignmentTarget } from "@/lib/admin/catalog-removal";
 
 interface TreatmentEditorProps {
   treatmentId: string;
@@ -39,6 +40,7 @@ interface TreatmentEditorProps {
   specialties: AdminSpecialtyRow[];
   professionals: AdminProfessionalRow[];
   treatment?: AdminTreatmentRow;
+  specialReassignmentTargets?: SpecialReassignmentTarget[];
 }
 
 const treatmentErrorMessages: Record<string, string> = {
@@ -107,53 +109,8 @@ function EditorSubmitButtons({ isNew, isPublished, mediaBusy }: { isNew: boolean
   );
 }
 
-function DeleteTreatmentButton() {
-  const { pending } = useFormStatus();
-  return <button className="button button--danger" type="submit" disabled={pending}><Trash2 aria-hidden="true" strokeWidth={1.75} />{pending ? "Eliminando…" : "Eliminar definitivamente"}</button>;
-}
 
-function DeleteTreatmentForm({ treatment }: { treatment: AdminTreatmentRow }) {
-  const usageAvailable = treatment.deletion_usage_available !== false;
-  const bookingCount = treatment.total_booking_count ?? 0;
-  const specialCount = treatment.monthly_special_count ?? 0;
-  const comboCount = treatment.treatment_combo_count ?? 0;
-  const hasHistory = bookingCount > 0 || specialCount > 0 || comboCount > 0;
-  const usageParts = [
-    bookingCount > 0 ? `${bookingCount} ${bookingCount === 1 ? "reserva asociada" : "reservas asociadas"}` : null,
-    specialCount > 0 ? `${specialCount} ${specialCount === 1 ? "especial asociado" : "especiales asociados"}` : null,
-    comboCount > 0 ? `${comboCount} ${comboCount === 1 ? "combo configurado" : "combos configurados"}` : null,
-  ].filter(Boolean);
-
-  return (
-    <details className="admin-delete-treatment">
-      <summary><span><Trash2 aria-hidden="true" strokeWidth={1.75} />Eliminar tratamiento</span></summary>
-      {!usageAvailable ? (
-        <div className="admin-delete-treatment__form" role="status">
-          <strong>No podemos comprobar si es seguro eliminarlo.</strong>
-          <p>Recargá la página antes de intentarlo. El tratamiento y su historial siguen intactos.</p>
-        </div>
-      ) : hasHistory ? (
-        <div className="admin-delete-treatment__form" role="status">
-          <strong>Este tratamiento conserva historial y no puede eliminarse.</strong>
-          <p>
-            {usageParts.join(", ")}.{" "}
-            Para quitarlo del catálogo, usá “Desactivar y guardar”.
-          </p>
-        </div>
-      ) : (
-        <form action={deleteTreatment} className="admin-delete-treatment__form">
-          <input type="hidden" name="treatmentId" value={treatment.id} />
-          <div><strong>Esta acción no se puede deshacer.</strong><p>Confirmamos que no tiene reservas, especiales ni combos asociados.</p></div>
-          <label htmlFor={`delete-code-${treatment.id}`}>Código de eliminación<input id={`delete-code-${treatment.id}`} name="confirmationCode" type="password" inputMode="numeric" pattern="[0-9]{4}" minLength={4} maxLength={128} autoComplete="off" required /></label>
-          <label className="admin-check" htmlFor={`delete-confirm-${treatment.id}`}><input id={`delete-confirm-${treatment.id}`} name="confirmDeletion" type="checkbox" required /><span>Confirmo que quiero eliminar “{treatment.name}”.</span></label>
-          <DeleteTreatmentButton />
-        </form>
-      )}
-    </details>
-  );
-}
-
-export function TreatmentEditor({ treatmentId, isNew, categories, specialties, professionals, treatment }: TreatmentEditorProps) {
+export function TreatmentEditor({ treatmentId, isNew, categories, specialties, professionals, treatment, specialReassignmentTargets = [] }: TreatmentEditorProps) {
   const formId = `treatment-${treatmentId}`;
   const [actionState, formAction] = useActionState(saveTreatment, initialSaveTreatmentState);
   const [selectedSpecialty, setSelectedSpecialty] = useState(treatment?.specialty_id ?? "");
@@ -331,6 +288,8 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
           <a href="#treatment-information">Información</a><a href="#treatment-scheduling">Agenda y precio</a><a href="#treatment-image">Imagen</a><a href="#treatment-publication">Publicación</a>
         </nav>
 
+        {!isNew && treatment && treatment.selection_mode !== "simple" ? <div className="admin-field-note admin-field-note--prominent"><strong>Precios de depilación</strong><p>Las zonas, combos y extras ya cargados se editan en su configuración. El precio de cada combo fijo y el de cada extra se actualizan por separado.</p><Link className="button button--quiet" href={`/admin/catalogo/${treatmentId}/combos`}>Ver y editar zonas, combos y extras</Link></div> : null}
+
         <fieldset id="treatment-information">
           <legend>Información pública</legend>
           <div className="admin-form-grid admin-form-grid--3">
@@ -420,7 +379,11 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
         {isDirty ? <p className="admin-unsaved-note" role="status">Tenés cambios sin guardar.</p> : null}
         {!isNew && treatment ? <Link className="button button--quiet" href={`/admin/catalogo/${treatment.id}/preview`}><Eye aria-hidden="true" strokeWidth={1.75} />Abrir vista previa</Link> : null}
         <Link className="button button--quiet" href="/admin/catalogo">Volver al catálogo</Link>
-        {!isNew && treatment ? <DeleteTreatmentForm treatment={treatment} /> : null}
+        {!isNew && treatment ? <CatalogRemovalDialog entity="treatment" id={treatment.id} name={treatment.name}
+          updatedAt={treatment.updated_at} usageAvailable={treatment.deletion_usage_available !== false}
+          hasHistory={(treatment.total_booking_count ?? 0) > 0 || (treatment.treatment_combo_count ?? 0) > 0}
+          specialVersions={treatment.special_versions ?? []}
+          replacementTargets={specialReassignmentTargets.filter(target => target.id !== treatment.id && target.selection_mode === treatment.selection_mode)} /> : null}
       </aside>
     </div>
   );

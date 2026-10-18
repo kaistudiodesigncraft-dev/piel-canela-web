@@ -9,11 +9,19 @@ import type {
   TreatmentCategorySlug,
 } from "@/domain/treatment";
 
+export function hasPublicTreatmentPrice(treatment: Treatment): boolean {
+  if (treatment.selectionMode === "simple") return Number.isFinite(treatment.priceCents) && treatment.priceCents > 0;
+  return treatment.combos.some(combo => {
+    const price = quoteCombo(combo).priceCents;
+    return combo.isActive && Number.isFinite(price) && price > 0;
+  });
+}
+
 export function getActiveTreatments(
   source: readonly Treatment[],
 ): readonly Treatment[] {
   return source
-    .filter((treatment) => treatment.isActive)
+    .filter((treatment) => treatment.isActive && hasPublicTreatmentPrice(treatment))
     .toSorted((a, b) => a.displayOrder - b.displayOrder);
 }
 

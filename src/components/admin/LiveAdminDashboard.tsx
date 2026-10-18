@@ -27,6 +27,7 @@ import { useFormStatus } from "react-dom";
 import { AdminRouteNav } from "@/components/admin/AdminRouteNav";
 import { BookingStatusTransitionForm } from "@/components/admin/BookingStatusTransitionForm";
 import { WeeklyAvailabilityEditor } from "@/components/admin/WeeklyAvailabilityEditor";
+import { CatalogRemovalDialog } from "@/components/admin/CatalogRemovalDialog";
 import {
   createAvailabilityException,
   createManualBooking,
@@ -131,6 +132,7 @@ interface ProfessionalOptionRow {
 
 interface MonthlySpecialRow {
   id: string;
+  updated_at?: string;
   treatment_id: string;
   title: string;
   short_description: string;
@@ -559,7 +561,7 @@ export function LiveAdminDashboard({
         <div className="admin-section-heading"><div><h2 id="specials-title">Especiales del mes</h2><p>Creá o editá las únicas propuestas concretas que aparecen destacadas en la home.</p></div><Sparkles aria-hidden="true" strokeWidth={1.75} /></div>
         <Feedback show={feedback.specialSaved === "1"} error={feedback.specialError} success="Especial del mes guardado y web actualizada." errorText="No se pudo guardar. Revisá fechas, precios, imagen y superposición de vigencia." />
         <details className="admin-disclosure"><summary><span><Plus aria-hidden="true" strokeWidth={1.75} />Crear especial del mes</span><ChevronDown aria-hidden="true" strokeWidth={1.75} /></summary><MonthlySpecialForm treatments={treatments} /></details>
-        <div className="monthly-special-admin-list">{monthlySpecials.length === 0 ? <div className="admin-empty"><Sparkles aria-hidden="true" strokeWidth={1.75} /><h3>No hay especiales cargados.</h3><p>Creá el primero y definí cuándo debe mostrarse.</p></div> : monthlySpecials.map((special) => <article key={special.id} className="monthly-special-admin-item"><div className="monthly-special-admin-item__image"><Image src={special.image_url} alt={special.image_alt} fill sizes="160px" /></div><div className="monthly-special-admin-item__summary"><span className={`status-badge ${special.is_active ? "status-confirmed" : "status-expired"}`}>{special.is_active ? "Activo" : "Pausado"}</span><h3>{special.title}</h3><p>{treatmentName.get(special.treatment_id)} · {special.pricing_mode === "combo_catalog" ? "Promoción de combos" : formatPrice(special.special_price_cents)}</p><small>{bookingDate(special.starts_at)} → {bookingDate(special.ends_at)}</small></div><details className="admin-disclosure admin-disclosure--inline"><summary><span>Editar especial</span><ChevronDown aria-hidden="true" strokeWidth={1.75} /></summary><MonthlySpecialForm treatments={treatments} special={special} /></details></article>)}</div>
+        <div className="monthly-special-admin-list">{monthlySpecials.length === 0 ? <div className="admin-empty"><Sparkles aria-hidden="true" strokeWidth={1.75} /><h3>No hay especiales cargados.</h3><p>Creá el primero y definí cuándo debe mostrarse.</p></div> : monthlySpecials.map((special) => <article key={special.id} className="monthly-special-admin-item"><div className="monthly-special-admin-item__image"><Image src={special.image_url} alt={special.image_alt} fill sizes="160px" /></div><div className="monthly-special-admin-item__summary"><span className={`status-badge ${special.is_active ? "status-confirmed" : "status-expired"}`}>{special.is_active ? "Activo" : "Pausado"}</span><h3>{special.title}</h3><p>{treatmentName.get(special.treatment_id)} · {special.pricing_mode === "combo_catalog" ? "Promoción de combos" : formatPrice(special.special_price_cents)}</p><small>{bookingDate(special.starts_at)} → {bookingDate(special.ends_at)}</small></div><details className="admin-disclosure admin-disclosure--inline"><summary><span>Editar especial</span><ChevronDown aria-hidden="true" strokeWidth={1.75} /></summary><MonthlySpecialForm treatments={treatments} special={special} /></details><CatalogRemovalDialog entity="special" id={special.id} name={special.title} updatedAt={special.updated_at} /></article>)}</div>
       </section> : null}
     </div>
   );

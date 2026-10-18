@@ -102,7 +102,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     supabase.from("professionals").select("id,full_name,public_name,specialty_id,is_active,display_order").eq("is_active", true).order("display_order").order("full_name"),
     supabase.from("treatment_professionals").select("treatment_id,professional_id").eq("is_active", true),
     supabase.from("professional_specialties").select("professional_id,specialty_id"),
-    supabase.from("monthly_specials").select("id,treatment_id,title,short_description,detail,image_path,image_alt,pricing_mode,special_price_cents,reference_price_cents,starts_at,ends_at,terms,is_active,display_order").order("display_order"),
+    supabase.from("monthly_specials").select("id,updated_at,treatment_id,title,short_description,detail,image_path,image_alt,pricing_mode,special_price_cents,reference_price_cents,starts_at,ends_at,terms,is_active,display_order").order("display_order"),
     bookingsRequest,
     supabase.from("bookings").select("id", { count: "exact", head: true })
       .gte("starts_at", todayRange.startsAt as string)

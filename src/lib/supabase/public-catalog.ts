@@ -13,6 +13,7 @@ import type {
 } from "@/domain/treatment";
 import { createSupabasePublicServerClient } from "./public-server";
 import { usesSupabaseDataSource } from "./env";
+import { hasPublicTreatmentPrice } from "@/lib/treatments";
 
 export interface PublicCatalogSnapshot {
   categories: readonly TreatmentCategory[];
@@ -432,6 +433,7 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
     } satisfies Treatment;
   });
 
+  const pricedTreatments = treatments.filter(treatment => !treatment.isActive || hasPublicTreatmentPrice(treatment));
   const monthlySpecials = (specialsResult.data as MonthlySpecialRow[]).map((row) => {
     return {
       id: row.id,
@@ -460,5 +462,5 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
     } satisfies MonthlySpecial;
   });
 
-  return { categories, treatments, monthlySpecials, source: "supabase" };
+  return { categories, treatments: pricedTreatments, monthlySpecials, source: "supabase" };
 });
