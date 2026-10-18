@@ -5,7 +5,10 @@
 - Project: `piel-canela-web` / `prj_8pLruNzIDBCJNDaKjBVAAvfXqRmC`.
 - Verified deployment: `dpl_3cfMA5Lr2ooEn6a5tZpdaPpE4n57`.
 - Artifact URL: https://piel-canela-h2zsa9vfg-kai-dev1.vercel.app
-- Release strategy: promote this existing verified deployment, without rebuilding it or executing database migrations.
+- Release strategy: promote this existing verified deployment without executing database migrations. Vercel automatically created and rebuilt a production instance from the approved deployment's source; the promotion did not reuse the exact Preview build artifact.
+- Application-source commit: `7a0dba193dc91189bfd9953b152d5a957287d1ff`, pushed to `origin/codex/brand-system-rework`.
+- Production deployment: `dpl_D699UkChXLsiYzVnz6SNNnCmXZzp`, READY, with `meta.originalDeploymentId` pointing to the verified deployment above.
+- Production instance: https://piel-canela-dousyv5dp-kai-dev1.vercel.app
 - Previous production deployment, available for application rollback: `dpl_EEzzNGbvRiaoRXoz8WGr8DRgGGhb`.
 - Public domains: https://piel-canela-catalogo.vercel.app and https://piel-canela-web-mauve.vercel.app.
 
@@ -26,6 +29,8 @@
 - The post-removal redirect fix is covered by five server-action regression tests and a read-only destination-page check; no further destructive E2E run was claimed.
 - Temporary QA treatments and specials were removed after explicit confirmation. Their audit events remain.
 - Full-row fingerprints of the six checked business tables matched before and after QA cleanup: treatments 19, monthly specials 1, professionals 6, zones 11, combos 4 and extras 11. No Storage object was created or removed.
+- Post-promotion read-only smoke: the production admin catalog rendered 19 treatments and the new direct depilation entry; the existing special rendered its independent removal control; public depilation displayed all four existing combos. Captured admin console errors were empty. No form was submitted and no business record was changed during this production smoke.
+- Both public domains were assigned to the READY production deployment; the older `web-mauve` domain redirects to the canonical catalog domain.
 
 ## Database boundary
 
