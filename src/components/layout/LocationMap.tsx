@@ -10,10 +10,10 @@ export function LocationMap() {
       <div className={`site-container ${styles.layout}`}>
         <div className={styles.copy}>
           <p className="eyebrow">Ubicación</p>
-          <h2 id="location-title">Encontranos en Espacio O2 Cofico.</h2>
-          <p>Consultá el mapa para organizar tu llegada. La disponibilidad de cada tratamiento se elige desde el turnero.</p>
+          <h2 id="location-title">Te esperamos en Espacio 02 Cofico.</h2>
+          <p>Estamos en Faustino Allende 1045. Encontrá cómo llegar y vení a disfrutar de tu momento de cuidado.</p>
           <a className="text-link" href={DIRECTIONS_URL} target="_blank" rel="noopener noreferrer">
-            Abrir indicaciones en Google Maps
+            Cómo llegar
             <ExternalLink aria-hidden="true" strokeWidth={1.75} />
             <span className="sr-only">(abre en otra pestaña)</span>
           </a>

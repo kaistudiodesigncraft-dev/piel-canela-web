@@ -1,23 +1,23 @@
 :root {
-  --color-ink: #24322e;
-  --color-deep-green: #3f604c;
-  --color-deep-petrol: #25545d;
-  --color-petrol: #2f6873;
-  --color-sky: #9bc7d1;
-  --color-leaf: #a9bba6;
+  --color-ink: #393939;
+  --color-deep-green: #2f6872;
+  --color-deep-petrol: #2f6872;
+  --color-petrol: #377a86;
+  --color-sky: #8ccccc;
+  --color-leaf: #35d4b1;
   --color-white: #ffffff;
-  --color-bone: #f7f4ee;
-  --color-cloud: #eff3f1;
-  --color-green-mist: #e7ede5;
-  --color-border: #d6dcd7;
-  --color-text-secondary: #59645f;
+  --color-bone: #ffffff;
+  --color-cloud: #ffffff;
+  --color-green-mist: #bfe3e3;
+  --color-border: #8ccccc;
+  --color-text-secondary: #525252;
   --color-action: var(--color-petrol);
   --color-text-muted: var(--color-text-secondary);
   --color-surface-soft: var(--color-cloud);
   --color-error: #9d3b35;
   --color-warning: #8a5a17;
-  --color-success: #2f6d4f;
-  --color-focus: #176d80;
+  --color-success: #2f6872;
+  --color-focus: #377a86;
 
   --font-title: var(--font-heading), Arial, sans-serif;
   --font-copy: var(--font-body), Arial, sans-serif;
@@ -2358,8 +2358,8 @@ svg {
 
 .form-message {
   padding: .75rem 1rem;
-  color: #244c42;
-  background: #e5f0e8;
+  color: var(--color-ink);
+  background: var(--color-aquamarine-soft);
   border-radius: .6rem;
 }
 
@@ -3887,7 +3887,7 @@ svg {
 }
 
 .admin-field-note {
-  color: #245f4a;
+  color: var(--color-deep-petrol);
   font-size: 0.78rem;
   font-weight: 650;
 }

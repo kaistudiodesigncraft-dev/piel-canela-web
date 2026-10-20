@@ -31,7 +31,7 @@
 .links a:active { transform:scale(.985); }
 .publicLink { color:var(--color-petrol); font-weight:650; }
 .drawer { background:var(--color-white); animation-timing-function:var(--ease-enter); }
-.drawer::backdrop { background:rgb(23 61 66 / 48%); }
+.drawer::backdrop { background:rgb(33 72 79 / 48%); }
 :global(.admin-product-shell):has(.sidebar) { padding-left:256px; }
 :global(.admin-product-shell):has(.compact) { padding-left:82px; }
 @media(max-width:1099px) { :global(.admin-product-shell):has(.sidebar),:global(.admin-product-shell):has(.compact) { padding-left:0; } }

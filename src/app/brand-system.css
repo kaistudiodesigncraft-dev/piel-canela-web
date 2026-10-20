@@ -1,33 +1,40 @@
 /*
  * Piel Canela brand system 2026
- * Source of truth: client brand manual supplied 2026-10-03.
+ * Source of truth: updated client brand manual, page 7, supplied 2026-10-20.
  * This file is loaded after the legacy styles so the functional product can
  * adopt the new identity without rewriting booking or administrative logic.
  */
 
 :root {
   --color-petrol: #377a86;
-  --color-deep-petrol: #2d6872;
-  --color-petrol-ink: #1f555e;
+  --color-deep-petrol: #2f6872;
+  --color-petrol-ink: #21484f;
   --color-aquamarine: #35d4b1;
-  --color-aquamarine-soft: #e1f8f3;
+  --color-aquamarine-soft: color-mix(in srgb, var(--color-aquamarine) 12%, var(--color-white));
   --color-celeste: #8ccccc;
-  --color-celeste-soft: #e7f5f5;
+  --color-celeste-soft: color-mix(in srgb, var(--color-celeste) 15%, var(--color-white));
   --color-graphite: #393939;
-  --color-ink: #263b3e;
-  --color-deep-green: #2d6872;
+  --color-ink: var(--color-graphite);
+  --color-deep-green: var(--color-deep-petrol);
   --color-white: #ffffff;
-  --color-bone: #f8fbfa;
-  --color-cloud: #f1f7f6;
-  --color-green-mist: #e4f3f0;
+  /* UI surfaces are explicitly diluted official colors, not additional brand hues. */
+  --color-bone: var(--color-white);
+  --color-cloud: color-mix(in srgb, var(--color-celeste) 10%, var(--color-white));
+  --color-green-mist: var(--color-aquamarine-soft);
   --color-leaf: #74e1c9;
   --color-sky: #8ccccc;
-  --color-border: #cfe1df;
-  --color-text-secondary: #52686a;
-  --color-text-muted: #52686a;
-  --color-surface-soft: #f1f7f6;
-  --color-action: #2d6872;
-  --color-focus: #0f606f;
+  --color-border: #bfe3e3;
+  --color-text-secondary: #525252;
+  --color-text-muted: var(--color-text-secondary);
+  --color-surface-soft: var(--color-cloud);
+  --color-action: var(--color-deep-petrol);
+  --color-focus: #285962;
+  --color-success: var(--color-deep-petrol);
+  --color-text: var(--color-graphite);
+  --color-surface: var(--color-white);
+  --color-sky-soft: var(--color-celeste-soft);
+  --color-leaf-deep: var(--color-deep-petrol);
+  --color-leaf-soft: var(--color-aquamarine-soft);
 
   --font-title: "sweet-sans-pro", var(--font-heading), Arial, sans-serif;
   --font-copy: var(--font-heading), Arial, sans-serif;
@@ -39,9 +46,9 @@
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
 
-  --shadow-soft: 0 .65rem 1.4rem rgb(27 82 88 / 10%);
-  --shadow-raised: 0 .35rem .75rem rgb(27 82 88 / 12%);
-  --shadow-floating: 0 1rem 2.25rem rgb(27 82 88 / 16%);
+  --shadow-soft: 0 .65rem 1.4rem rgb(55 122 134 / 10%);
+  --shadow-raised: 0 .35rem .75rem rgb(55 122 134 / 12%);
+  --shadow-floating: 0 1rem 2.25rem rgb(55 122 134 / 16%);
 
   --motion-instant: 100ms;
   --motion-fast: 180ms;
@@ -128,9 +135,9 @@ dd { text-wrap: pretty; }
 .button--primary {
   color: var(--color-white);
   background: var(--color-deep-petrol);
-  box-shadow: 0 .4rem .75rem rgb(45 104 114 / 18%);
+  box-shadow: 0 .4rem .75rem rgb(47 104 114 / 18%);
 }
-.button--primary:not(:disabled):hover { background: var(--color-petrol); box-shadow: 0 .55rem .9rem rgb(45 104 114 / 22%); }
+.button--primary:not(:disabled):hover { background: var(--color-petrol); box-shadow: 0 .55rem .9rem rgb(47 104 114 / 22%); }
 .button--secondary,
 .button--quiet { border-color: var(--color-border); color: var(--color-petrol-ink); background: var(--color-white); }
 .button--secondary:hover,
@@ -148,7 +155,7 @@ dd { text-wrap: pretty; }
 .site-header {
   border-bottom-color: rgb(55 122 134 / 14%);
   background: rgb(255 255 255 / 92%);
-  box-shadow: 0 .25rem 1rem rgb(31 85 94 / 4%);
+  box-shadow: 0 .25rem 1rem rgb(33 72 79 / 4%);
 }
 .site-header__inner { min-height: 5.4rem; }
 .wordmark { width: clamp(9.5rem, 18vw, 13.5rem); color: var(--color-petrol); }
@@ -196,8 +203,8 @@ dd { text-wrap: pretty; }
 }
 .category-entry:hover { border-color: transparent; box-shadow: var(--shadow-soft); transform: translateY(-.3rem); }
 .category-entry--estetica { color: var(--color-white); background: var(--color-petrol); }
-.category-entry--bienestar { color: var(--color-white); background: #147664; }
-.category-entry--recuperacion { color: var(--color-white); background: #34777e; }
+.category-entry--bienestar { color: var(--color-graphite); background: var(--color-aquamarine); }
+.category-entry--recuperacion { color: var(--color-graphite); background: var(--color-celeste); }
 .category-entry :is(h3, p, .text-link, .category-entry__icon) { color: inherit; }
 .category-entry__body h3 {
   font-size: clamp(2.22rem, 1.95rem + 1vw, 2.75rem);
@@ -213,7 +220,7 @@ dd { text-wrap: pretty; }
   flex: none;
   overflow: visible;
   border-radius: 50%;
-  filter: drop-shadow(0 .5rem 1rem rgb(16 85 91 / 12%));
+  filter: drop-shadow(0 .5rem 1rem rgb(55 122 134 / 12%));
   transition: transform var(--motion-base) var(--ease-enter);
 }
 .brand-category-icon img { display: block; width: 100%; height: 100%; object-fit: contain; }
@@ -242,7 +249,7 @@ dd { text-wrap: pretty; }
   rotate: -12deg;
 }
 .section--approach :is(h2, .eyebrow) { color: var(--color-white); }
-.section--approach p { color: rgb(255 255 255 / 88%); }
+.section--approach p { color: var(--color-white); }
 
 .section--steps { background: var(--color-aquamarine-soft); }
 .booking-steps { gap: 0; border-top-color: rgb(55 122 134 / 24%); }
@@ -265,9 +272,9 @@ dd { text-wrap: pretty; }
   background: var(--color-petrol);
 }
 .page-hero::after { right: -5rem; bottom: -9rem; opacity: .11; rotate: -18deg; }
-.page-hero::before { background: linear-gradient(90deg, rgb(31 85 94 / 96%), rgb(55 122 134 / 78%)); }
+.page-hero::before { background: linear-gradient(90deg, rgb(33 72 79 / 96%), rgb(55 122 134 / 78%)); }
 .page-hero :is(h1, .eyebrow) { color: var(--color-white); }
-.page-hero p { color: rgb(255 255 255 / 88%); }
+.page-hero p { color: var(--color-white); }
 .section--catalog { background: var(--color-white); }
 
 .catalog-search input,
@@ -458,7 +465,7 @@ dd { text-wrap: pretty; }
 .admin-filters button.is-active { color: var(--color-white); background: var(--color-petrol); }
 
 .status-badge { border-radius: 999px; }
-.status-confirmed { color: #195b4d; background: #dcf8ef; }
+.status-confirmed { color: var(--color-petrol-ink); background: var(--color-aquamarine-soft); }
 .status-pending { color: #755014; background: #fff2ca; }
 .status-cancelled { color: #84323a; background: #fde6e8; }
 .admin-count { color: var(--color-petrol-ink); background: var(--color-aquamarine-soft); }
@@ -482,7 +489,7 @@ dd { text-wrap: pretty; }
 
 .public-site .section--approach p,
 .public-site .page-hero .page-hero__content > p {
-  color: rgb(255 255 255 / 86%);
+  color: var(--color-white);
 }
 
 /* Full-opacity white for Fiona only on verified dark brand surfaces. */

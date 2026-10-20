@@ -92,7 +92,7 @@
   aspect-ratio: 78 / 87;
   background: url("/brand/symbol.webp") center / contain no-repeat;
   content: "";
-  filter: drop-shadow(0 .35rem .6rem rgb(28 77 84 / 18%));
+  filter: drop-shadow(0 .35rem .6rem rgb(33 72 79 / 18%));
 }
 
 .caption {
@@ -136,7 +136,7 @@
 }
 .backgroundLayer { position: absolute; z-index: -2; inset: -2.5rem 0; pointer-events: none; }
 .background { object-fit: cover; object-position: center; }
-.shade { position: absolute; z-index: -1; inset: 0; background: #173e45; opacity: .64; pointer-events: none; }
+.shade { position: absolute; z-index: -1; inset: 0; background: var(--color-petrol-ink); opacity: .64; pointer-events: none; }
 .logo {
   position: relative;
   display: block;
