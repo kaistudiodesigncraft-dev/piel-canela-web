@@ -11,6 +11,8 @@ import type {
 
 export function hasPublicTreatmentPrice(treatment: Treatment): boolean {
   if (treatment.selectionMode === "simple") return Number.isFinite(treatment.priceCents) && treatment.priceCents > 0;
+  if (treatment.zoneOrder?.ready && treatment.zoneOrder.zones.some(z => z.isActive && z.referencePriceCents > 0)) return true;
+  if (treatment.zoneOrder) return treatment.combos.some(c => c.isActive && c.fixedPriceCents > 0);
   return treatment.combos.some(combo => {
     const price = quoteCombo(combo).priceCents;
     return combo.isActive && Number.isFinite(price) && price > 0;
@@ -96,6 +98,8 @@ export function buildBookingHref(selection: BookingInitialSelection): string {
   }
   if (selection.comboId) params.set("comboId", selection.comboId);
   for (const extraId of selection.extraIds ?? []) params.append("extraId", extraId);
+  if (selection.zoneOrder) params.set("zoneOrder", "1");
+  for (const zoneId of selection.zoneIds ?? []) params.append("zoneId", zoneId);
   return `/reservar?${params.toString()}`;
 }
 

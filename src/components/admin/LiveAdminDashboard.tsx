@@ -174,6 +174,7 @@ interface AdminBookingRow {
   completed_at: string | null;
   no_show_at: string | null;
   combo_name_snapshot: string | null;
+  zone_names?: string[];
   package_charge_kind: "standard" | "package_initial" | "package_included";
   customer_package_id: string | null;
   history: Array<{
@@ -481,7 +482,7 @@ export function LiveAdminDashboard({
               return <article key={booking.id} className="live-booking-row">
                 <div className="live-booking-row__time numeric"><Clock3 aria-hidden="true" strokeWidth={1.75} /><time dateTime={booking.starts_at}>{bookingDate(booking.starts_at)}</time></div>
                 <div className="live-booking-row__identity"><strong>{customerName}</strong><a href={`https://wa.me/${normalizePhone(phone)}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer"><MessageCircle aria-hidden="true" strokeWidth={1.75} />{phone || "Sin teléfono"}</a></div>
-                <div className="live-booking-row__treatment"><strong>{treatmentName}</strong><span>Profesional: {booking.professional?.public_name || booking.professional?.full_name || "Sin asignación registrada"}</span>{booking.combo_name_snapshot ? <span>{booking.combo_name_snapshot}</span> : null}<span className="numeric">{booking.booking_code} · {booking.package_charge_kind === "package_included" ? "Incluida en paquete" : formatPrice(booking.applied_price_snapshot_cents)}</span>{booking.customer_package_id && (booking.status === "completed" || booking.status === "no_show") ? <Link className="text-link" href="/admin/paquetes">Resolver consumo de sesión</Link> : null}</div>
+                <div className="live-booking-row__treatment"><strong>{treatmentName}</strong><span>Profesional: {booking.professional?.public_name || booking.professional?.full_name || "Sin asignación registrada"}</span>{booking.combo_name_snapshot ? <span>{booking.combo_name_snapshot}</span> : null}{booking.zone_names?.length ? <span>Zonas: {booking.zone_names.join(" · ")}</span> : null}<span className="numeric">{booking.booking_code} · {booking.package_charge_kind === "package_included" ? "Incluida en paquete" : formatPrice(booking.applied_price_snapshot_cents)}</span>{booking.customer_package_id && (booking.status === "completed" || booking.status === "no_show") ? <Link className="text-link" href="/admin/paquetes">Resolver consumo de sesión</Link> : null}</div>
                 <span className={`status-badge status-${booking.status}`}>{BOOKING_STATUS_LABELS[booking.status]}</span>
                 {transitions.length > 0 ? <BookingStatusTransitionForm bookingId={booking.id} bookingCode={booking.booking_code} transitions={transitions} /> : <span className="booking-status-closed">Estado final</span>}
                 <details className="booking-detail-disclosure" id={`booking-${booking.id}`}>

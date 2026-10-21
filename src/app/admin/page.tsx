@@ -18,7 +18,12 @@ interface AdminPageProps {
   searchParams: Promise<Record<string, string | undefined>>;
 }
 
-const bookingSelect = "id,treatment_id,treatment_combo_id,professional_id,professional:professionals!bookings_professional_id_fkey(full_name,public_name),booking_code,status,starts_at,ends_at,duration_snapshot_minutes,applied_price_snapshot_cents,customer_notes,internal_notes,created_at,rescheduled_at,reschedule_count,status_reason,status_changed_at,deposit_confirmed_at,completed_at,no_show_at,combo_name_snapshot,package_charge_kind,customer_package_id,customer:customers(full_name,phone,email),treatment:treatments(name)";
+const bookingSelect = "id,treatment_id,treatment_combo_id,professional_id,professional:professionals!bookings_professional_id_fkey(full_name,public_name),booking_code,status,starts_at,ends_at,duration_snapshot_minutes,applied_price_snapshot_cents,customer_notes,internal_notes,created_at,rescheduled_at,reschedule_count,status_reason,status_changed_at,deposit_confirmed_at,completed_at,no_show_at,combo_name_snapshot,combo_zones_snapshot,combo_extras_snapshot,package_charge_kind,customer_package_id,customer:customers(full_name,phone,email),treatment:treatments(name)";
+
+function snapshotNames(value: unknown): string[] {
+  return Array.isArray(value) ? value.flatMap((item: unknown) =>
+    item && typeof item === "object" && "name" in item && typeof item.name === "string" ? [item.name] : []) : [];
+}
 
 interface BookingHistoryRow {
   id: number;
@@ -167,6 +172,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   }
   const bookings = bookingRows.map((booking) => ({
     ...booking,
+    zone_names: [...snapshotNames(booking.combo_zones_snapshot), ...snapshotNames(booking.combo_extras_snapshot)],
     professional: Array.isArray(booking.professional) ? (booking.professional[0] ?? null) : booking.professional,
     messageTemplates: templatesByTreatment.get(booking.treatment_id) ?? {},
     customer: Array.isArray(booking.customer) ? (booking.customer[0] ?? null) : booking.customer,

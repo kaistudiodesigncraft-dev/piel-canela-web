@@ -7,6 +7,7 @@ import type { DepilationAudience, Treatment } from "@/domain/treatment";
 import { formatDuration, formatPrice } from "@/lib/format";
 import { buildBookingHref } from "@/lib/treatments";
 import { quoteCombo } from "@/lib/combo-quote";
+import { DepilationOrderSelector } from "./DepilationOrderSelector";
 
 const labels: Record<DepilationAudience, string> = { women: "Mujeres", men: "Hombres", shared: "Compartido" };
 type Filter = "all" | DepilationAudience;
@@ -26,6 +27,8 @@ export function TreatmentComboSelector({ treatment, preview = false, bookableCom
   const quote = selected ? quoteCombo(selected, selectedExtraIds) : null;
   const selectedPrice = quote?.priceCents ?? 0;
   const selectedDuration = quote?.durationMinutes ?? 0;
+
+  if (treatment.zoneOrder) return <DepilationOrderSelector treatment={treatment} preview={preview} />;
 
   return <section className="combo-selector" aria-labelledby={`combo-selector-${treatment.id}`}>
     <div className="combo-selector__heading"><div><p className="eyebrow">Opciones disponibles</p><h2 id={`combo-selector-${treatment.id}`}>Elegí un combo</h2><p>Seleccioná una propuesta, agregá extras si están disponibles y revisá el resumen antes de buscar un horario.</p></div></div>

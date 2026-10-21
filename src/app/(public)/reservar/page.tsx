@@ -4,6 +4,7 @@ import { LiveBookingFlow } from "@/components/booking/LiveBookingFlow";
 import { StatePanel } from "@/components/ui/StatePanel";
 import { siteContentMap } from "@/domain/site-content";
 import { buildBookingDates } from "@/lib/booking";
+import { resolveZoneOrder } from "@/lib/depilation-selection";
 import {
   getPublicBookingSettings,
   getPublicCatalogSnapshot,
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 interface BookingPageProps {
-  searchParams: Promise<{ treatmentId?: string; monthlySpecialId?: string; comboId?: string; extraId?: string | string[] }>;
+  searchParams: Promise<{ treatmentId?: string; monthlySpecialId?: string; comboId?: string; extraId?: string | string[]; zoneId?: string | string[]; zoneOrder?: string }>;
 }
 
 export default async function BookingPage({ searchParams }: BookingPageProps) {
@@ -64,6 +65,27 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
   const combo = getTreatmentCombo(treatment, query.comboId);
   const requestedExtraIds = Array.isArray(query.extraId) ? query.extraId : query.extraId ? [query.extraId] : [];
   const selectedExtras = combo?.extras.filter((extra) => requestedExtraIds.includes(extra.id) && extra.isActive) ?? [];
+  if (treatment.zoneOrder) {
+    const zoneIds = Array.isArray(query.zoneId) ? query.zoneId : query.zoneId ? [query.zoneId] : [];
+    let selection;
+    try {
+      // Old extra IDs are never silently converted to zone IDs.
+      if (query.monthlySpecialId || requestedExtraIds.length) throw new Error("incompatible_selection");
+      selection = resolveZoneOrder(treatment, query.comboId, zoneIds);
+    } catch {
+      return <div className="site-container route-state"><StatePanel kind="empty"
+        title="Revisá tus zonas o combo"
+        description="Elegí al menos una zona o un combo disponible. Los extras anteriores y los especiales no se combinan con esta selección."
+        actionHref={`/tratamientos/${treatment.slug}`} actionLabel="Elegir zonas y combos" /></div>;
+    }
+    return <><h1 className="sr-only">Reservar {treatment.name}</h1><div className="site-container booking-demo-page">
+      <LiveBookingFlow selection={selection} dates={buildBookingDates(new Date(), settings.maximumAdvanceDays + 1)} whatsappNumber={settings.whatsappNumber} />
+    </div></>;
+  }
+  if (query.zoneOrder || query.zoneId) {
+    return <div className="site-container route-state"><StatePanel kind="error" title="Esta selección todavía no está habilitada"
+      description="Volvé al tratamiento para consultar las opciones disponibles." actionHref={`/tratamientos/${treatment.slug}`} actionLabel="Ver opciones" /></div>;
+  }
   if (treatment.selectionMode !== "simple" && !combo) {
     const hasPublicCombos = treatment.combos.some((item) => item.isActive);
     return <><BookingHeader content={content} image={headerImage} /><div className="site-container route-state"><StatePanel

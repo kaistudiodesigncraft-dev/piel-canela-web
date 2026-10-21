@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminRouteNav } from "@/components/admin/AdminRouteNav";
 import { DepilationComboAdmin } from "@/components/admin/DepilationComboAdmin";
+import { DepilationDiscountForm } from "@/components/admin/DepilationDiscountForm";
 import { treatmentUsesCombos, type TreatmentSelectionMode } from "@/domain/treatment";
 import { requireAdmin } from "@/lib/admin/require-admin";
 
@@ -12,10 +13,13 @@ export const metadata: Metadata = { title: "Combos de depilación" };
 export default async function TreatmentCombosPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { id } = await params;
   const { supabase, profile } = await requireAdmin();
+  const zoneOrdersEnabled = process.env.DEPILATION_ZONES_ENABLED === "true";
+  const discountResult = zoneOrdersEnabled ? await supabase.from("business_settings")
+    .select("depilation_discount_percent").eq("singleton", true).maybeSingle() : null;
   const [treatmentResult, zonesResult, combosResult, linksResult, extrasResult, allowedExtrasResult, bookingsResult, packagesResult, settingsResult] = await Promise.all([
     supabase.from("treatments").select("id,name,slug,selection_mode,buffer_minutes,start_interval_minutes").eq("id", id).maybeSingle(),
     supabase.from("depilation_zones").select("id,name,audience,reference_price_cents,duration_minutes,is_active,display_order").order("display_order").order("name"),
-    supabase.from("treatment_combos").select("id,name,description,audience,mode,session_count,pricing_mode,discount_percent,tier_min_items,tier_discount_percent,allow_public_extras,fixed_price_cents,validity_days,is_active,display_order").eq("treatment_id", id).order("display_order").order("name"),
+    supabase.from("treatment_combos").select("id,name,description,audience,mode,session_count,pricing_mode,discount_percent,tier_min_items,tier_discount_percent,allow_public_extras,fixed_price_cents,appointment_duration_minutes,validity_days,is_active,display_order").eq("treatment_id", id).order("display_order").order("name"),
     supabase.from("treatment_combo_zones").select("combo_id,zone_id,display_order").order("display_order"),
     supabase.from("treatment_combo_extras").select("id,treatment_id,name,description,audience,price_cents,duration_minutes,is_active,display_order").eq("treatment_id", id).order("display_order").order("name"),
     supabase.from("treatment_combo_allowed_extras").select("combo_id,extra_id"),
@@ -44,5 +48,10 @@ export default async function TreatmentCombosPage({ params, searchParams }: { pa
   // A failed history query is unknown, never an empty history authorizing deletion.
   const combos = (combosResult.data ?? []).map((combo) => ({ ...combo, zone_ids: linksByCombo.get(combo.id) ?? [], extra_ids: extrasByCombo.get(combo.id) ?? [], booking_count: bookingsResult.error ? -1 : bookingCounts.get(combo.id) ?? 0, package_count: packagesResult.error ? -1 : packageCounts.get(combo.id) ?? 0 }));
   const zones = (zonesResult.data ?? []).map((zone) => ({ ...zone, link_count: linkCountsByZone.get(zone.id) ?? 0 }));
-  return <div className="live-admin site-container"><header className="live-admin__header admin-editor-page-header"><div><Link className="admin-back-link" href={`/admin/catalogo/${id}`}><ArrowLeft aria-hidden="true" />Editar tratamiento</Link><p className="eyebrow">Configuración comercial</p><h1>Combos de {treatmentResult.data.name}</h1><p>Prepará opciones cerradas, extras y descuentos sin modificar las reservas históricas.</p></div><div className="live-admin__actions"><Link className="button button--quiet" href={`/admin/catalogo/${id}/preview`} target="_blank" rel="noreferrer"><ExternalLink aria-hidden="true" />Vista previa</Link></div></header><AdminRouteNav current="catalog" canManageAccess={profile.role === "admin"} /><DepilationComboAdmin treatmentId={id} treatmentName={treatmentResult.data.name} treatmentBufferMinutes={treatmentResult.data.buffer_minutes} startIntervalMinutes={treatmentResult.data.start_interval_minutes} featureEnabled={settingsResult.data?.depilation_combos_enabled ?? false} zones={zones} extras={extrasResult.data ?? []} combos={combos} feedback={await searchParams} /></div>;
+  return <div className="live-admin site-container"><header className="live-admin__header admin-editor-page-header"><div><Link className="admin-back-link" href={`/admin/catalogo/${id}`}><ArrowLeft aria-hidden="true" />Editar tratamiento</Link><p className="eyebrow">Configuración comercial</p><h1>Combos de {treatmentResult.data.name}</h1><p>Prepará zonas y combos sin modificar las reservas históricas.</p></div><div className="live-admin__actions"><Link className="button button--quiet" href={`/admin/catalogo/${id}/preview`} target="_blank" rel="noreferrer"><ExternalLink aria-hidden="true" />Vista previa</Link></div></header>
+    <AdminRouteNav current="catalog" canManageAccess={profile.role === "admin"} />
+    {zoneOrdersEnabled ? discountResult?.data && !discountResult.error
+      ? <DepilationDiscountForm initialPercent={Number(discountResult.data.depilation_discount_percent)} />
+      : <p className="form-message form-message--error" role="alert">El descuento global todavía no está disponible. Falta verificar la migración; no se modificaron tus precios.</p> : null}
+    <DepilationComboAdmin zoneOrdersEnabled={zoneOrdersEnabled} treatmentId={id} treatmentName={treatmentResult.data.name} treatmentBufferMinutes={treatmentResult.data.buffer_minutes} startIntervalMinutes={treatmentResult.data.start_interval_minutes} featureEnabled={settingsResult.data?.depilation_combos_enabled ?? false} zones={zones} extras={extrasResult.data ?? []} combos={combos} feedback={await searchParams} /></div>;
 }

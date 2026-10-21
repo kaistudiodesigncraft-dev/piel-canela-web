@@ -72,6 +72,7 @@ export interface TreatmentCombo {
   tierDiscountPercent: number | null;
   allowPublicExtras: boolean;
   fixedPriceCents: number;
+  appointmentDurationMinutes?: number | null;
   referencePriceCents: number;
   pricePerSessionCents: number;
   savingsCents: number;
@@ -113,6 +114,11 @@ export interface Treatment {
   startIntervalMinutes: 15 | 30 | 60;
   selectionMode: TreatmentSelectionMode;
   combos: readonly TreatmentCombo[];
+  zoneOrder?: {
+    zones: readonly DepilationZone[];
+    discountPercent: number;
+    ready: boolean;
+  };
   priceCents: number;
   preparation: string | null;
   contraindications: string | null;
@@ -149,9 +155,12 @@ export interface BookingInitialSelection {
   monthlySpecialId?: string;
   comboId?: string;
   extraIds?: readonly string[];
+  zoneIds?: readonly string[];
+  zoneOrder?: boolean;
 }
 
 export interface ResolvedBookingSelection extends BookingInitialSelection {
+  orderSnapshot?: import("@/lib/depilation-order").OrderTotal;
   treatmentName: string;
   monthlySpecialTitle?: string;
   comboId?: string;

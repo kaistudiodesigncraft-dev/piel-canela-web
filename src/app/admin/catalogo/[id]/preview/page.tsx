@@ -37,6 +37,7 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
   let combos: TreatmentCombo[] = [];
   let bookableComboIds: string[] = [];
   let publicPreviewUnavailable = false;
+  let zoneOrder: Treatment["zoneOrder"];
   if (row.selection_mode !== "simple") {
     // Public availability must be checked with the anonymous client. The admin
     // client also sees drafts and cannot prove that a customer can book them.
@@ -51,10 +52,11 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
       throw new Error(`No se pudo preparar la vista previa de extras: ${extrasResult.error?.code ?? allowedExtrasResult.error?.code ?? "query"}`);
     }
     publicPreviewUnavailable = publicCatalogResult.failed;
+    zoneOrder = publicCatalogResult.catalog?.treatments.find(item => item.id === id)?.zoneOrder;
     bookableComboIds = publicCatalogResult.catalog?.treatments.find((item) => item.id === id && item.isActive)
       ?.combos.filter((combo) => combo.isActive).map((combo) => combo.id) ?? [];
     const { data: comboRows, error: combosError } = await supabase.from("treatment_combos")
-      .select("id,treatment_id,name,description,audience,mode,session_count,pricing_mode,discount_percent,tier_min_items,tier_discount_percent,allow_public_extras,fixed_price_cents,validity_days,is_active,display_order,zones:treatment_combo_zones(display_order,zone:depilation_zones(id,name,audience,reference_price_cents,duration_minutes,is_active,display_order))")
+      .select("id,treatment_id,name,description,audience,mode,session_count,pricing_mode,discount_percent,tier_min_items,tier_discount_percent,allow_public_extras,fixed_price_cents,appointment_duration_minutes,validity_days,is_active,display_order,zones:treatment_combo_zones(display_order,zone:depilation_zones(id,name,audience,reference_price_cents,duration_minutes,is_active,display_order))")
       .eq("treatment_id", id)
       .order("display_order");
     if (combosError) throw new Error(`No se pudo preparar la vista previa de combos: ${combosError.code ?? "query"}`);
@@ -87,10 +89,11 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
         tierDiscountPercent: combo.tier_discount_percent === null ? null : Number(combo.tier_discount_percent),
         allowPublicExtras: combo.allow_public_extras,
         fixedPriceCents: combo.fixed_price_cents,
+        appointmentDurationMinutes: combo.appointment_duration_minutes,
         referencePriceCents,
         pricePerSessionCents: Math.round(combo.fixed_price_cents / combo.session_count),
         savingsCents: Math.max(0, referencePriceCents - combo.fixed_price_cents),
-        durationMinutes: zones.reduce((total, zone) => total + zone.durationMinutes, 0),
+        durationMinutes: combo.appointment_duration_minutes ?? zones.reduce((total, zone) => total + zone.durationMinutes, 0),
         validityDays: combo.validity_days,
         zones,
         extras: (extrasResult.data ?? []).filter((extra) =>
@@ -123,6 +126,7 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
     startIntervalMinutes: row.start_interval_minutes,
     selectionMode: row.selection_mode,
     combos,
+    zoneOrder,
     priceCents: row.price_cents,
     preparation: row.preparation,
     contraindications: row.contraindications,
@@ -140,7 +144,7 @@ export default async function TreatmentPreviewPage({ params }: { params: Promise
     updatedAt: row.updated_at,
   };
   return <div className="admin-preview-page"><div className="admin-preview-banner"><strong>Vista previa administrativa</strong><span>{row.is_active ? "Tratamiento publicado" : "Todavía no visible en el catálogo público"}</span></div>
-    {row.selection_mode !== "simple" && (publicPreviewUnavailable || bookableComboIds.length === 0) ? <p className="form-message form-message--error" role="alert">{publicPreviewUnavailable
+    {row.selection_mode !== "simple" && !zoneOrder?.ready && (publicPreviewUnavailable || bookableComboIds.length === 0) ? <p className="form-message form-message--error" role="alert">{publicPreviewUnavailable
       ? "No pudimos verificar la disponibilidad pública. Podés revisar la propuesta, pero el acceso al turnero queda deshabilitado hasta volver a consultar."
       : "Esta vista incluye borradores. Todavía no hay combos visibles para el público: revisá la publicación del tratamiento, de cada combo y el selector público. Si ya están habilitados, contactá a soporte para revisar los permisos del catálogo."}</p> : null}
     <TreatmentDetailContent treatment={treatment} category={category} preview bookableComboIds={bookableComboIds} /></div>;

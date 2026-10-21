@@ -5665,6 +5665,20 @@ svg {
 .combo-selection-summary__note { margin: 0; font-size: 0.78rem; line-height: 1.5; }
 .combo-selector--empty { text-align: center; }
 
+.depilation-order__choices { border: 0; padding: 0; margin: 0 0 1.5rem; display: grid; gap: 0.75rem; min-width: 0; }
+.depilation-order__choices legend { margin-bottom: 0.75rem; font-weight: 700; }
+.depilation-order .combo-option input { position: static; opacity: 1; width: 1.25rem; height: 1.25rem; accent-color: var(--color-petrol); }
+.depilation-order .combo-option:focus-within { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.depilation-order__zone { display: flex; align-items: center; gap: 0.75rem; min-height: 44px; padding: 0.75rem 0; border-bottom: 1px solid var(--color-border); cursor: pointer; }
+.depilation-order__zone > span:first-of-type { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.depilation-order__zone small { display: block; color: var(--color-text-secondary); }
+.depilation-order__zone input { width: 1.25rem; height: 1.25rem; flex-shrink: 0; accent-color: var(--color-petrol); }
+.depilation-order__zone.is-included { cursor: default; }
+.depilation-order__summary { align-self: start; box-shadow: none; }
+@media (max-width: 767px) {
+  .depilation-order__summary { position: sticky; bottom: 0; max-height: 45svh; overflow-y: auto; padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+}
+
 .admin-selection-mode,
 .depilation-feature-control,
 .package-admin-item > header {

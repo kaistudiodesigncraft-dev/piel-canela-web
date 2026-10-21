@@ -5,8 +5,17 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { usesSupabaseDataSource } from "@/lib/supabase/env";
 import { createSupabasePublicServerClient } from "@/lib/supabase/public-server";
+import { createZoneOrderQuote } from "@/lib/supabase/depilation-order";
+
+const zoneSelectionFields = {
+  zoneOrder: z.boolean().optional().default(false),
+  zoneIds: z.array(z.string().uuid()).max(100).optional().default([]),
+  expectedTotalCents: z.number().int().nonnegative().optional(),
+  expectedDurationMinutes: z.number().int().positive().optional(),
+};
 
 const availabilitySchema = z.object({
+  ...zoneSelectionFields,
   treatmentId: z.string().uuid(),
   comboId: z.string().uuid().nullable().optional().default(null),
   extraIds: z.array(z.string().uuid()).optional().default([]),
@@ -14,6 +23,7 @@ const availabilitySchema = z.object({
 });
 
 const bookingSchema = z.object({
+  ...zoneSelectionFields,
   treatmentId: z.string().uuid(),
   monthlySpecialId: z.string().uuid().nullable(),
   comboId: z.string().uuid().nullable().optional().default(null),
@@ -29,11 +39,11 @@ const bookingSchema = z.object({
 
 export type AvailabilityResult =
   | { ok: true; slots: { startsAt: string; endsAt: string }[] }
-  | { ok: false; reason: "configuration" | "invalid" | "unavailable" };
+  | { ok: false; reason: "configuration" | "invalid" | "unavailable" | "price_changed" };
 
 export type CreateBookingResult =
   | { ok: true; bookingId: string; bookingCode: string; status: "pending" }
-  | { ok: false; reason: "invalid" | "slot" | "treatment" | "special" | "rate_limited" | "verification" | "server" };
+  | { ok: false; reason: "invalid" | "slot" | "treatment" | "special" | "rate_limited" | "verification" | "server" | "price_changed" };
 
 function createBookingGuard(input: {
   secret: string;
@@ -52,7 +62,25 @@ export async function getAvailableSlots(input: unknown): Promise<AvailabilityRes
   const parsed = availabilitySchema.safeParse(input);
   if (!parsed.success) return { ok: false, reason: "invalid" };
 
+  // Once enabled, configurable bookings cannot opt back into legacy pricing.
+  if (process.env.DEPILATION_ZONES_ENABLED === "true" && parsed.data.comboId && !parsed.data.zoneOrder) return { ok: false, reason: "invalid" };
+
   const supabase = createSupabasePublicServerClient();
+  if (parsed.data.zoneOrder) {
+    const secret = process.env.BOOKING_GUARD_SECRET;
+    if (!secret || secret.length < 32) return { ok: false, reason: "configuration" };
+    if (parsed.data.extraIds.length) return { ok: false, reason: "invalid" };
+    try {
+      const quote = await createZoneOrderQuote(parsed.data.treatmentId, parsed.data.comboId, parsed.data.zoneIds, secret);
+      if (quote.order.totalCents !== parsed.data.expectedTotalCents || quote.order.durationMinutes !== parsed.data.expectedDurationMinutes) return { ok: false, reason: "price_changed" };
+      const { data, error } = await supabase.rpc("get_available_slots_for_zone_order", {
+        payload: quote.payload, signature: quote.signature, requested_date: parsed.data.date,
+      });
+      if (error) return { ok: false, reason: error.message.includes("quote_changed") ? "price_changed" : "unavailable" };
+      return { ok: true, slots: ((data ?? []) as { starts_at: string; ends_at: string }[]).map(s => ({ startsAt: s.starts_at, endsAt: s.ends_at })) };
+    } catch { return { ok: false, reason: "unavailable" }; }
+  }
+  if (parsed.data.zoneIds.length) return { ok: false, reason: "invalid" };
   const { data, error } = parsed.data.comboId
     ? await supabase.rpc("get_available_slots_for_selection_v2", {
         requested_treatment_id: parsed.data.treatmentId,
@@ -80,6 +108,8 @@ export async function createPublicBooking(input: unknown): Promise<CreateBooking
   const parsed = bookingSchema.safeParse(input);
   if (!parsed.success) return { ok: false, reason: "invalid" };
 
+  if (process.env.DEPILATION_ZONES_ENABLED === "true" && parsed.data.comboId && !parsed.data.zoneOrder) return { ok: false, reason: "invalid" };
+
   const guardSecret = process.env.BOOKING_GUARD_SECRET;
   if (!guardSecret || guardSecret.length < 32) {
     return { ok: false, reason: "server" };
@@ -91,7 +121,23 @@ export async function createPublicBooking(input: unknown): Promise<CreateBooking
   const guard = createBookingGuard({ secret: guardSecret, fingerprintSource });
 
   const supabase = createSupabasePublicServerClient();
-  const { data, error } = await supabase.rpc("create_booking_for_selection_v2", {
+  if (parsed.data.zoneIds.length && !parsed.data.zoneOrder) return { ok: false, reason: "invalid" };
+  let zoneQuote: Awaited<ReturnType<typeof createZoneOrderQuote>> | undefined;
+  if (parsed.data.zoneOrder) {
+    if (parsed.data.monthlySpecialId || parsed.data.extraIds.length) return { ok: false, reason: "invalid" };
+    try {
+      zoneQuote = await createZoneOrderQuote(parsed.data.treatmentId, parsed.data.comboId, parsed.data.zoneIds, guardSecret);
+    } catch { return { ok: false, reason: "treatment" }; }
+    // Client values only detect a changed offer; authoritative values always come from the database.
+    if (zoneQuote.order.totalCents !== parsed.data.expectedTotalCents || zoneQuote.order.durationMinutes !== parsed.data.expectedDurationMinutes) return { ok: false, reason: "price_changed" };
+  }
+  const { data, error } = zoneQuote ? await supabase.rpc("create_booking_for_zone_order", {
+    payload: zoneQuote.payload, signature: zoneQuote.signature,
+    requested_starts_at: parsed.data.startsAt, requested_idempotency_key: parsed.data.idempotencyKey,
+    customer_full_name: parsed.data.fullName, customer_phone: parsed.data.phone,
+    customer_email: parsed.data.email || null, customer_notes: parsed.data.notes || null,
+    request_guard_nonce: guard.nonce, request_guard_fingerprint: guard.fingerprint, request_guard_secret: guardSecret,
+  }) : await supabase.rpc("create_booking_for_selection_v2", {
     requested_treatment_id: parsed.data.treatmentId,
     requested_combo_id: parsed.data.comboId,
     requested_monthly_special_id: parsed.data.monthlySpecialId,
@@ -108,6 +154,7 @@ export async function createPublicBooking(input: unknown): Promise<CreateBooking
   });
 
   if (error) {
+    if (error.message.includes("quote_changed") || error.message.includes("quote_expired")) return { ok: false, reason: "price_changed" };
     if (error.message.includes("slot_not_available")) return { ok: false, reason: "slot" };
     if (error.message.includes("treatment_not_available")) return { ok: false, reason: "treatment" };
     if (error.message.includes("monthly_special_not_available")) return { ok: false, reason: "special" };

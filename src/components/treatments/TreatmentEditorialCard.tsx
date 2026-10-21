@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Treatment, TreatmentCategory } from "@/domain/treatment";
 import { quoteCombo } from "@/lib/combo-quote";
+import { getMinimumZoneOrderPrice } from "@/lib/depilation-selection";
 import { formatDuration, formatPrice } from "@/lib/format";
 
 interface TreatmentEditorialCardProps {
@@ -19,7 +20,8 @@ export function TreatmentEditorialCard({
   onOpen,
 }: TreatmentEditorialCardProps) {
   const activeCombos = treatment.combos.filter((combo) => combo.isActive);
-  const comboPrice = activeCombos.length > 0 ? Math.min(...activeCombos.map((combo) => quoteCombo(combo).priceCents)) : null;
+  const comboPrice = treatment.zoneOrder ? getMinimumZoneOrderPrice(treatment)
+    : activeCombos.length > 0 ? Math.min(...activeCombos.map((combo) => quoteCombo(combo).priceCents)) : null;
   return (
     <article className={`treatment-editorial-card${treatment.image ? "" : " treatment-editorial-card--text"}`}>
       <div className="treatment-editorial-card__top">
@@ -48,7 +50,7 @@ export function TreatmentEditorialCard({
       <div className="treatment-editorial-card__footer numeric">
         <span className="treatment-editorial-card__duration">
           {treatment.selectionMode !== "simple" ? <Layers3 aria-hidden="true" strokeWidth={1.75} /> : <Clock3 aria-hidden="true" strokeWidth={1.75} />}
-          {treatment.selectionMode !== "simple" ? `${activeCombos.length} ${activeCombos.length === 1 ? "combo" : "combos"}` : formatDuration(treatment.durationMinutes)}
+          {treatment.zoneOrder ? "Zonas y combos" : treatment.selectionMode !== "simple" ? `${activeCombos.length} ${activeCombos.length === 1 ? "combo" : "combos"}` : formatDuration(treatment.durationMinutes)}
         </span>
         <strong>{treatment.selectionMode !== "simple" ? (comboPrice === null ? "En preparación" : `Desde ${formatPrice(comboPrice)}`) : formatPrice(treatment.priceCents)}</strong>
         <Link

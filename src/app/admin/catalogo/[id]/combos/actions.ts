@@ -29,6 +29,7 @@ const comboSchema = z.object({
   mode: z.enum(["single_session", "package"]),
   sessionCount: z.coerce.number().int().min(1).max(48),
   fixedPricePesos: z.coerce.number().int().positive(),
+  appointmentDurationMinutes: z.preprocess((value) => value === "" || value == null ? undefined : value, z.coerce.number().int().min(5).max(480).optional()),
   pricingMode: z.enum(["fixed_price", "percentage_discount", "tiered_discount"]),
   discountPercent: z.coerce.number().min(0).max(100).optional(),
   tierMinItems: z.coerce.number().int().min(1).max(99).optional(),
@@ -117,6 +118,7 @@ export async function saveDepilationZoneResult(formData: FormData): Promise<Depi
   revalidatePath(`/admin/catalogo/${parsed.data.treatmentId}/combos`);
   revalidatePath("/tratamientos");
   revalidatePath("/tratamientos/[slug]", "page");
+  revalidatePath("/reservar");
   return { status: "saved", zoneId: result.data.id, fieldErrors: {}, message: parsed.data.zoneId ? "Zona actualizada." : "Zona creada. Ya podés usarla en combos." };
 }
 
@@ -152,6 +154,7 @@ export async function saveTreatmentComboResult(formData: FormData): Promise<Comb
     mode,
     sessionCount: mode === "single_session" ? 1 : formData.get("sessionCount"),
     fixedPricePesos,
+    appointmentDurationMinutes: formData.get("appointmentDurationMinutes"),
     pricingMode: formData.get("pricingMode"),
     discountPercent: formData.get("discountPercent") || undefined,
     tierMinItems: formData.get("tierMinItems") || undefined,
@@ -176,7 +179,10 @@ export async function saveTreatmentComboResult(formData: FormData): Promise<Comb
           : "Revisá los campos indicados. No se guardó ningún cambio.",
     };
   }
-  const { data: savedId, error } = await supabase.rpc("save_depilation_combo_v2", {
+  if (process.env.DEPILATION_ZONES_ENABLED === "true" && parsed.data.pricingMode !== "fixed_price") {
+    return { status: "invalid", fieldErrors: { pricingMode: ["Los combos conservan un precio propio. El descuento global se aplica solo a zonas sueltas."] }, message: "Indicá el precio final del combo." };
+  }
+  const { data: savedId, error } = await supabase.rpc("save_depilation_combo_v3", {
     requested_combo_id: parsed.data.comboId ?? null,
     requested_treatment_id: parsed.data.treatmentId,
     requested_name: parsed.data.name,
@@ -185,6 +191,7 @@ export async function saveTreatmentComboResult(formData: FormData): Promise<Comb
     requested_mode: parsed.data.mode,
     requested_session_count: parsed.data.sessionCount,
     requested_fixed_price_cents: pesosToCents(parsed.data.fixedPricePesos),
+    requested_appointment_duration_minutes: parsed.data.appointmentDurationMinutes ?? null,
     requested_validity_days: parsed.data.mode === "package" ? parsed.data.validityDays : null,
     requested_display_order: parsed.data.displayOrder,
     requested_is_active: publishing,

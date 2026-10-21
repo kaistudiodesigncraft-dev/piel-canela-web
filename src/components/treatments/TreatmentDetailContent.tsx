@@ -37,7 +37,7 @@ export function TreatmentDetailContent({
         <div className="treatment-detail__intro">
           <p className="eyebrow">{activeSpecial ? "Especial del mes" : category.name}</p>
           <h1>{activeSpecial?.title ?? treatment.name}</h1>
-          {treatment.selectionMode !== "simple" ? <p>Elegí un combo para conocer duración y precio.</p> : null}
+          {treatment.selectionMode !== "simple" ? <p>{treatment.zoneOrder ? "Elegí zonas sueltas o un combo para conocer duración y precio." : "Elegí un combo para conocer duración y precio."}</p> : null}
           <p className="treatment-detail__lead">
             {activeSpecial?.shortDescription ?? treatment.shortDescription}
           </p>
@@ -121,7 +121,7 @@ export function TreatmentDetailContent({
       </div>
 
       {treatment.selectionMode !== "simple" ? (
-        treatment.combos.length > 0 ? <TreatmentComboSelector treatment={treatment} preview={preview} bookableComboIds={bookableComboIds} /> : <section className="combo-selector combo-selector--empty"><h2>No hay combos disponibles para reservar</h2><p>En este momento no hay opciones publicadas disponibles. Podés volver al catálogo para elegir otro tratamiento.</p><Link className="button button--quiet" href="/tratamientos">Ver tratamientos</Link></section>
+        treatment.zoneOrder || treatment.combos.length > 0 ? <TreatmentComboSelector treatment={treatment} preview={preview} bookableComboIds={bookableComboIds} /> : <section className="combo-selector combo-selector--empty"><h2>No hay combos disponibles para reservar</h2><p>En este momento no hay opciones publicadas disponibles. Podés volver al catálogo para elegir otro tratamiento.</p><Link className="button button--quiet" href="/tratamientos">Ver tratamientos</Link></section>
       ) : null}
     </article>
   );

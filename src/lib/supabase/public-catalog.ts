@@ -10,6 +10,7 @@ import type {
   Treatment,
   TreatmentCombo,
   TreatmentCategory,
+  DepilationZone,
 } from "@/domain/treatment";
 import { createSupabasePublicServerClient } from "./public-server";
 import { usesSupabaseDataSource } from "./env";
@@ -135,6 +136,7 @@ interface ComboRow {
   tier_discount_percent?: number | string | null;
   allow_public_extras?: boolean;
   fixed_price_cents: number;
+  appointment_duration_minutes?: number | null;
   validity_days: number | null;
   is_active: boolean;
   display_order: number;
@@ -254,7 +256,7 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
       .order("display_order"),
     supabase
       .from("treatment_combos")
-      .select("id,treatment_id,name,description,audience,mode,session_count,pricing_mode,discount_percent,tier_min_items,tier_discount_percent,allow_public_extras,fixed_price_cents,validity_days,is_active,display_order,zones:treatment_combo_zones(display_order,zone:depilation_zones(id,name,audience,reference_price_cents,duration_minutes,is_active,display_order))")
+      .select("id,treatment_id,name,description,audience,mode,session_count,pricing_mode,discount_percent,tier_min_items,tier_discount_percent,allow_public_extras,fixed_price_cents,appointment_duration_minutes,validity_days,is_active,display_order,zones:treatment_combo_zones(display_order,zone:depilation_zones(id,name,audience,reference_price_cents,duration_minutes,is_active,display_order))")
       .eq("is_active", true)
       .order("display_order"),
     supabase
@@ -296,7 +298,7 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
         .order("display_order"),
       supabase
         .from("treatment_combos")
-        .select("id,treatment_id,name,description,audience,mode,session_count,fixed_price_cents,validity_days,is_active,display_order,zones:treatment_combo_zones(display_order,zone:depilation_zones(id,name,audience,reference_price_cents,duration_minutes,is_active,display_order))")
+        .select("id,treatment_id,name,description,audience,mode,session_count,fixed_price_cents,appointment_duration_minutes,validity_days,is_active,display_order,zones:treatment_combo_zones(display_order,zone:depilation_zones(id,name,audience,reference_price_cents,duration_minutes,is_active,display_order))")
         .eq("is_active", true)
         .order("display_order"),
     ]) as [
@@ -351,6 +353,8 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
         isActive: zone.is_active,
       }));
     if (zones.length === 0) continue;
+    if (process.env.DEPILATION_ZONES_ENABLED === "true" &&
+      (zones.length !== row.zones.length || zones.some(z => z.referencePriceCents <= 0))) continue;
     const referencePriceCents = zones.reduce((total, zone) => total + zone.referencePriceCents, 0) * row.session_count;
     const extras = (extraIdsByCombo.get(row.id) ?? [])
       .map((id) => extrasById.get(id))
@@ -380,10 +384,11 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
       tierDiscountPercent: row.tier_discount_percent == null ? null : Number(row.tier_discount_percent),
       allowPublicExtras: Boolean(row.allow_public_extras),
       fixedPriceCents: row.fixed_price_cents,
+      appointmentDurationMinutes: row.appointment_duration_minutes ?? null,
       referencePriceCents,
       pricePerSessionCents: Math.round(row.fixed_price_cents / row.session_count),
       savingsCents: Math.max(0, referencePriceCents - row.fixed_price_cents),
-      durationMinutes: zones.reduce((total, zone) => total + zone.durationMinutes, 0),
+      durationMinutes: row.appointment_duration_minutes ?? zones.reduce((total, zone) => total + zone.durationMinutes, 0),
       validityDays: row.validity_days,
       zones,
       extras,
@@ -433,6 +438,21 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
     } satisfies Treatment;
   });
 
+  if (process.env.DEPILATION_ZONES_ENABLED === "true") {
+    const [zonesResult, discountResult] = await Promise.all([
+      supabase.from("depilation_zones").select("id,name,audience,reference_price_cents,duration_minutes,is_active,display_order")
+        .eq("is_active",true).gt("reference_price_cents",0).order("display_order").order("name"),
+      supabase.from("business_settings").select("depilation_discount_percent").eq("singleton",true).single(),
+    ]);
+    const zones: DepilationZone[] = (zonesResult.data ?? []).map(row => ({
+      id: row.id, name: row.name, audience: row.audience, referencePriceCents: row.reference_price_cents,
+      durationMinutes: row.duration_minutes, isActive: row.is_active, displayOrder: row.display_order,
+    }));
+    for (const treatment of treatments as Treatment[]) if (treatment.selectionMode !== "simple") {
+      treatment.zoneOrder = { zones, discountPercent: Number(discountResult.data?.depilation_discount_percent ?? 0),
+        ready: !zonesResult.error && !discountResult.error };
+    }
+  }
   const pricedTreatments = treatments.filter(treatment => !treatment.isActive || hasPublicTreatmentPrice(treatment));
   const monthlySpecials = (specialsResult.data as MonthlySpecialRow[]).map((row) => {
     return {

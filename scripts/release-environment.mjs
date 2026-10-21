@@ -5,10 +5,11 @@ function normalizedValue(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function assertValidSupabaseUrl(value) {
+function assertValidSupabaseUrl(value, allowLocalDevelopment = false) {
   try {
     const url = new URL(value);
-    return url.protocol === "https:" && url.hostname.length > 0;
+    return (url.protocol === "https:" && url.hostname.length > 0) ||
+      (allowLocalDevelopment && url.protocol === "http:" && ["127.0.0.1", "localhost"].includes(url.hostname));
   } catch {
     return false;
   }
@@ -49,7 +50,8 @@ export function resolveReleaseEnvironment(env = process.env) {
     const url = normalizedValue(env.NEXT_PUBLIC_SUPABASE_URL);
     const publishableKey = normalizedValue(env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
 
-    if (!assertValidSupabaseUrl(url) || publishableKey.length < 20) {
+    const allowLocalDevelopment = !vercelEnvironment && env.NODE_ENV === "development";
+    if (!assertValidSupabaseUrl(url, allowLocalDevelopment) || publishableKey.length < 20) {
       throw new Error(
         "Supabase está seleccionado, pero faltan NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY válidas.",
       );

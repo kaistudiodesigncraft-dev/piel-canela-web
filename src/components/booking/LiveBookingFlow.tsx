@@ -55,6 +55,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
   const [customer, setCustomer] = useState<CustomerForm>(initialCustomer);
   const [isLoadingSlots, setIsLoadingSlots] = useState(true);
   const [slotsError, setSlotsError] = useState(false);
+  const [priceChanged, setPriceChanged] = useState(false);
   const [slotRefresh, setSlotRefresh] = useState(0);
   const [visibleDateCount, setVisibleDateCount] = useState(INITIAL_VISIBLE_DATES);
   const [showAllSlots, setShowAllSlots] = useState(false);
@@ -80,9 +81,12 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
       for (let index = start; index < dates.length; index += 1) {
         if (epoch !== searchEpoch.current) return;
         const candidate = dates[index]!;
-        const result = await getAvailableSlots({ treatmentId: selection.treatmentId, comboId: selection.comboId ?? null, extraIds: [...(selection.extraIds ?? [])], date: candidate.value });
+        const result = await getAvailableSlots({ treatmentId: selection.treatmentId, comboId: selection.comboId ?? null, extraIds: [...(selection.extraIds ?? [])], zoneOrder: selection.zoneOrder, zoneIds: selection.zoneIds, expectedTotalCents: selection.appliedPriceCents, expectedDurationMinutes: selection.durationMinutes, date: candidate.value });
         if (epoch !== searchEpoch.current) return;
-        if (!result.ok) throw new Error("availability_unavailable");
+        if (!result.ok) {
+          if (result.reason === "price_changed") setPriceChanged(true);
+          throw new Error("availability_unavailable");
+        }
         if (result.slots.length) {
           setDate(candidate.value);
           setVisibleDateCount((count) => Math.max(count, index + 1));
@@ -141,11 +145,12 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
   useEffect(() => {
     let active = true;
 
-    void getAvailableSlots({ treatmentId: selection.treatmentId, comboId: selection.comboId ?? null, extraIds: [...(selection.extraIds ?? [])], date }).then((result) => {
+    void getAvailableSlots({ treatmentId: selection.treatmentId, comboId: selection.comboId ?? null, extraIds: [...(selection.extraIds ?? [])], zoneOrder: selection.zoneOrder, zoneIds: selection.zoneIds, expectedTotalCents: selection.appliedPriceCents, expectedDurationMinutes: selection.durationMinutes, date }).then((result) => {
       if (!active) return;
       if (result.ok) {
         setSlots(result.slots);
       } else {
+        if (result.reason === "price_changed") setPriceChanged(true);
         setSlots([]);
         setSlotsError(true);
       }
@@ -161,13 +166,13 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
     return () => {
       active = false;
     };
-  }, [date, selection.comboId, selection.extraIds, selection.treatmentId, slotRefresh]);
+  }, [date, selection.comboId, selection.extraIds, selection.treatmentId, selection.zoneOrder, selection.zoneIds, selection.appliedPriceCents, selection.durationMinutes, slotRefresh]);
 
   const whatsappMessage = useMemo(() => {
     if (!booking || !selectedDate || !selectedTime) return "";
     return buildManualPreReservationMessage({
       name: customer.fullName,
-      treatment: selection.monthlySpecialTitle ?? selection.treatmentName,
+      treatment: `${selection.monthlySpecialTitle ?? selection.treatmentName}${selection.zoneOrder && selection.comboExtras?.length ? ` · Zonas: ${selection.comboExtras.join(", ")}` : ""}`,
       combo: selection.comboName
         ? `${selection.comboName} (${selection.sessionCount ?? 1} sesiones)`
         : null,
@@ -202,6 +207,10 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
       monthlySpecialId: selection.monthlySpecialId ?? null,
       comboId: selection.comboId ?? null,
       extraIds: [...(selection.extraIds ?? [])],
+      zoneOrder: selection.zoneOrder,
+      zoneIds: selection.zoneIds,
+      expectedTotalCents: selection.appliedPriceCents,
+      expectedDurationMinutes: selection.durationMinutes,
       startsAt: selectedSlot,
       idempotencyKey: idempotencyKey.current,
       website,
@@ -223,6 +232,11 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
       setSlotsError(false);
       setSelectedSlot(null);
       setSlotRefresh((current) => current + 1);
+      return;
+    }
+    if (result.reason === "price_changed") {
+      setPriceChanged(true);
+      setSubmitError("Cambió el precio o la duración de tu selección. Revisá los valores actualizados antes de reservar.");
       return;
     }
     if (result.reason === "treatment" || result.reason === "special") {
@@ -263,7 +277,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
           <div><dt>Código</dt><dd>{booking.code}</dd></div>
           <div><dt>Tratamiento</dt><dd>{selection.monthlySpecialTitle ?? selection.treatmentName}</dd></div>
           {selection.comboName ? <div><dt>Combo</dt><dd>{selection.comboName} · {selection.sessionCount} {selection.sessionCount === 1 ? "sesión" : "sesiones"}</dd></div> : null}
-          {selection.comboExtras?.length ? <div><dt>Extras</dt><dd>{selection.comboExtras.join(" · ")}</dd></div> : null}
+          {selection.comboExtras?.length ? <div><dt>{selection.comboId ? "Zonas adicionales" : "Zonas"}</dt><dd>{selection.comboExtras.join(" · ")}</dd></div> : null}
           <div><dt>Cuándo</dt><dd>{selectedDate.longLabel}, {selectedTime}</dd></div>
           <div><dt>Valor</dt><dd>{formatPrice(selection.appliedPriceCents)}</dd></div>
         </dl>
@@ -321,6 +335,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
       </ol>
 
       {submitError ? <p className="form-message form-message--error" role="alert">{submitError}</p> : null}
+      {priceChanged ? <div className="form-message form-message--error" role="alert"><p>El precio o la duración cambió. No creamos una reserva con valores distintos a los que viste.</p><button type="button" className="button button--quiet" onClick={() => window.location.reload()}>Actualizar selección</button></div> : null}
 
       <div className="booking-flow__layout">
         <div className="booking-flow__main">
@@ -483,7 +498,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
               </div>
               <div className="booking-step-actions">
                 <button className="button button--quiet" type="button" disabled={isSubmitting || submissionUncertain} onClick={() => setStep("details")}><ArrowLeft aria-hidden="true" strokeWidth={1.75} />Corregir datos</button>
-                <button className="button button--primary" type="button" disabled={isSubmitting} onClick={submitBooking}>
+                <button className="button button--primary" type="button" disabled={isSubmitting || priceChanged} onClick={submitBooking}>
                   {isSubmitting ? <><LoaderCircle className="is-spinning" aria-hidden="true" strokeWidth={1.75} />Creando…</> : <>Crear pre-reserva<Check aria-hidden="true" strokeWidth={1.75} /></>}
                 </button>
               </div>
@@ -496,10 +511,13 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
           <h2>{selection.monthlySpecialTitle ?? selection.treatmentName}</h2>
           {selection.monthlySpecialTitle ? <p>{selection.treatmentName}</p> : null}
           {selection.comboName ? <><p className="booking-selection-rail__combo">{selection.comboName}</p><p>{selection.comboZones?.join(" · ")}</p></> : null}
+          {selection.comboExtras?.length ? <p>{selection.comboId ? "Zonas adicionales" : "Zonas"}: {selection.comboExtras.join(" · ")}</p> : null}
           <dl className="numeric">
             <div><dt>Duración</dt><dd>{formatDuration(selection.durationMinutes)}</dd></div>
             {selection.sessionCount && selection.sessionCount > 1 ? <div><dt>Sesiones</dt><dd>{selection.sessionCount}</dd></div> : null}
             <div><dt>Valor total</dt><dd>{formatPrice(selection.appliedPriceCents)}</dd></div>
+            {selection.orderSnapshot ? <div><dt>Subtotal</dt><dd>{formatPrice(selection.orderSnapshot.subtotalCents)}</dd></div> : null}
+            {selection.orderSnapshot && selection.orderSnapshot.discountCents > 0 ? <div><dt>Descuento en zonas ({selection.orderSnapshot.discountPercent} %)</dt><dd>−{formatPrice(selection.orderSnapshot.discountCents)}</dd></div> : null}
             {selection.pricePerSessionCents && selection.sessionCount && selection.sessionCount > 1 ? <div><dt>Por sesión</dt><dd>{formatPrice(selection.pricePerSessionCents)}</dd></div> : null}
           </dl>
           {selectedDate && selectedTime ? (
