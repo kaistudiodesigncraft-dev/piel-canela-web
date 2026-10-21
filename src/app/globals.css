@@ -3955,6 +3955,117 @@ svg {
   flex: 0 0 auto;
 }
 
+.admin-message-selector {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.admin-message-selector .button {
+  min-width: 10rem;
+}
+
+.admin-message-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.admin-message-editor-grid .admin-form {
+  align-content: start;
+}
+
+.admin-message-editor-grid .admin-form h2 {
+  font-size: 1.2rem;
+}
+
+.admin-message-editor-grid .admin-form > p,
+.admin-message-editor-grid details,
+.admin-message-footer,
+.admin-message-history small,
+.admin-message-history span,
+.admin-message-empty p {
+  color: var(--color-text-muted);
+}
+
+.admin-message-history {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  border-block: 1px solid var(--color-border);
+  list-style: none;
+}
+
+.admin-message-history > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding-block: 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-message-history > li:last-child {
+  border-bottom: 0;
+}
+
+.admin-message-history > li > div:first-child {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.admin-message-empty {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  min-height: 8rem;
+  padding: 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.8rem;
+  background: var(--color-white);
+}
+
+.admin-message-empty > svg {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--color-petrol);
+}
+
+.admin-message-empty :is(h3, p),
+.admin-message-footer p {
+  margin: 0;
+}
+
+.admin-message-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding-block: 1.5rem 3rem;
+}
+
+@media (max-width: 900px) {
+  .admin-message-editor-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-message-selector,
+  .admin-message-history > li {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-message-selector .button {
+    width: 100%;
+  }
+
+  .admin-message-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 .admin-slot-picker {
   display: grid;
   gap: 0.9rem;

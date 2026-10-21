@@ -6,6 +6,7 @@ describe("AdminRouteNav", () => {
   it("keeps governance owner-only and links reception modules", () => {
     const { rerender } = render(<AdminRouteNav current="operations" />);
     expect(screen.getByRole("link", { name: "Contenido" })).toHaveAttribute("href", "/admin/contenido");
+    expect(screen.getByRole("link", { name: "Mensajes" })).toHaveAttribute("href", "/admin/mensajes");
     expect(screen.getByRole("link", { name: "Agenda" })).toHaveAttribute("href", "/admin?module=agenda");
     expect(screen.getByRole("link", { name: "Mi cuenta" })).toHaveAttribute("href", "/admin/mi-cuenta");
     expect(screen.queryByRole("link", { name: /accesos y actividad/i })).not.toBeInTheDocument();
