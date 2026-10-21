@@ -244,7 +244,11 @@ export function ContentSectionEditor({
               <ul>
                 {revisions.slice(0, 5).map((revision) => (
                   <li key={revision.id}>
-                    <span>{new Intl.DateTimeFormat("es-AR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(revision.createdAt))}</span>
+                    <span>{new Intl.DateTimeFormat("es-AR", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                      timeZone: "America/Argentina/Cordoba",
+                    }).format(new Date(revision.createdAt))}</span>
                     <form action={restoreSiteContentRevision}>
                       <input type="hidden" name="revisionId" value={revision.id} />
                       <button className="text-link" type="submit">
