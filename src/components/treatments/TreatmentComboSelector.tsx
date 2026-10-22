@@ -7,6 +7,7 @@ import type { DepilationAudience, Treatment } from "@/domain/treatment";
 import { formatDuration, formatPrice } from "@/lib/format";
 import { buildBookingHref } from "@/lib/treatments";
 import { quoteCombo } from "@/lib/combo-quote";
+import { sortByNaturalName } from "@/lib/natural-order";
 import { DepilationOrderSelector } from "./DepilationOrderSelector";
 
 const labels: Record<DepilationAudience, string> = { women: "Mujeres", men: "Hombres", shared: "Compartido" };
@@ -21,7 +22,8 @@ export function TreatmentComboSelector({ treatment, preview = false, bookableCom
   const [filter, setFilter] = useState<Filter>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
-  const visible = useMemo(() => treatment.combos.filter((combo) => (preview || combo.isActive) && (filter === "all" || combo.audience === filter)), [filter, treatment.combos, preview]);
+  const visible = useMemo(() => sortByNaturalName(treatment.combos.filter((combo) =>
+    (preview || combo.isActive) && (filter === "all" || combo.audience === filter))), [filter, treatment.combos, preview]);
   const selected = visible.find((combo) => combo.id === selectedId);
   const canBook = Boolean(selected?.isActive && treatment.isActive && (!preview || bookableComboIds.includes(selected.id)));
   const quote = selected ? quoteCombo(selected, selectedExtraIds) : null;

@@ -6,6 +6,7 @@ import type { DepilationAudience, Treatment } from "@/domain/treatment";
 import { DISCOUNT_MIN_ZONES } from "@/lib/depilation-order";
 import { resolveZoneOrder } from "@/lib/depilation-selection";
 import { formatDuration, formatPrice } from "@/lib/format";
+import { sortByNaturalName } from "@/lib/natural-order";
 import { buildBookingHref } from "@/lib/treatments";
 
 const audienceLabels: Record<DepilationAudience, string> = {
@@ -27,11 +28,11 @@ export function DepilationOrderSelector({ treatment, preview = false }: {
       <button className="button button--quiet" type="button" onClick={() => window.location.reload()}>Reintentar</button>
     </section>;
   }
-  const combos = treatment.combos.filter(c => c.isActive && c.fixedPriceCents > 0);
+  const combos = sortByNaturalName(treatment.combos.filter(c => c.isActive && c.fixedPriceCents > 0));
   const selectedCombo = combos.find(c => c.id === comboId);
   const included = new Set(selectedCombo?.zones.map(z => z.id) ?? []);
-  const visibleZones = catalog.zones.filter(z => z.isActive && z.referencePriceCents > 0 &&
-    (filter === "all" || z.audience === filter));
+  const visibleZones = sortByNaturalName(catalog.zones.filter(z => z.isActive && z.referencePriceCents > 0 &&
+    (filter === "all" || z.audience === filter)));
   let selection = null;
   let selectionError = "";
   try {

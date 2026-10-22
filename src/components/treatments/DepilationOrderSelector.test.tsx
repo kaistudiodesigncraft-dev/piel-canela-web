@@ -22,6 +22,35 @@ const treatment: Treatment = { ...treatments[0]!, isActive: true, selectionMode:
   zoneOrder: { ready: true, discountPercent: 10, zones } };
 afterEach(cleanup);
 describe("depilation order selector", () => {
+  it("shows combos in natural name order and zones alphabetically", () => {
+    const scrambledCombos: TreatmentCombo[] = [
+      { ...combo, id: "79000000-0000-4000-8000-000000000010", name: "Combo Mujeres 10" },
+      { ...combo, id: "79000000-0000-4000-8000-000000000002", name: "Combo Mujeres 2" },
+      { ...combo, id: "79000000-0000-4000-8000-000000000003", name: "Combo Hombres 3" },
+    ];
+
+    render(
+      <DepilationOrderSelector
+        treatment={{
+          ...treatment,
+          combos: scrambledCombos,
+          zoneOrder: { ...treatment.zoneOrder!, zones: [zones[2]!, zones[0]!, zones[1]!] },
+        }}
+      />,
+    );
+
+    expect(screen.getAllByRole("radio", { name: /Combo/i }).map((input) => input.closest("label")?.textContent)).toEqual([
+      expect.stringContaining("Combo Hombres 3"),
+      expect.stringContaining("Combo Mujeres 2"),
+      expect.stringContaining("Combo Mujeres 10"),
+    ]);
+    expect(screen.getAllByRole("checkbox").map((input) => input.closest("label")?.textContent)).toEqual([
+      expect.stringContaining("Axilas"),
+      expect.stringContaining("Incluida"),
+      expect.stringContaining("Piernas"),
+    ]);
+  });
+
   it("books one standalone zone without a combo and advertises the actual discount", async () => {
     const user = userEvent.setup();
     render(<DepilationOrderSelector treatment={treatment} />);
