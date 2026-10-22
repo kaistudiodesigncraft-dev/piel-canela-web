@@ -51,6 +51,30 @@ describe("depilation order selector", () => {
     ]);
   });
 
+  it("filters combos by audience while keeping shared options in both groups", async () => {
+    const user = userEvent.setup();
+    const menCombo = { ...combo, id: "79000000-0000-4000-8000-000000000011", name: "Combo Hombres 1", audience: "men" as const };
+    const womenCombo = { ...combo, id: "79000000-0000-4000-8000-000000000012", name: "Combo Mujeres 1", audience: "women" as const };
+    const sharedCombo = { ...combo, id: "79000000-0000-4000-8000-000000000013", name: "Combo Compartido", audience: "shared" as const };
+
+    render(<DepilationOrderSelector treatment={{ ...treatment, combos: [womenCombo, sharedCombo, menCombo] }} />);
+
+    const comboFilters = within(screen.getByRole("group", { name: "Filtrar combos" }));
+    expect(screen.getByText("Combo Hombres 1")).toBeInTheDocument();
+    expect(screen.getByText("Combo Mujeres 1")).toBeInTheDocument();
+    expect(screen.getByText("Combo Compartido")).toBeInTheDocument();
+
+    await user.click(comboFilters.getByRole("button", { name: "Mujeres" }));
+    expect(screen.queryByText("Combo Hombres 1")).not.toBeInTheDocument();
+    expect(screen.getByText("Combo Mujeres 1")).toBeInTheDocument();
+    expect(screen.getByText("Combo Compartido")).toBeInTheDocument();
+
+    await user.click(comboFilters.getByRole("button", { name: "Hombres" }));
+    expect(screen.getByText("Combo Hombres 1")).toBeInTheDocument();
+    expect(screen.queryByText("Combo Mujeres 1")).not.toBeInTheDocument();
+    expect(screen.getByText("Combo Compartido")).toBeInTheDocument();
+  });
+
   it("books one standalone zone without a combo and advertises the actual discount", async () => {
     const user = userEvent.setup();
     render(<DepilationOrderSelector treatment={treatment} />);
@@ -69,7 +93,7 @@ describe("depilation order selector", () => {
     const user = userEvent.setup();
     render(<DepilationOrderSelector treatment={treatment} />);
     await user.click(screen.getByRole("checkbox", { name: /Axilas/i }));
-    await user.click(screen.getByRole("button", { name: "Hombres" }));
+    await user.click(within(screen.getByLabelText("Filtrar zonas")).getByRole("button", { name: "Hombres" }));
     await user.click(screen.getByRole("checkbox", { name: /Piernas/i }));
     const summary = within(screen.getByRole("complementary", { name: "Resumen de tu elección" }));
     expect(summary.getByText("$ 43.200")).toBeInTheDocument();

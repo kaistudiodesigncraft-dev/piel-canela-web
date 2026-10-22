@@ -19,6 +19,7 @@ export function DepilationOrderSelector({ treatment, preview = false }: {
 }) {
   const [comboId, setComboId] = useState<string>();
   const [zoneIds, setZoneIds] = useState<string[]>([]);
+  const [comboFilter, setComboFilter] = useState<"all" | "women" | "men">("all");
   const [filter, setFilter] = useState<"all" | DepilationAudience>("all");
   const catalog = treatment.zoneOrder;
   if (!catalog?.ready) {
@@ -29,6 +30,7 @@ export function DepilationOrderSelector({ treatment, preview = false }: {
     </section>;
   }
   const combos = sortByNaturalName(treatment.combos.filter(c => c.isActive && c.fixedPriceCents > 0));
+  const visibleCombos = combos.filter(combo => comboFilter === "all" || combo.audience === comboFilter || combo.audience === "shared");
   const selectedCombo = combos.find(c => c.id === comboId);
   const included = new Set(selectedCombo?.zones.map(z => z.id) ?? []);
   const visibleZones = sortByNaturalName(catalog.zones.filter(z => z.isActive && z.referencePriceCents > 0 &&
@@ -44,6 +46,12 @@ export function DepilationOrderSelector({ treatment, preview = false }: {
     setComboId(id);
     setZoneIds(current => current.filter(zone => !next?.zones.some(z => z.id === zone)));
   }
+  function filterCombos(value: "all" | "women" | "men") {
+    setComboFilter(value);
+    if (selectedCombo && value !== "all" && selectedCombo.audience !== value && selectedCombo.audience !== "shared") {
+      chooseCombo(undefined);
+    }
+  }
   return <section className="combo-selector depilation-order" aria-labelledby={`order-${treatment.id}`}>
     <div className="combo-selector__heading"><div>
       <h2 id={`order-${treatment.id}`}>Elegí cómo querés depilarte</h2>
@@ -53,11 +61,16 @@ export function DepilationOrderSelector({ treatment, preview = false }: {
       <div className="combo-selector__options">
         <fieldset className="depilation-order__choices">
           <legend>Tu punto de partida</legend>
+          <div className="combo-selector__filters" role="group" aria-label="Filtrar combos">
+            {(["all", "women", "men"] as const).map(value => <button key={value} type="button"
+              className={`filter-chip${comboFilter === value ? " is-active" : ""}`} aria-pressed={comboFilter === value}
+              onClick={() => filterCombos(value)}>{value === "all" ? "Ambos" : audienceLabels[value]}</button>)}
+          </div>
           <label className={`combo-option${!comboId ? " is-selected" : ""}`}>
             <input type="radio" name={`order-combo-${treatment.id}`} checked={!comboId} onChange={() => chooseCombo(undefined)} />
             <span className="combo-option__body"><strong>Elegir zonas sueltas</strong><small>Una zona o tu propia combinación.</small></span>
           </label>
-          {combos.map(combo => <label key={combo.id} className={`combo-option${comboId === combo.id ? " is-selected" : ""}`}>
+          {visibleCombos.map(combo => <label key={combo.id} className={`combo-option${comboId === combo.id ? " is-selected" : ""}`}>
             <input type="radio" name={`order-combo-${treatment.id}`} checked={comboId === combo.id} onChange={() => chooseCombo(combo.id)} />
             <span className="combo-option__body">
               <span className="combo-option__top"><strong>{combo.name}</strong><span>{audienceLabels[combo.audience]}</span></span>
@@ -65,6 +78,7 @@ export function DepilationOrderSelector({ treatment, preview = false }: {
               <span className="combo-option__facts numeric"><span>{combo.sessionCount} {combo.sessionCount === 1 ? "sesión" : "sesiones"}</span><span>{formatDuration(combo.durationMinutes)}</span><strong>{formatPrice(combo.fixedPriceCents)}</strong></span>
             </span>
           </label>)}
+          {visibleCombos.length === 0 ? <p>Todavía no hay combos publicados para este filtro.</p> : null}
         </fieldset>
         <fieldset className="depilation-order__choices">
           <legend>{selectedCombo ? "Zonas adicionales" : "Seleccioná tus zonas"}</legend>
