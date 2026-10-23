@@ -113,6 +113,8 @@ export interface Treatment {
   bufferMinutes: number;
   startIntervalMinutes: 15 | 30 | 60;
   selectionMode: TreatmentSelectionMode;
+  catalogGroup?: import("@/lib/catalog-order").CatalogGroup;
+  isCombo?: boolean;
   combos: readonly TreatmentCombo[];
   zoneOrder?: {
     zones: readonly DepilationZone[];

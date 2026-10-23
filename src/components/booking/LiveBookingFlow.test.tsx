@@ -4,12 +4,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ResolvedBookingSelection } from "@/domain/treatment";
 import { LiveBookingFlow } from "./LiveBookingFlow";
 
-const { getAvailableSlotsMock, createPublicBookingMock } = vi.hoisted(() => ({
+const { getAvailableDatesMock, getAvailableSlotsMock, createPublicBookingMock } = vi.hoisted(() => ({
+  getAvailableDatesMock: vi.fn(),
   getAvailableSlotsMock: vi.fn(),
   createPublicBookingMock: vi.fn(),
 }));
 
 vi.mock("@/app/(public)/reservar/actions", () => ({
+  getAvailableDates: (...args: unknown[]) => getAvailableDatesMock(...args),
   getAvailableSlots: (...args: unknown[]) => getAvailableSlotsMock(...args),
   createPublicBooking: (...args: unknown[]) => createPublicBookingMock(...args),
 }));
@@ -32,12 +34,14 @@ const dates = [{
 
 describe("LiveBookingFlow", () => {
   beforeEach(() => {
+    getAvailableDatesMock.mockReset();
     getAvailableSlotsMock.mockReset();
     createPublicBookingMock.mockReset();
     getAvailableSlotsMock.mockResolvedValue({
       ok: true,
       slots: [{ startsAt: "2026-08-17T15:30:00.000Z", endsAt: "2026-08-17T16:45:00.000Z" }],
     });
+    getAvailableDatesMock.mockResolvedValue({ ok: true, dates: dates.map((item) => item.value) });
     createPublicBookingMock.mockResolvedValue({
       ok: true,
       bookingId: "50000000-0000-4000-8000-000000000001",
@@ -132,8 +136,7 @@ describe("LiveBookingFlow", () => {
     expect(screen.getByRole("button", { name: "Ver menos horarios" })).toHaveAttribute("aria-expanded", "true");
   });
 
-  it("reveals the administrator-defined booking window progressively", async () => {
-    const user = userEvent.setup();
+  it("shows only days that still have real availability", async () => {
     const longWindow = Array.from({ length: 18 }, (_, index) => ({
       value: `2026-09-${String(index + 1).padStart(2, "0")}`,
       weekday: "Lun",
@@ -142,10 +145,11 @@ describe("LiveBookingFlow", () => {
       longLabel: `lunes, ${index + 1} de septiembre`,
     }));
 
+    getAvailableDatesMock.mockResolvedValue({ ok: true, dates: [longWindow[1]!.value, longWindow[17]!.value] });
     render(<LiveBookingFlow selection={selection} dates={longWindow} whatsappNumber="5493515550000" />);
-    expect(screen.queryByRole("button", { name: /18 Sep/i })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Ver 4 fechas más" }));
+    expect(await screen.findByRole("button", { name: /2 Sep/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /18 Sep/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /1 Sep/i })).not.toBeInTheDocument();
   });
 
   it("recovers from a slot taken concurrently without losing customer data", async () => {

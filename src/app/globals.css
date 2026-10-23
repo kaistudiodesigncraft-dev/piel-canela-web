@@ -565,6 +565,34 @@ svg {
   color: var(--color-text-secondary);
 }
 
+.catalog-group-item {
+  display: contents;
+}
+
+.catalog-group-heading {
+  grid-column: 1 / -1;
+  margin: 1.5rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 1.25rem + 1vw, 2.25rem);
+  font-weight: 400;
+  color: var(--color-petrol);
+}
+
+.booking-month-select {
+  display: grid;
+  gap: 0.45rem;
+  max-width: 22rem;
+  margin-bottom: 1rem;
+}
+
+.booking-month-select span {
+  font-weight: 700;
+}
+
+.booking-month-select select {
+  min-height: 2.75rem;
+}
+
 .section--specials {
   background: var(--color-bone);
 }

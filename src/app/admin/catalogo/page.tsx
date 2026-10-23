@@ -25,7 +25,7 @@ export default async function AdminCatalogPage({ searchParams }: { searchParams:
     supabase.from("treatment_categories").select("id,name,slug,short_description,icon_name,display_order,is_active").order("display_order"),
     supabase.from("specialties").select("id,name,is_active").order("display_order"),
     supabase.from("professionals").select("id,specialty_id,full_name,public_name,is_active").order("display_order"),
-    supabase.from("treatments").select("id,category_id,specialty_id,professional_id,requires_professional_assignment,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order").order("display_order").order("name"),
+    supabase.from("treatments").select("id,category_id,specialty_id,professional_id,requires_professional_assignment,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,catalog_group,is_combo,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order").order("display_order").order("name"),
     supabase.from("treatment_professionals").select("treatment_id,professional_id").eq("is_active", true),
     supabase.from("treatment_combos").select("treatment_id").eq("is_active", true),
     supabase.from("bookings").select("treatment_id").in("status", [...OCCUPYING_BOOKING_STATUSES]).gte("starts_at", now),

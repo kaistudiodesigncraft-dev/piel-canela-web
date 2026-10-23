@@ -22,6 +22,15 @@ const availabilitySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 
+const availableDatesSchema = z.object({
+  ...zoneSelectionFields,
+  treatmentId: z.string().uuid(),
+  comboId: z.string().uuid().nullable().optional().default(null),
+  extraIds: z.array(z.string().uuid()).optional().default([]),
+  fromDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  toDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
 const bookingSchema = z.object({
   ...zoneSelectionFields,
   treatmentId: z.string().uuid(),
@@ -39,6 +48,10 @@ const bookingSchema = z.object({
 
 export type AvailabilityResult =
   | { ok: true; slots: { startsAt: string; endsAt: string }[] }
+  | { ok: false; reason: "configuration" | "invalid" | "unavailable" | "price_changed" };
+
+export type AvailableDatesResult =
+  | { ok: true; dates: string[] }
   | { ok: false; reason: "configuration" | "invalid" | "unavailable" | "price_changed" };
 
 export type CreateBookingResult =
@@ -101,6 +114,47 @@ export async function getAvailableSlots(input: unknown): Promise<AvailabilityRes
       endsAt: slot.ends_at,
     })),
   };
+}
+
+export async function getAvailableDates(input: unknown): Promise<AvailableDatesResult> {
+  if (!usesSupabaseDataSource()) return { ok: false, reason: "configuration" };
+  const parsed = availableDatesSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, reason: "invalid" };
+  const from = new Date(`${parsed.data.fromDate}T12:00:00Z`);
+  const to = new Date(`${parsed.data.toDate}T12:00:00Z`);
+  const days = Math.round((to.getTime() - from.getTime()) / 86_400_000);
+  if (!Number.isFinite(days) || days < 0 || days > 366) return { ok: false, reason: "invalid" };
+  if (process.env.DEPILATION_ZONES_ENABLED === "true" && parsed.data.comboId && !parsed.data.zoneOrder) return { ok: false, reason: "invalid" };
+
+  const supabase = createSupabasePublicServerClient();
+  if (parsed.data.zoneOrder) {
+    const secret = process.env.BOOKING_GUARD_SECRET;
+    if (!secret || secret.length < 32 || parsed.data.extraIds.length) return { ok: false, reason: "configuration" };
+    try {
+      const quote = await createZoneOrderQuote(parsed.data.treatmentId, parsed.data.comboId, parsed.data.zoneIds, secret);
+      if (quote.order.totalCents !== parsed.data.expectedTotalCents || quote.order.durationMinutes !== parsed.data.expectedDurationMinutes) return { ok: false, reason: "price_changed" };
+      const { data, error } = await supabase.rpc("get_available_dates_for_zone_order", {
+        payload: quote.payload,
+        signature: quote.signature,
+        requested_from_date: parsed.data.fromDate,
+        requested_to_date: parsed.data.toDate,
+      });
+      if (error) return { ok: false, reason: error.message.includes("quote_changed") ? "price_changed" : "unavailable" };
+      return { ok: true, dates: ((data ?? []) as { available_date: string }[]).map((row) => row.available_date) };
+    } catch {
+      return { ok: false, reason: "unavailable" };
+    }
+  }
+  if (parsed.data.zoneIds.length) return { ok: false, reason: "invalid" };
+  const { data, error } = await supabase.rpc("get_available_dates_for_selection_v2", {
+    requested_treatment_id: parsed.data.treatmentId,
+    requested_combo_id: parsed.data.comboId,
+    requested_from_date: parsed.data.fromDate,
+    requested_to_date: parsed.data.toDate,
+    requested_extra_ids: parsed.data.extraIds,
+  });
+  if (error) return { ok: false, reason: "unavailable" };
+  return { ok: true, dates: ((data ?? []) as { available_date: string }[]).map((row) => row.available_date) };
 }
 
 export async function createPublicBooking(input: unknown): Promise<CreateBookingResult> {

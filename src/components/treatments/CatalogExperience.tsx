@@ -10,6 +10,7 @@ import type {
   TreatmentCategory,
 } from "@/domain/treatment";
 import { getMonthlySpecialForTreatment } from "@/lib/treatments";
+import { sortCatalogItems, type CatalogGroup } from "@/lib/catalog-order";
 import { StatePanel } from "@/components/ui/StatePanel";
 import { TreatmentDetailDialog } from "./TreatmentDetailDialog";
 import { TreatmentEditorialCard } from "./TreatmentEditorialCard";
@@ -51,9 +52,26 @@ export function CatalogExperience({
   const visibleTreatments = useMemo(() => {
     const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es");
     const active = treatments.filter((treatment) => treatment.isActive && normalize(treatment.name).includes(normalize(searchQuery)));
-    if (!selectedCategory) return active;
-    return active.filter((treatment) => treatment.categoryId === selectedCategory.id);
-  }, [selectedCategory, treatments, searchQuery]);
+    const filtered = selectedCategory ? active.filter((treatment) => treatment.categoryId === selectedCategory.id) : active;
+    const categoryOrder = new Map(categories.map((category) => [category.id, category.displayOrder]));
+    return sortCatalogItems(filtered, (treatment) => ({
+      categoryOrder: categoryOrder.get(treatment.categoryId) ?? 999,
+      catalogGroup: treatment.catalogGroup ?? "default",
+      isCombo: treatment.isCombo ?? false,
+      displayOrder: treatment.displayOrder,
+    }));
+  }, [categories, selectedCategory, treatments, searchQuery]);
+
+  const groupLabel = (treatment: Treatment) => {
+    if (treatment.isCombo) return "Combos";
+    const labels: Record<CatalogGroup, string | null> = {
+      default: null,
+      facial: "Tratamientos faciales",
+      brows_lashes: "Cejas y pestañas",
+      depilation: "Depilación",
+    };
+    return labels[treatment.catalogGroup ?? "default"];
+  };
 
   function withCurrentParams(changes: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -146,20 +164,21 @@ export function CatalogExperience({
         />
       ) : (
         <div className="treatment-editorial-grid">
-          {visibleTreatments.map((treatment) => {
+          {visibleTreatments.map((treatment, index) => {
             const category = categories.find((item) => item.id === treatment.categoryId);
             if (!category) return null;
+            const currentGroup = selectedCategory?.slug === "estetica" ? groupLabel(treatment) : null;
+            const previousGroup = index > 0 ? groupLabel(visibleTreatments[index - 1]!) : null;
             return (
-              <TreatmentEditorialCard
-                key={treatment.id}
-                treatment={treatment}
-                category={category}
-                detailHref={withCurrentParams({
-                  treatment: treatment.slug,
-                  monthlySpecial: null,
-                })}
-                onOpen={rememberOpener}
-              />
+              <div className="catalog-group-item" key={treatment.id}>
+                {currentGroup && currentGroup !== previousGroup ? <h3 className="catalog-group-heading">{currentGroup}</h3> : null}
+                <TreatmentEditorialCard
+                  treatment={treatment}
+                  category={category}
+                  detailHref={withCurrentParams({ treatment: treatment.slug, monthlySpecial: null })}
+                  onOpen={rememberOpener}
+                />
+              </div>
             );
           })}
         </div>

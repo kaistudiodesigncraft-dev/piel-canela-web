@@ -16,6 +16,7 @@ import Link from "next/link";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   createPublicBooking,
+  getAvailableDates,
   getAvailableSlots,
 } from "@/app/(public)/reservar/actions";
 import type { ResolvedBookingSelection } from "@/domain/treatment";
@@ -45,11 +46,15 @@ interface LiveBookingFlowProps {
 const initialCustomer: CustomerForm = { fullName: "", phone: "", email: "", notes: "" };
 const stepOrder: BookingStep[] = ["schedule", "details", "review", "success"];
 const INITIAL_VISIBLE_SLOTS = 12;
-const INITIAL_VISIBLE_DATES = 14;
 
 export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookingFlowProps) {
   const [step, setStep] = useState<BookingStep>("schedule");
-  const [date, setDate] = useState(dates[0]?.value ?? "");
+  const [date, setDate] = useState("");
+  const [availableDates, setAvailableDates] = useState<readonly BookingDateOption[]>([]);
+  const [isLoadingDates, setIsLoadingDates] = useState(true);
+  const [datesError, setDatesError] = useState(false);
+  const [datesRefresh, setDatesRefresh] = useState(0);
+  const [selectedMonth, setSelectedMonth] = useState("");
   const [slots, setSlots] = useState<{ startsAt: string; endsAt: string }[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [customer, setCustomer] = useState<CustomerForm>(initialCustomer);
@@ -57,7 +62,6 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
   const [slotsError, setSlotsError] = useState(false);
   const [priceChanged, setPriceChanged] = useState(false);
   const [slotRefresh, setSlotRefresh] = useState(0);
-  const [visibleDateCount, setVisibleDateCount] = useState(INITIAL_VISIBLE_DATES);
   const [showAllSlots, setShowAllSlots] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -67,52 +71,17 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
   const idempotencyKey = useRef<string | null>(null);
   const submissionInFlight = useRef(false);
   const initialStepRender = useRef(true);
-  const searchEpoch = useRef(0);
-  const [searchingNext, setSearchingNext] = useState(false);
-  const [searchMessage, setSearchMessage] = useState("");
-  useEffect(() => () => { searchEpoch.current += 1; }, []);
-
-  async function findNextAvailableDate() {
-    const epoch = ++searchEpoch.current;
-    setSearchingNext(true);
-    setSearchMessage("Buscando dentro del período habilitado…");
-    try {
-      const start = dates.findIndex((item) => item.value === date) + 1;
-      for (let index = start; index < dates.length; index += 1) {
-        if (epoch !== searchEpoch.current) return;
-        const candidate = dates[index]!;
-        const result = await getAvailableSlots({ treatmentId: selection.treatmentId, comboId: selection.comboId ?? null, extraIds: [...(selection.extraIds ?? [])], zoneOrder: selection.zoneOrder, zoneIds: selection.zoneIds, expectedTotalCents: selection.appliedPriceCents, expectedDurationMinutes: selection.durationMinutes, date: candidate.value });
-        if (epoch !== searchEpoch.current) return;
-        if (!result.ok) {
-          if (result.reason === "price_changed") setPriceChanged(true);
-          throw new Error("availability_unavailable");
-        }
-        if (result.slots.length) {
-          setDate(candidate.value);
-          setVisibleDateCount((count) => Math.max(count, index + 1));
-          setSelectedSlot(null);
-          setSlotsError(false);
-          setIsLoadingSlots(true);
-          setShowAllSlots(false);
-          setSearchMessage(`Encontramos horarios para ${candidate.longLabel}. Elegí uno para continuar.`);
-          return;
-        }
-      }
-      setSearchMessage("No hay horarios posteriores disponibles dentro del período habilitado. Podés revisar una fecha anterior o consultar a recepción.");
-    } catch {
-      if (epoch === searchEpoch.current) setSearchMessage("No pudimos completar la búsqueda. Tu selección se conserva; intentá nuevamente.");
-    } finally {
-      if (epoch === searchEpoch.current) setSearchingNext(false);
-    }
-  }
-
   const selectedDate = dates.find((item) => item.value === date);
   const selectedTime = selectedSlot ? formatBookingTime(selectedSlot) : null;
   const currentStepIndex = stepOrder.indexOf(step);
   const visibleSlots = showAllSlots ? slots : slots.slice(0, INITIAL_VISIBLE_SLOTS);
   const hiddenSlotCount = Math.max(0, slots.length - visibleSlots.length);
-  const visibleDates = dates.slice(0, visibleDateCount);
-  const hiddenDateCount = Math.max(0, dates.length - visibleDates.length);
+  const availableMonths = useMemo(() => Array.from(new Map(availableDates.map((item) => {
+    const key = item.value.slice(0, 7);
+    const label = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${item.value}T12:00:00Z`));
+    return [key, label.charAt(0).toUpperCase() + label.slice(1)];
+  })).entries()), [availableDates]);
+  const visibleDates = availableDates.filter((item) => item.value.startsWith(selectedMonth));
   const canContinueByWhatsApp = Boolean(whatsappNumber && normalizeWhatsAppPhone(whatsappNumber));
 
   useEffect(() => {
@@ -144,6 +113,43 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
 
   useEffect(() => {
     let active = true;
+    if (!dates.length) return;
+    void getAvailableDates({
+      treatmentId: selection.treatmentId,
+      comboId: selection.comboId ?? null,
+      extraIds: [...(selection.extraIds ?? [])],
+      zoneOrder: selection.zoneOrder,
+      zoneIds: selection.zoneIds,
+      expectedTotalCents: selection.appliedPriceCents,
+      expectedDurationMinutes: selection.durationMinutes,
+      fromDate: dates[0]!.value,
+      toDate: dates[dates.length - 1]!.value,
+    }).then((result) => {
+      if (!active) return;
+      if (!result.ok) {
+        if (result.reason === "price_changed") setPriceChanged(true);
+        setDatesError(true);
+        setAvailableDates([]);
+        return;
+      }
+      const allowed = new Set(result.dates);
+      const nextDates = dates.filter((item) => allowed.has(item.value));
+      setAvailableDates(nextDates);
+      const nextDate = nextDates[0]?.value ?? "";
+      setDate(nextDate);
+      setSelectedMonth(nextDate.slice(0, 7));
+    }).catch(() => {
+      if (active) setDatesError(true);
+    }).finally(() => {
+      if (active) setIsLoadingDates(false);
+    });
+    return () => { active = false; };
+  }, [dates, datesRefresh, selection.appliedPriceCents, selection.comboId, selection.durationMinutes, selection.extraIds, selection.treatmentId, selection.zoneIds, selection.zoneOrder]);
+
+  useEffect(() => {
+    let active = true;
+
+    if (!date) return;
 
     void getAvailableSlots({ treatmentId: selection.treatmentId, comboId: selection.comboId ?? null, extraIds: [...(selection.extraIds ?? [])], zoneOrder: selection.zoneOrder, zoneIds: selection.zoneIds, expectedTotalCents: selection.appliedPriceCents, expectedDurationMinutes: selection.durationMinutes, date }).then((result) => {
       if (!active) return;
@@ -343,7 +349,20 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
             <div className="booking-step-panel">
               <fieldset>
                 <legend>Elegí un día</legend>
-                <div className="date-choice-grid">
+                {isLoadingDates ? <p className="booking-inline-state" role="status"><LoaderCircle className="is-spinning" aria-hidden="true" /> Buscando días con horarios…</p> : datesError ? (
+                  <div><p className="booking-inline-state booking-inline-state--error" role="alert">No pudimos consultar los días disponibles.</p><button className="button button--quiet" type="button" onClick={() => { setIsLoadingDates(true); setDatesError(false); setDatesRefresh((value) => value + 1); }}>Reintentar</button></div>
+                ) : availableDates.length === 0 ? (
+                  <p className="booking-inline-state">No hay días con horarios disponibles dentro del período habilitado. Consultá con recepción para evaluar otra fecha.</p>
+                ) : <>
+                  {availableMonths.length > 1 ? <label className="booking-month-select"><span>Mes disponible</span><select value={selectedMonth} onChange={(event) => {
+                    const month = event.target.value;
+                    setSelectedMonth(month);
+                    const first = availableDates.find((item) => item.value.startsWith(month));
+                    if (first) setDate(first.value);
+                    setSelectedSlot(null);
+                    setShowAllSlots(false);
+                  }}>{availableMonths.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label> : null}
+                  <div className="date-choice-grid" aria-label="Días con horarios disponibles">
                   {visibleDates.map((item) => (
                     <button
                       key={item.value}
@@ -351,9 +370,6 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
                       type="button"
                       aria-pressed={date === item.value}
                       onClick={() => {
-                        searchEpoch.current += 1;
-                        setSearchingNext(false);
-                        setSearchMessage("");
                         if (date === item.value) return;
                         setDate(item.value);
                         setIsLoadingSlots(true);
@@ -365,24 +381,13 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
                       <span>{item.weekday}</span><strong>{item.day}</strong><small>{item.month}</small>
                     </button>
                   ))}
-                </div>
-                {hiddenDateCount > 0 ? (
-                  <button
-                    className="button button--quiet booking-dates-toggle"
-                    type="button"
-                    onClick={() => setVisibleDateCount((current) => Math.min(current + INITIAL_VISIBLE_DATES, dates.length))}
-                  >
-                    Ver {Math.min(INITIAL_VISIBLE_DATES, hiddenDateCount)} fechas más
-                  </button>
-                ) : null}
+                  </div>
+                </>}
               </fieldset>
 
               <fieldset>
                 <legend>Horarios disponibles</legend>
-                <button className="button button--quiet" type="button" disabled={searchingNext || !dates.length} onClick={() => void findNextAvailableDate()}>{searchingNext ? "Buscando…" : "Buscar próxima fecha disponible"}</button>
-                {searchingNext ? <button className="button button--quiet" type="button" onClick={() => { searchEpoch.current += 1; setSearchingNext(false); setSearchMessage("Búsqueda cancelada. Tu selección se conserva."); }}>Cancelar búsqueda</button> : null}
-                {searchMessage ? <p role="status">{searchMessage}</p> : null}
-                {isLoadingSlots ? (
+                {!date ? <p className="booking-inline-state">Elegí un día disponible para ver sus horarios.</p> : isLoadingSlots ? (
                   <p className="booking-inline-state" role="status">
                     <LoaderCircle className="is-spinning" aria-hidden="true" strokeWidth={1.75} /> Consultando horarios…
                   </p>

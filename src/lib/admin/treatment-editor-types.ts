@@ -41,6 +41,8 @@ export interface AdminTreatmentRow {
   buffer_minutes: number;
   start_interval_minutes: 15 | 30 | 60;
   selection_mode: "simple" | "closed_combo" | "combo_with_extras";
+  catalog_group?: import("@/lib/catalog-order").CatalogGroup;
+  is_combo?: boolean;
   price_cents: number;
   preparation: string | null;
   contraindications: string | null;

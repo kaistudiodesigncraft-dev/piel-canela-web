@@ -9,6 +9,7 @@ import { BrandCategoryIcon } from "@/components/icons/BrandCategoryIcon";
 import { focalPointToPercentage, getTreatmentPublicationState } from "@/lib/admin/catalog";
 import type { AdminCategoryRow, AdminProfessionalRow, AdminSpecialtyRow, AdminTreatmentRow } from "@/lib/admin/treatment-editor-types";
 import { formatDuration, formatPrice } from "@/lib/format";
+import { sortCatalogItems } from "@/lib/catalog-order";
 
 export type { AdminCategoryRow, AdminProfessionalRow, AdminSpecialtyRow, AdminTreatmentRow } from "@/lib/admin/treatment-editor-types";
 
@@ -39,11 +40,17 @@ export function CatalogAdmin({ categories, specialties, treatments, feedback, bo
   const [stateFilter, setStateFilter] = useState<"all" | "published" | "ready" | "draft">("all");
   const categoryName = useMemo(() => new Map(categories.map((item) => [item.id, item.name])), [categories]);
   const specialtyName = useMemo(() => new Map(specialties.map((item) => [item.id, item.name])), [specialties]);
-  const filtered = treatments.filter((treatment) => {
+  const categoryOrder = useMemo(() => new Map(categories.map((item) => [item.id, item.display_order])), [categories]);
+  const filtered = sortCatalogItems(treatments.filter((treatment) => {
     const state = getTreatmentPublicationState({ isActive: treatment.is_active, imagePath: treatment.image_path, imageAlt: treatment.image_alt, shortDescription: treatment.short_description, description: treatment.description, priceCents: treatment.price_cents, selectionMode: treatment.selection_mode, hasActiveCombo: treatment.has_active_combo });
     if (stateFilter !== "all" && state !== stateFilter) return false;
     return `${treatment.name} ${categoryName.get(treatment.category_id)} ${specialtyName.get(treatment.specialty_id)}`.toLocaleLowerCase("es-AR").includes(query.trim().toLocaleLowerCase("es-AR"));
-  });
+  }), (treatment) => ({
+    categoryOrder: categoryOrder.get(treatment.category_id) ?? 999,
+    catalogGroup: treatment.catalog_group ?? "default",
+    isCombo: treatment.is_combo ?? false,
+    displayOrder: treatment.display_order,
+  }));
 
   return (
     <>

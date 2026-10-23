@@ -107,6 +107,8 @@ interface TreatmentRow {
   buffer_minutes: number;
   start_interval_minutes: 15 | 30 | 60;
   selection_mode: "simple" | "closed_combo" | "combo_with_extras";
+  catalog_group?: import("@/lib/catalog-order").CatalogGroup;
+  is_combo?: boolean;
   requires_professional_assignment?: boolean;
   price_cents: number;
   preparation: string | null;
@@ -248,7 +250,7 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
       .order("display_order"),
     supabase
       .from("treatments")
-      .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,requires_professional_assignment,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,professional:professionals!treatments_professional_id_fkey(public_name,is_active)")
+      .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,catalog_group,is_combo,requires_professional_assignment,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,professional:professionals!treatments_professional_id_fkey(public_name,is_active)")
       .order("display_order"),
     supabase
       .from("monthly_specials")
@@ -417,6 +419,8 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
       bufferMinutes: row.buffer_minutes,
       startIntervalMinutes: row.start_interval_minutes,
       selectionMode: row.selection_mode,
+      catalogGroup: row.catalog_group ?? "default",
+      isCombo: row.is_combo ?? false,
       combos: combosByTreatment.get(row.id) ?? [],
       priceCents: row.price_cents,
       preparation: row.preparation,

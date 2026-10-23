@@ -1,4 +1,5 @@
 import { quoteCombo } from "./combo-quote";
+import { sortCatalogItems } from "./catalog-order";
 import type {
   BookingInitialSelection,
   MonthlySpecial,
@@ -22,9 +23,15 @@ export function hasPublicTreatmentPrice(treatment: Treatment): boolean {
 export function getActiveTreatments(
   source: readonly Treatment[],
 ): readonly Treatment[] {
-  return source
-    .filter((treatment) => treatment.isActive && hasPublicTreatmentPrice(treatment))
-    .toSorted((a, b) => a.displayOrder - b.displayOrder);
+  return sortCatalogItems(
+    source.filter((treatment) => treatment.isActive && hasPublicTreatmentPrice(treatment)),
+    (treatment) => ({
+      categoryOrder: 0,
+      catalogGroup: treatment.catalogGroup ?? "default",
+      isCombo: treatment.isCombo ?? false,
+      displayOrder: treatment.displayOrder,
+    }),
+  );
 }
 
 export function filterTreatmentsByCategory(
