@@ -30,6 +30,9 @@ const treatmentSchema = z.object({
   durationMinutes: z.coerce.number().int().min(5).max(480),
   bufferMinutes: z.coerce.number().int().min(0).max(180),
   startIntervalMinutes: z.coerce.number().int().refine((value) => [15, 30, 60].includes(value)),
+  serviceFrequency: z.enum(["weekly", "monthly"]),
+  monthlyWeekday: z.coerce.number().int().min(0).max(6).nullable(),
+  monthlyOccurrenceOrdinals: z.array(z.coerce.number().int().refine((value) => [-1, 1, 2, 3, 4].includes(value))).max(5),
   selectionMode: z.enum(["simple", "closed_combo", "combo_with_extras"]),
   pricePesos: z.coerce.number().int().min(0),
   preparation: z.string().trim().max(1400).optional(),
@@ -193,6 +196,9 @@ async function saveTreatmentImpl(
     durationMinutes: formData.get("durationMinutes"),
     bufferMinutes: formData.get("bufferMinutes"),
     startIntervalMinutes: formData.get("startIntervalMinutes"),
+    serviceFrequency: formData.get("serviceFrequency"),
+    monthlyWeekday: formData.get("serviceFrequency") === "monthly" ? formData.get("monthlyWeekday") : null,
+    monthlyOccurrenceOrdinals: [...new Set(formData.getAll("monthlyOccurrenceOrdinals"))],
     selectionMode: formData.get("selectionMode"),
     pricePesos: formData.get("pricePesos"),
     preparation: formData.get("preparation") || undefined,
@@ -203,6 +209,11 @@ async function saveTreatmentImpl(
     displayOrder: formData.get("displayOrder"),
   });
   if (!parsed.success) return treatmentFailure("invalid", schemaFieldErrors(parsed.error));
+  if (parsed.data.serviceFrequency === "monthly" && parsed.data.monthlyOccurrenceOrdinals.length === 0) {
+    return treatmentFailure("invalid", {
+      monthlyOccurrenceOrdinals: ["Elegí al menos una aparición del día dentro del mes."],
+    });
+  }
 
   const expectations = splitAdminLines(String(formData.get("expectations") ?? ""), 8);
   const characteristics = splitAdminLines(String(formData.get("characteristics") ?? ""), 3);
@@ -275,13 +286,16 @@ async function saveTreatmentImpl(
     duration_minutes: number;
     buffer_minutes: number;
     start_interval_minutes: number;
+    service_frequency: "weekly" | "monthly";
+    monthly_weekday: number | null;
+    monthly_occurrence_ordinals: number[];
     selection_mode: "simple" | "closed_combo" | "combo_with_extras";
     is_active: boolean;
   } | null = null;
   let futureBookings = 0;
   if (!isNew) {
     const treatmentResult = await supabase.from("treatments")
-      .select("slug,image_path,specialty_id,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,is_active")
+      .select("slug,image_path,specialty_id,duration_minutes,buffer_minutes,start_interval_minutes,service_frequency,monthly_weekday,monthly_occurrence_ordinals,selection_mode,is_active")
       .eq("id", id).single();
     existing = treatmentResult.data;
     if (treatmentResult.error && treatmentResult.error.code !== "PGRST116") {
@@ -291,6 +305,9 @@ async function saveTreatmentImpl(
     const affectsAgenda = existing.duration_minutes !== parsed.data.durationMinutes
       || existing.buffer_minutes !== parsed.data.bufferMinutes
       || existing.start_interval_minutes !== parsed.data.startIntervalMinutes
+      || existing.service_frequency !== parsed.data.serviceFrequency
+      || existing.monthly_weekday !== parsed.data.monthlyWeekday
+      || existing.monthly_occurrence_ordinals.join(",") !== parsed.data.monthlyOccurrenceOrdinals.join(",")
       || existing.selection_mode !== parsed.data.selectionMode
       || existing.specialty_id !== parsed.data.specialtyId
       || (existing.is_active && !isActive);
@@ -349,6 +366,9 @@ async function saveTreatmentImpl(
     duration_minutes: parsed.data.durationMinutes,
     buffer_minutes: parsed.data.bufferMinutes,
     start_interval_minutes: parsed.data.startIntervalMinutes,
+    service_frequency: parsed.data.serviceFrequency,
+    monthly_weekday: parsed.data.serviceFrequency === "monthly" ? parsed.data.monthlyWeekday : null,
+    monthly_occurrence_ordinals: parsed.data.serviceFrequency === "monthly" ? parsed.data.monthlyOccurrenceOrdinals : [],
     selection_mode: parsed.data.selectionMode,
     price_cents: pesosToCents(parsed.data.pricePesos),
     preparation: parsed.data.preparation || null,

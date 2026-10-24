@@ -40,6 +40,9 @@ export interface AdminTreatmentRow {
   duration_minutes: number;
   buffer_minutes: number;
   start_interval_minutes: 15 | 30 | 60;
+  service_frequency: "weekly" | "monthly";
+  monthly_weekday: number | null;
+  monthly_occurrence_ordinals: number[];
   selection_mode: "simple" | "closed_combo" | "combo_with_extras";
   catalog_group?: import("@/lib/catalog-order").CatalogGroup;
   is_combo?: boolean;

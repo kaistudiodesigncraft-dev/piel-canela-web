@@ -59,6 +59,9 @@ const savedTreatment = {
   duration_minutes: 60,
   buffer_minutes: 15,
   start_interval_minutes: 30 as const,
+  service_frequency: "weekly" as const,
+  monthly_weekday: null,
+  monthly_occurrence_ordinals: [],
   selection_mode: "simple" as const,
   price_cents: 6500000,
   preparation: null,
@@ -85,6 +88,19 @@ describe("TreatmentEditor", () => {
     render(<TreatmentEditor treatmentId="40000000-0000-4000-8000-000000000001" isNew categories={[category]} specialties={[specialty]} professionals={[]} />);
     expect(screen.getByRole("button", { name: "Guardar borrador" })).toHaveAttribute("value", "draft");
     expect(screen.getByRole("button", { name: "Publicar tratamiento" })).toHaveAttribute("value", "publish");
+  });
+
+  it("configures exact monthly service days without changing the weekly default", async () => {
+    const user = userEvent.setup();
+    render(<TreatmentEditor treatmentId="40000000-0000-4000-8000-000000000001" isNew categories={[category]} specialties={[specialty]} professionals={[]} />);
+
+    const frequency = screen.getByRole("combobox", { name: /Cuándo se ofrece/i });
+    expect(frequency).toHaveValue("weekly");
+    fireEvent.change(frequency, { target: { value: "monthly" } });
+    await user.selectOptions(screen.getByRole("combobox", { name: /Día de atención/i }), "4");
+
+    expect(screen.getByRole("checkbox", { name: /Primer jueves/i })).toBeChecked();
+    expect(screen.getByText("1 vez por mes.")).toBeInTheDocument();
   });
 
   it("keeps media optional so catalog work can continue without a photograph", () => {

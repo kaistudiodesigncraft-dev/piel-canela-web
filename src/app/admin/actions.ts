@@ -270,6 +270,12 @@ export async function getManualBookingSlots(input: unknown): Promise<ManualBooki
   const { supabase } = await requireAdmin();
   const parsed = manualBookingAvailabilitySchema.safeParse(input);
   if (!parsed.success) return { ok: false, reason: "invalid" };
+  const offeredResult = await supabase.rpc("is_treatment_offered_on_date", {
+    requested_treatment_id: parsed.data.treatmentId,
+    requested_date: parsed.data.date,
+  });
+  if (offeredResult.error) return { ok: false, reason: "server" };
+  if (!offeredResult.data) return { ok: true, slots: [] };
   const payload = {
     requested_treatment_id: parsed.data.treatmentId,
     requested_combo_id: parsed.data.comboId ?? null,

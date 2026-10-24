@@ -68,6 +68,15 @@ const mediaStageLabels: Record<TreatmentMediaStage, string> = {
   failed: "La imagen no se pudo preparar.",
 };
 
+const weekdays = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"] as const;
+const monthlyOccurrences = [
+  { value: 1, label: "Primer" },
+  { value: 2, label: "Segundo" },
+  { value: 3, label: "Tercer" },
+  { value: 4, label: "Cuarto" },
+  { value: -1, label: "Último" },
+] as const;
+
 function FieldError({ id, messages }: { id: string; messages?: string[] }) {
   if (!messages?.length) return null;
   return <span className="admin-field-error" id={id}>{messages[0]}</span>;
@@ -118,6 +127,9 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
   const [durationMinutes, setDurationMinutes] = useState(treatment?.duration_minutes ?? 60);
   const [bufferMinutes, setBufferMinutes] = useState(treatment?.buffer_minutes ?? 15);
   const [startIntervalMinutes, setStartIntervalMinutes] = useState<15 | 30 | 60>(treatment?.start_interval_minutes ?? 30);
+  const [serviceFrequency, setServiceFrequency] = useState<"weekly" | "monthly">(treatment?.service_frequency ?? "weekly");
+  const [monthlyWeekday, setMonthlyWeekday] = useState(treatment?.monthly_weekday ?? 4);
+  const [monthlyOrdinals, setMonthlyOrdinals] = useState<number[]>(treatment?.monthly_occurrence_ordinals?.length ? treatment.monthly_occurrence_ordinals : [1]);
   const [selectionMode, setSelectionMode] = useState<"simple" | "closed_combo" | "combo_with_extras">(treatment?.selection_mode ?? "simple");
   const [focalX, setFocalX] = useState(focalPointToPercentage(treatment?.image_focal_x ?? 0.5));
   const [focalY, setFocalY] = useState(focalPointToPercentage(treatment?.image_focal_y ?? 0.5));
@@ -350,6 +362,38 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
             {selectionMode === "simple" ? <label htmlFor={`${formId}-durationMinutes`}>Duración<input id={`${formId}-durationMinutes`} name="durationMinutes" type="number" min="5" max="480" step="5" value={durationMinutes} onChange={(event) => setDurationMinutes(Number(event.target.value))} required /></label> : null}
             <label htmlFor={`${formId}-bufferMinutes`}>Preparación entre turnos<input id={`${formId}-bufferMinutes`} name="bufferMinutes" type="number" min="0" max="180" step="5" value={bufferMinutes} onChange={(event) => setBufferMinutes(Number(event.target.value))} required /></label>
             <label htmlFor={`${formId}-startIntervalMinutes`}>Frecuencia de inicio<select id={`${formId}-startIntervalMinutes`} name="startIntervalMinutes" value={startIntervalMinutes} onChange={(event) => setStartIntervalMinutes(Number(event.target.value) as 15 | 30 | 60)} required><option value="15">15 minutos</option><option value="30">30 minutos</option><option value="60">60 minutos</option></select><small>Define cada cuánto puede comenzar. No modifica su duración.</small></label>
+          </div>
+          <div className="admin-field-note admin-field-note--prominent">
+            <label htmlFor={`${formId}-serviceFrequency`}>Cuándo se ofrece
+              <select id={`${formId}-serviceFrequency`} name="serviceFrequency" value={serviceFrequency} onChange={(event) => setServiceFrequency(event.target.value as "weekly" | "monthly")}>
+                <option value="weekly">Todas las semanas</option>
+                <option value="monthly">Días específicos del mes</option>
+              </select>
+              <small>Esta regla pertenece al tratamiento. No cambia la agenda de otros servicios de la misma especialidad.</small>
+            </label>
+            {serviceFrequency === "monthly" ? <div className="admin-monthly-schedule">
+              <label htmlFor={`${formId}-monthlyWeekday`}>Día de atención
+                <select id={`${formId}-monthlyWeekday`} name="monthlyWeekday" value={monthlyWeekday} onChange={(event) => setMonthlyWeekday(Number(event.target.value))}>
+                  {weekdays.map((weekday, index) => <option key={weekday} value={index}>{weekday}</option>)}
+                </select>
+              </label>
+              <fieldset id={`${formId}-monthlyOccurrenceOrdinals`} aria-describedby={`${formId}-monthlyOccurrenceOrdinals-help ${formId}-monthlyOccurrenceOrdinals-error`}>
+                <legend>Qué días del mes</legend>
+                <small id={`${formId}-monthlyOccurrenceOrdinals-help`}>Elegí uno o más. La cantidad seleccionada define cuántas veces se ofrece por mes.</small>
+                <div className="admin-check-grid">{monthlyOccurrences.map((occurrence) => {
+                  const checked = monthlyOrdinals.includes(occurrence.value);
+                  return <label className="admin-check" key={occurrence.value}><input type="checkbox" name="monthlyOccurrenceOrdinals" value={occurrence.value} checked={checked} onChange={(event) => setMonthlyOrdinals((current) => {
+                    if (!event.target.checked) return current.filter((value) => value !== occurrence.value);
+                    const withoutEquivalentLastDay = occurrence.value === -1
+                      ? current.filter((value) => value !== 4)
+                      : occurrence.value === 4 ? current.filter((value) => value !== -1) : current;
+                    return [...withoutEquivalentLastDay, occurrence.value];
+                  })} /><span>{occurrence.label} {(weekdays[monthlyWeekday] ?? "día").toLowerCase()}</span></label>;
+                })}</div>
+                <FieldError id={`${formId}-monthlyOccurrenceOrdinals-error`} messages={fieldError("monthlyOccurrenceOrdinals")} />
+              </fieldset>
+              <p><strong>{monthlyOrdinals.length || 0} {monthlyOrdinals.length === 1 ? "vez" : "veces"} por mes.</strong> Solo esas fechas aparecerán en el calendario público. La especialidad también debe tener una franja habitual abierta para ese día.</p>
+            </div> : <input type="hidden" name="monthlyWeekday" value="" />}
           </div>
           <div className="admin-scheduling-explainer" aria-live="polite">{selectionMode === "simple" ? <div><span>Duración</span><strong>{durationMinutes} min</strong></div> : <div><span>Duración</span><strong>Según zonas</strong></div>}<div><span>Preparación</span><strong>{bufferMinutes} min</strong></div><div><span>Puede comenzar cada</span><strong>{startIntervalMinutes} min</strong></div><p>{selectionMode === "simple" ? <>Cada reserva ocupa <strong>{durationMinutes + bufferMinutes} minutos</strong>.</> : <>Cada reserva ocupa <strong>la suma de zonas + {bufferMinutes} minutos</strong>.</>}</p></div>
           {treatment && treatment.future_booking_count > 0 ? <label className="admin-impact-check" htmlFor={`${formId}-confirmImpact`}><input id={`${formId}-confirmImpact`} type="checkbox" name="confirmImpact" required={actionState.error === "impact"} /><span><strong>{treatment.future_booking_count} reservas futuras.</strong> Confirmo cambios que puedan afectar su agenda.</span><FieldError id={`${formId}-confirmImpact-error`} messages={fieldError("confirmImpact")} /></label> : null}

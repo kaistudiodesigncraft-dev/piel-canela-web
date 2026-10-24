@@ -79,6 +79,12 @@ export async function getAvailableSlots(input: unknown): Promise<AvailabilityRes
   if (process.env.DEPILATION_ZONES_ENABLED === "true" && parsed.data.comboId && !parsed.data.zoneOrder) return { ok: false, reason: "invalid" };
 
   const supabase = createSupabasePublicServerClient();
+  const offeredResult = await supabase.rpc("is_treatment_offered_on_date", {
+    requested_treatment_id: parsed.data.treatmentId,
+    requested_date: parsed.data.date,
+  });
+  if (offeredResult.error) return { ok: false, reason: "unavailable" };
+  if (!offeredResult.data) return { ok: true, slots: [] };
   if (parsed.data.zoneOrder) {
     const secret = process.env.BOOKING_GUARD_SECRET;
     if (!secret || secret.length < 32) return { ok: false, reason: "configuration" };

@@ -9,7 +9,7 @@ import type { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
-const treatmentSelect = "id,updated_at,category_id,specialty_id,professional_id,requires_professional_assignment,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order";
+const treatmentSelect = "id,updated_at,category_id,specialty_id,professional_id,requires_professional_assignment,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,service_frequency,monthly_weekday,monthly_occurrence_ordinals,selection_mode,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order";
 
 export async function loadTreatmentEditorTaxonomies(supabase: SupabaseServerClient) {
   const [categoriesResult, specialtiesResult, professionalsResult, professionalSpecialtiesResult, reassignmentResult] = await Promise.all([
