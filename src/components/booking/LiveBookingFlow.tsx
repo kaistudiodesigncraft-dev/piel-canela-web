@@ -136,6 +136,10 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
       const nextDates = dates.filter((item) => allowed.has(item.value));
       setAvailableDates(nextDates);
       const nextDate = nextDates[0]?.value ?? "";
+      setIsLoadingSlots(Boolean(nextDate));
+      setSlotsError(false);
+      setSlots([]);
+      setSelectedSlot(null);
       setDate(nextDate);
       setSelectedMonth(nextDate.slice(0, 7));
     }).catch(() => {
@@ -190,6 +194,16 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
 
   function updateCustomer(field: keyof CustomerForm, value: string) {
     setCustomer((current) => ({ ...current, [field]: value }));
+  }
+
+  function selectBookingDate(nextDate: string) {
+    if (date === nextDate) return;
+    setIsLoadingSlots(true);
+    setSlotsError(false);
+    setSlots([]);
+    setSelectedSlot(null);
+    setShowAllSlots(false);
+    setDate(nextDate);
   }
 
   function continueFromDetails(event: FormEvent<HTMLFormElement>) {
@@ -358,9 +372,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
                     const month = event.target.value;
                     setSelectedMonth(month);
                     const first = availableDates.find((item) => item.value.startsWith(month));
-                    if (first) setDate(first.value);
-                    setSelectedSlot(null);
-                    setShowAllSlots(false);
+                    if (first) selectBookingDate(first.value);
                   }}>{availableMonths.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label> : null}
                   <div className="date-choice-grid" aria-label="Días con horarios disponibles">
                   {visibleDates.map((item) => (
@@ -370,12 +382,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
                       type="button"
                       aria-pressed={date === item.value}
                       onClick={() => {
-                        if (date === item.value) return;
-                        setDate(item.value);
-                        setIsLoadingSlots(true);
-                        setSlotsError(false);
-                        setSelectedSlot(null);
-                        setShowAllSlots(false);
+                        selectBookingDate(item.value);
                       }}
                     >
                       <span>{item.weekday}</span><strong>{item.day}</strong><small>{item.month}</small>

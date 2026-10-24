@@ -100,7 +100,7 @@ describe("LiveBookingFlow", () => {
     );
     const messageUrl = new URL(screen.getByRole("link", { name: /continuar por whatsapp/i }).getAttribute("href")!);
     expect(messageUrl.searchParams.get("text")).toBe(
-      "¡Hola! 😊 Acabo de hacer una pre-reserva en Piel Canela.\n\nTe dejo los datos de mi turno:\n\nNombre: Laura Gómez\nTratamiento: Relajación profunda\nFecha: lunes, 17 de agosto\nHorario: 12:30\nCódigo de reserva: PC-ABC12345\n\nEspero los datos para transferir la seña y confirmar mi turno.",
+      "¡Hola! Acabo de hacer una pre-reserva en Piel Canela.\n\nTe dejo los datos de mi turno:\n\nNombre: Laura Gómez\nTratamiento: Relajación profunda\nFecha: lunes, 17 de agosto\nHorario: 12:30\nCódigo de reserva: PC-ABC12345\n\nEspero los datos para transferir la seña y confirmar mi turno.",
     );
   });
 
@@ -150,6 +150,45 @@ describe("LiveBookingFlow", () => {
     expect(await screen.findByRole("button", { name: /2 Sep/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /18 Sep/i })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /1 Sep/i })).not.toBeInTheDocument();
+  });
+
+  it("clears stale hours while loading a different month", async () => {
+    const user = userEvent.setup();
+    const datesAcrossMonths = [
+      dates[0]!,
+      {
+        value: "2026-09-18",
+        weekday: "Vie",
+        day: "18",
+        month: "Sep",
+        longLabel: "viernes, 18 de septiembre",
+      },
+    ];
+    let resolveSeptember!: (value: { ok: true; slots: { startsAt: string; endsAt: string }[] }) => void;
+    const septemberRequest = new Promise<{ ok: true; slots: { startsAt: string; endsAt: string }[] }>((resolve) => {
+      resolveSeptember = resolve;
+    });
+    getAvailableDatesMock.mockResolvedValue({ ok: true, dates: datesAcrossMonths.map((item) => item.value) });
+    getAvailableSlotsMock
+      .mockReset()
+      .mockResolvedValueOnce({
+        ok: true,
+        slots: [{ startsAt: "2026-08-17T15:30:00.000Z", endsAt: "2026-08-17T16:30:00.000Z" }],
+      })
+      .mockReturnValueOnce(septemberRequest);
+
+    render(<LiveBookingFlow selection={selection} dates={datesAcrossMonths} whatsappNumber={null} />);
+    expect(await screen.findByRole("button", { name: "12:30" })).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Mes disponible"), "2026-09");
+    expect(screen.getByText("Consultando horarios…")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "12:30" })).not.toBeInTheDocument();
+
+    resolveSeptember({
+      ok: true,
+      slots: [{ startsAt: "2026-09-18T16:00:00.000Z", endsAt: "2026-09-18T17:00:00.000Z" }],
+    });
+    expect(await screen.findByRole("button", { name: "13:00" })).toBeInTheDocument();
   });
 
   it("recovers from a slot taken concurrently without losing customer data", async () => {

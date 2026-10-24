@@ -29,7 +29,7 @@ describe("WhatsApp message safety", () => {
       time: "15:00",
       bookingCode: "PC-123",
     });
-    expect(message).toContain("¡Hola! 😊 Acabo de hacer una pre-reserva en Piel Canela.");
+    expect(message).toContain("¡Hola! Acabo de hacer una pre-reserva en Piel Canela.");
     expect(message).toContain("Nombre: Ana\nTratamiento: Masaje\nFecha:");
     expect(message).not.toContain("Combo:");
     expect(message).toContain("Espero los datos para transferir la seña y confirmar mi turno.");

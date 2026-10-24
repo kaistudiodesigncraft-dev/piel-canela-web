@@ -1125,11 +1125,11 @@ svg {
   padding: 2rem 1.2rem 2rem 1rem;
 }
 
-.treatment-editorial-card__content h2 {
-  overflow-wrap: break-word;
+.treatment-editorial-card__content h3 {
+  overflow-wrap: normal;
   word-break: normal;
-  font-size: clamp(1.55rem, 5.5vw, 2.3rem);
-  hyphens: none;
+  font-size: clamp(1.55rem, 2.3vw, 1.85rem);
+  hyphens: auto;
 }
 
 .treatment-editorial-card__description {

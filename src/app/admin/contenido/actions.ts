@@ -16,6 +16,7 @@ import {
 } from "@/lib/admin/image-upload";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { normalizeAdminImageOnServer } from "@/lib/admin/server-image";
+import { containsEmoji } from "@/lib/plain-text";
 
 const sectionSchema = z.enum([
   "hero", "categories", "specials", "approach", "booking", "faq",
@@ -25,7 +26,8 @@ const intentSchema = z.enum(["draft", "publish"]);
 const surfaceSchema = z.enum(["plain", "soft", "contrast"]);
 const overlaySchema = z.enum(["none", "light", "medium", "strong"]);
 const safeTextSchema = (maximum: number) => z.string().trim().min(1).max(maximum)
-  .refine((value) => !/<[^>]*>/.test(value), "No se admite HTML.");
+  .refine((value) => !/<[^>]*>/.test(value), "No se admite HTML.")
+  .refine((value) => !containsEmoji(value), "No se admiten emojis. Usá texto e iconografía del sistema.");
 const imageExtension: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
