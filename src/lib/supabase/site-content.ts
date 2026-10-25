@@ -9,6 +9,7 @@ import {
   type SiteContentSection,
   type SiteContentSurfacePreset,
 } from "@/domain/site-content";
+import { stripEmoji } from "@/lib/plain-text";
 import { usesSupabaseDataSource } from "./env";
 import { createSupabasePublicServerClient } from "./public-server";
 
@@ -39,14 +40,18 @@ export interface SiteContentRevisionSummary {
 
 type SiteContentQueryClient = ReturnType<typeof createSupabasePublicServerClient>;
 
-function resolveRows(rows: readonly SiteContentRow[], supabase: SiteContentQueryClient) {
+function resolveRows(
+  rows: readonly SiteContentRow[],
+  supabase: SiteContentQueryClient,
+  options: { publicCopy?: boolean } = {},
+) {
   const stored = new Map(rows.filter((row) => isSiteContentKey(row.key)).map((row) => [row.key, row]));
 
   return getDefaultSiteContent().map((fallback) => {
     const row = stored.get(fallback.key);
     if (!row) return fallback;
 
-    let value = row.value;
+    let value = options.publicCopy && row.kind !== "image" ? stripEmoji(row.value) : row.value;
     if (row.kind === "image" && row.image_path) {
       value = row.image_path.startsWith("/")
         ? row.image_path
@@ -88,7 +93,7 @@ export async function getSiteContent(): Promise<SiteContentField[]> {
 
   if (error) throw new Error(`No se pudo cargar el contenido del sitio: ${error.message}`);
 
-  return resolveRows(data as SiteContentRow[], supabase);
+  return resolveRows(data as SiteContentRow[], supabase, { publicCopy: true });
 }
 
 export async function getSiteContentDrafts(
