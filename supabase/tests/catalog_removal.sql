@@ -7,11 +7,17 @@ insert into public.profiles(user_id,full_name,role,is_active)
 values('17000000-0000-4000-8000-000000000001','Catalog test manager','manager',true);
 insert into public.specialties(id,name,slug,is_active)
 values('27000000-0000-4000-8000-000000000001','Removal test','removal-test',true);
-insert into public.treatments(id,category_id,specialty_id,name,slug,short_description,description,price_cents,duration_minutes,buffer_minutes,start_interval_minutes,is_active,display_order)
-select ('37000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,category.id,'27000000-0000-4000-8000-000000000001',
+insert into public.professionals(id,specialty_id,full_name,is_active,display_order)
+values('57000000-0000-4000-8000-000000000002','27000000-0000-4000-8000-000000000001','Removal test professional',true,999);
+insert into public.treatments(id,category_id,specialty_id,professional_id,name,slug,short_description,description,price_cents,duration_minutes,buffer_minutes,start_interval_minutes,is_active,display_order)
+select ('37000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,category.id,'27000000-0000-4000-8000-000000000001','57000000-0000-4000-8000-000000000002',
  'Removal test '||n,'removal-test-'||n,'Descripción suficientemente larga.',
  'Descripción completa suficientemente larga para este tratamiento.',10000,30,0,15,false,900+n
 from generate_series(1,6) n cross join lateral(select id from public.treatment_categories order by display_order limit 1) category;
+insert into public.treatment_professionals(treatment_id,professional_id,is_active)
+select ('37000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'57000000-0000-4000-8000-000000000002',true
+from generate_series(1,6) n;
+update public.treatments set is_active=true where id::text like '37000000-0000-4000-8000-%';
 insert into public.monthly_specials(id,treatment_id,title,short_description,detail,image_path,image_alt,special_price_cents,starts_at,ends_at,is_active,display_order,created_by)
 select ('47000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,('37000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,
  'Special test '||n,'Descripción suficientemente larga.','Detalle suficientemente largo para la promoción.',
@@ -21,6 +27,7 @@ insert into public.customers(id,full_name,phone)
 values('57000000-0000-4000-8000-000000000001','Test customer','5493510000001');
 insert into public.bookings(id,booking_code,idempotency_key,customer_id,treatment_id,monthly_special_id,specialty_id,starts_at,ends_at,status,duration_snapshot_minutes,buffer_snapshot_minutes,base_price_snapshot_cents,applied_price_snapshot_cents,treatment_name_snapshot)
 values('67000000-0000-4000-8000-000000000001','PC-REMOVE01','77000000-0000-4000-8000-000000000001','57000000-0000-4000-8000-000000000001','37000000-0000-4000-8000-000000000004','47000000-0000-4000-8000-000000000004','27000000-0000-4000-8000-000000000001',now()-interval '2 days',now()-interval '2 days'+interval '30 minutes','completed',30,0,10000,5000,'Historical snapshot');
+update public.treatments set is_active=false where id::text like '37000000-0000-4000-8000-%';
 insert into private.booking_guard_config(singleton,secret_hash)
 values(true,encode(extensions.digest(repeat('t',32),'sha256'),'hex'))
 on conflict(singleton) do update set secret_hash=excluded.secret_hash;

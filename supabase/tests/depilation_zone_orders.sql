@@ -123,6 +123,28 @@ do $$ declare b public.bookings%rowtype; begin
     or b.duration_snapshot_minutes<>75 or b.buffer_snapshot_minutes<>15 or b.depilation_order_snapshot is null
     or jsonb_array_length(b.combo_extras_snapshot)<>2 then raise exception 'snapshot not persisted'; end if;
 end $$;
+
+-- Reception uses the same signed quote and server-side calculation as the
+-- public flow, while retaining professional auto-assignment and idempotency.
+select set_config('request.jwt.claims','{"sub":"19000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+set local role authenticated;
+do $$ declare q record; selected_slot timestamptz; created record; stored public.bookings%rowtype; begin
+  select * into q from qa_quote limit 1;
+  select starts_at into selected_slot
+  from public.get_admin_available_slots_for_zone_order(q.payload,q.signature,current_date+21,null)
+  order by starts_at limit 1;
+  if selected_slot is null then raise exception 'admin zone-order slots unavailable'; end if;
+  select * into created from public.create_admin_booking_for_zone_order(
+    q.payload,q.signature,selected_slot,'pending','89000000-0000-4000-8000-000000000003',
+    'QA Reception','3510000001','',null,'Turno manual QA',null
+  );
+  select * into stored from public.bookings where id=created.booking_id;
+  if stored.professional_id is null or stored.applied_price_snapshot_cents<>6820000
+    or stored.duration_snapshot_minutes<>75 or stored.depilation_order_snapshot is null then
+    raise exception 'admin zone-order snapshot mismatch';
+  end if;
+end $$;
+reset role;
 -- The new flow must release an expired provisional hold just like the simple
 -- and legacy-combo booking flows. The cleanup and all assertions roll back.
 update public.bookings set created_at=now()-interval '100 days'

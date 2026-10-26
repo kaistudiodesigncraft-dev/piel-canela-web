@@ -33,7 +33,7 @@ export async function getBookingRescheduleSlots(input: unknown): Promise<Booking
   const { supabase } = await requireAdmin();
   const parsed = rescheduleSlotsSchema.safeParse(input);
   if (!parsed.success) return { ok: false, reason: "invalid" };
-  const { data, error } = await supabase.rpc("get_available_slots_for_reschedule", {
+  const { data, error } = await supabase.rpc("get_available_slots_for_reschedule_v2", {
     requested_booking_id: parsed.data.bookingId,
     requested_date: parsed.data.date,
   });

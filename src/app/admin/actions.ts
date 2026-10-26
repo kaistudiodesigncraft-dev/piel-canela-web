@@ -13,6 +13,7 @@ import {
 import { ADMIN_IMAGE_MAX_BYTES, ADMIN_IMAGE_TYPES, hasExpectedImageSignature } from "@/lib/admin/image-upload";
 import { isOperationalAdminRole, requireAdmin } from "@/lib/admin/require-admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createZoneOrderQuote } from "@/lib/supabase/depilation-order";
 import { treatmentUsesCombos, type TreatmentSelectionMode } from "@/domain/treatment";
 import {
   isTreatmentDeleteCodeConfigured,
@@ -47,6 +48,8 @@ const manualBookingSchema = z.object({
   treatmentId: z.string().uuid(),
   comboId: z.string().uuid().optional(),
   extraIds: z.array(z.string().uuid()).max(24).default([]),
+  zoneOrder: z.boolean().default(false),
+  zoneIds: z.array(z.string().uuid()).max(100).default([]),
   monthlySpecialId: z.string().uuid().optional(),
   professionalId: z.string().uuid().optional(),
   startsAt: z.string(),
@@ -61,6 +64,8 @@ const manualBookingAvailabilitySchema = z.object({
   treatmentId: z.string().uuid(),
   comboId: z.string().uuid().optional(),
   extraIds: z.array(z.string().uuid()).max(24).default([]),
+  zoneOrder: z.boolean().default(false),
+  zoneIds: z.array(z.string().uuid()).max(100).default([]),
   professionalId: z.string().uuid().optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
@@ -228,6 +233,8 @@ export async function createManualBooking(formData: FormData) {
     treatmentId: formData.get("treatmentId"),
     comboId: formData.get("comboId") || undefined,
     extraIds: formData.getAll("extraIds"),
+    zoneOrder: formData.get("zoneOrder") === "on",
+    zoneIds: formData.getAll("zoneIds"),
     monthlySpecialId: formData.get("monthlySpecialId") || undefined,
     professionalId: formData.get("professionalId") || undefined,
     startsAt: formData.get("startsAt"), status: formData.get("status"),
@@ -238,22 +245,52 @@ export async function createManualBooking(formData: FormData) {
   });
   const startsAt = parsed.success ? adminSubmittedDateTimeToIso(parsed.data.startsAt) : null;
   if (!parsed.success || !startsAt) redirect("/admin?manualBookingError=invalid#asignar");
-  const bookingPayload = {
-    requested_treatment_id: parsed.data.treatmentId,
-    requested_combo_id: parsed.data.comboId ?? null,
-    requested_monthly_special_id: parsed.data.monthlySpecialId ?? null,
-    requested_starts_at: startsAt,
-    requested_status: parsed.data.status,
-    requested_idempotency_key: parsed.data.idempotencyKey,
-    customer_full_name: parsed.data.fullName,
-    customer_phone: parsed.data.phone,
-    customer_email: parsed.data.email ?? "",
-    customer_notes: parsed.data.customerNotes ?? "",
-    internal_notes: parsed.data.internalNotes ?? "",
-    requested_extra_ids: parsed.data.extraIds,
-    requested_professional_id: parsed.data.professionalId ?? null,
-  };
-  const { error } = await supabase.rpc("create_admin_booking_for_selection", bookingPayload);
+  let error: { message: string } | null;
+  if (parsed.data.zoneOrder) {
+    if (process.env.DEPILATION_ZONES_ENABLED !== "true"
+      || parsed.data.monthlySpecialId || parsed.data.extraIds.length
+      || (!parsed.data.comboId && parsed.data.zoneIds.length === 0)) {
+      redirect("/admin?manualBookingError=invalid#asignar");
+    }
+    const secret = process.env.BOOKING_GUARD_SECRET;
+    if (!secret || secret.length < 32) redirect("/admin?manualBookingError=save#asignar");
+    try {
+      const quote = await createZoneOrderQuote(
+        parsed.data.treatmentId, parsed.data.comboId ?? null, parsed.data.zoneIds, secret,
+      );
+      ({ error } = await supabase.rpc("create_admin_booking_for_zone_order", {
+        payload: quote.payload,
+        signature: quote.signature,
+        requested_starts_at: startsAt,
+        requested_status: parsed.data.status,
+        requested_idempotency_key: parsed.data.idempotencyKey,
+        customer_full_name: parsed.data.fullName,
+        customer_phone: parsed.data.phone,
+        customer_email: parsed.data.email ?? "",
+        customer_notes: parsed.data.customerNotes ?? "",
+        internal_notes: parsed.data.internalNotes ?? "",
+        requested_professional_id: parsed.data.professionalId ?? null,
+      }));
+    } catch {
+      redirect("/admin?manualBookingError=invalid#asignar");
+    }
+  } else {
+    ({ error } = await supabase.rpc("create_admin_booking_for_selection", {
+      requested_treatment_id: parsed.data.treatmentId,
+      requested_combo_id: parsed.data.comboId ?? null,
+      requested_monthly_special_id: parsed.data.monthlySpecialId ?? null,
+      requested_starts_at: startsAt,
+      requested_status: parsed.data.status,
+      requested_idempotency_key: parsed.data.idempotencyKey,
+      customer_full_name: parsed.data.fullName,
+      customer_phone: parsed.data.phone,
+      customer_email: parsed.data.email ?? "",
+      customer_notes: parsed.data.customerNotes ?? "",
+      internal_notes: parsed.data.internalNotes ?? "",
+      requested_extra_ids: parsed.data.extraIds,
+      requested_professional_id: parsed.data.professionalId ?? null,
+    }));
+  }
   if (error) {
     const reason = error.message.includes("slot_not_available") ? "conflict" : "save";
     redirect(`/admin?manualBookingError=${reason}#asignar`);
@@ -276,6 +313,35 @@ export async function getManualBookingSlots(input: unknown): Promise<ManualBooki
   });
   if (offeredResult.error) return { ok: false, reason: "server" };
   if (!offeredResult.data) return { ok: true, slots: [] };
+  if (parsed.data.zoneOrder) {
+    if (process.env.DEPILATION_ZONES_ENABLED !== "true" || parsed.data.extraIds.length
+      || (!parsed.data.comboId && parsed.data.zoneIds.length === 0)) {
+      return { ok: false, reason: "invalid" };
+    }
+    const secret = process.env.BOOKING_GUARD_SECRET;
+    if (!secret || secret.length < 32) return { ok: false, reason: "server" };
+    try {
+      const quote = await createZoneOrderQuote(
+        parsed.data.treatmentId, parsed.data.comboId ?? null, parsed.data.zoneIds, secret,
+      );
+      const { data, error } = await supabase.rpc("get_admin_available_slots_for_zone_order", {
+        payload: quote.payload,
+        signature: quote.signature,
+        requested_date: parsed.data.date,
+        requested_professional_id: parsed.data.professionalId ?? null,
+      });
+      if (error) return { ok: false, reason: error.message.includes("not_available") ? "unavailable" : "server" };
+      return {
+        ok: true,
+        slots: ((data ?? []) as { starts_at: string; ends_at: string }[]).map((slot) => ({
+          startsAt: slot.starts_at,
+          endsAt: slot.ends_at,
+        })),
+      };
+    } catch {
+      return { ok: false, reason: "unavailable" };
+    }
+  }
   const payload = {
     requested_treatment_id: parsed.data.treatmentId,
     requested_combo_id: parsed.data.comboId ?? null,

@@ -25,7 +25,7 @@ export async function getPackageSessionSlots(input: unknown): Promise<PackageSes
   const { supabase } = await requireAdmin();
   const parsed = packageSlotsSchema.safeParse(input);
   if (!parsed.success) return { ok: false, reason: "invalid" };
-  const { data, error } = await supabase.rpc("get_available_slots_for_package", {
+  const { data, error } = await supabase.rpc("get_available_slots_for_package_v2", {
     requested_package_id: parsed.data.packageId,
     requested_date: parsed.data.date,
   });

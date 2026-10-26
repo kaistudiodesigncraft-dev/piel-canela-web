@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { saveTreatmentComboResult, type ComboEditorResult } from "@/app/admin/catalogo/[id]/combos/actions";
+import { preventImplicitFormSubmit } from "@/lib/admin/form-safety";
 
 const fieldNames: Record<string, string> = {
   name: "Nombre", zoneIds: "Zonas incluidas", extraIds: "Extras compatibles", fixedPricePesos: "Precio",
@@ -20,7 +21,7 @@ export function ComboEditorForm({ children }: { children: ReactNode }) {
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, []);
-  return <form className="admin-form depilation-combo-form" aria-busy={pending} onInput={() => { dirty.current = true; }} onSubmit={async (event) => {
+  return <form className="admin-form depilation-combo-form" aria-busy={pending} onKeyDown={preventImplicitFormSubmit} onInput={() => { dirty.current = true; }} onSubmit={async (event) => {
     event.preventDefault();
     if (inFlight.current) return;
     const form = event.currentTarget;

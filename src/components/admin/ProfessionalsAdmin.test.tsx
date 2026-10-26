@@ -53,4 +53,14 @@ describe("ProfessionalsAdmin", () => {
     expect(screen.getByText(/2 tratamientos activos asignados y 4 turnos registrados/i)).toBeInTheDocument();
     expect(screen.queryByLabelText("Código de eliminación")).not.toBeInTheDocument();
   });
+
+  it("warns about active duplicate identities without changing either profile", () => {
+    render(<ProfessionalsAdmin specialties={[specialty]} professionals={[
+      professional(),
+      professional({ id: "30000000-0000-4000-8000-000000000002", display_order: 2 }),
+    ]} feedback={{}} />);
+
+    expect(screen.getByText("Revisá los perfiles con el mismo nombre.")).toBeInTheDocument();
+    expect(screen.getByText(/no fusionará ni desactivará perfiles automáticamente/i)).toBeInTheDocument();
+  });
 });

@@ -7,15 +7,20 @@ insert into public.profiles(user_id,full_name,role,is_active)
 values('13000000-0000-0000-0000-000000000001','Booking delete test owner','admin',true);
 insert into public.specialties(id,name,slug,description,is_active,display_order)
 values('33000000-0000-0000-0000-000000000001','Booking delete specialty','booking-delete-specialty','Test',true,999);
+insert into public.professionals(id,specialty_id,full_name,is_active,display_order)
+values('43000000-0000-0000-0000-000000000001','33000000-0000-0000-0000-000000000001','Booking delete professional',true,999);
 insert into public.treatments(
   id,category_id,specialty_id,professional_id,name,slug,short_description,description,
   price_cents,duration_minutes,buffer_minutes,start_interval_minutes,is_active,display_order
 )
 select
-  '53000000-0000-0000-0000-000000000001',category.id,'33000000-0000-0000-0000-000000000001',null,
+  '53000000-0000-0000-0000-000000000001',category.id,'33000000-0000-0000-0000-000000000001','43000000-0000-0000-0000-000000000001',
   'Booking delete treatment','booking-delete-treatment','Descripción de prueba suficientemente larga.',
   'Descripción de prueba suficientemente larga para validar el tratamiento.',1000,30,0,15,false,999
 from public.treatment_categories category order by category.display_order limit 1;
+insert into public.treatment_professionals(treatment_id,professional_id,is_active)
+values('53000000-0000-0000-0000-000000000001','43000000-0000-0000-0000-000000000001',true);
+update public.treatments set is_active=true where id='53000000-0000-0000-0000-000000000001';
 insert into public.customers(id,full_name,phone,email)
 values('63000000-0000-0000-0000-000000000001','Reserva de prueba','5493510000000','booking-delete@example.test');
 
@@ -31,6 +36,7 @@ insert into public.bookings(
 values
 ('73000000-0000-0000-0000-000000000001','PC-DELETE1','74000000-0000-0000-0000-000000000001','63000000-0000-0000-0000-000000000001','53000000-0000-0000-0000-000000000001','33000000-0000-0000-0000-000000000001',now()-interval '2 days',now()-interval '2 days'+interval '30 minutes','expired',30,0,1000,1000,'Booking delete treatment'),
 ('73000000-0000-0000-0000-000000000002','PC-ACTIVE1','74000000-0000-0000-0000-000000000002','63000000-0000-0000-0000-000000000001','53000000-0000-0000-0000-000000000001','33000000-0000-0000-0000-000000000001',now()+interval '2 days',now()+interval '2 days'+interval '30 minutes','confirmed',30,0,1000,1000,'Booking delete treatment');
+update public.treatments set is_active=false where id='53000000-0000-0000-0000-000000000001';
 insert into public.booking_status_history(booking_id,previous_status,next_status,reason)
 values('73000000-0000-0000-0000-000000000001','pending','expired','Prueba automática');
 

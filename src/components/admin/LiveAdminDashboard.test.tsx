@@ -9,7 +9,7 @@ vi.mock("@/components/admin/WeeklyAvailabilityEditor", () => ({ WeeklyAvailabili
 vi.mock("@/components/admin/BookingStatusTransitionForm", () => ({ BookingStatusTransitionForm: () => null }));
 const props = {
   adminName: "Recepción", canManageAccess: false, referenceTime: "2026-09-10T12:00:00Z",
-  specialties: [], rules: [], exceptions: [], treatments: [], treatmentCombos: [], treatmentComboExtras: [], professionals: [], monthlySpecials: [], bookings: [],
+  specialties: [], rules: [], exceptions: [], treatments: [], treatmentCombos: [], depilationZones: [], treatmentComboExtras: [], zoneOrdersEnabled: true, professionals: [], monthlySpecials: [], bookings: [],
   agenda: { query: { view: "day" as const, date: "2026-09-10", status: "all" as const, page: 1 }, range: { startsAt: null, endsAt: null, previousDate: "2026-09-09", nextDate: "2026-09-11", label: "Hoy" }, total: 0, pageSize: 25, summary: { today: 0, attention: 0, confirmed: 0 } },
 };
 describe("Reception modules", () => {
@@ -49,6 +49,20 @@ describe("Reception modules", () => {
     expect(screen.getByRole("combobox", { name: /profesional/i })).toHaveTextContent("Autoasignar disponible");
     expect(screen.getByRole("option", { name: "Agustina Spertino" })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "Melina" })).not.toBeInTheDocument();
+  });
+  it("allows reception to choose standalone zones without forcing a combo", () => {
+    render(<LiveAdminDashboard
+      {...props}
+      feedback={{ module: "agenda" }}
+      specialties={[{ id: "specialty", name: "Estética", slug: "estetica", description: "", display_order: 1, is_active: true }]}
+      treatments={[{ id: "treatment", name: "Depilación", specialty_id: "specialty", duration_minutes: 30, buffer_minutes: 10, start_interval_minutes: 15, selection_mode: "combo_with_extras", price_cents: 0, is_active: true }]}
+      depilationZones={[{ id: "zone-a", name: "Axilas", audience: "shared", reference_price_cents: 150000, duration_minutes: 15, is_active: true, display_order: 1 }]}
+    />);
+
+    expect(screen.getByRole("combobox", { name: /combo opcional/i })).not.toBeRequired();
+    expect(screen.getByRole("option", { name: "Solo zonas sueltas" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /axilas/i })).toBeInTheDocument();
+    expect(screen.getByText(/elegí un combo o al menos una zona/i)).toBeInTheDocument();
   });
   it("offers protected permanent deletion only for final test reservations", () => {
     const booking = {

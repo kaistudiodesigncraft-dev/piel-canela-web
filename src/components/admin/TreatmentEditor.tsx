@@ -4,6 +4,7 @@ import { AlertCircle, Check, Eye, ImageIcon, LoaderCircle, UploadCloud } from "l
 import Image from "next/image";
 import Link from "next/link";
 import { preserveSubmittedForm } from "@/lib/admin/preserve-form";
+import { preventImplicitFormSubmit } from "@/lib/admin/form-safety";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
@@ -290,7 +291,7 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
 
   return (
     <div className="admin-treatment-editor-shell">
-      <form action={formAction} className="admin-form admin-form--treatment admin-treatment-editor" onSubmit={(event) => preserveSubmittedForm(event.currentTarget)} onInput={() => setIsDirty(true)}>
+      <form action={formAction} className="admin-form admin-form--treatment admin-treatment-editor" onKeyDown={preventImplicitFormSubmit} onSubmit={(event) => preserveSubmittedForm(event.currentTarget)} onInput={() => setIsDirty(true)}>
         <input type="hidden" name="treatmentId" value={treatmentId} />
         <input type="hidden" name="isNew" value={String(isNew)} />
         <input type="hidden" name="expectedUpdatedAt" value={treatment?.updated_at ?? ""} />

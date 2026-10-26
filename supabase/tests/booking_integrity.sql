@@ -29,7 +29,8 @@ select public.save_admin_treatment(
     'name','Tratamiento auditado','slug','tratamiento-auditado','short_description','Descripción suficiente para publicar',
     'description','Detalle completo y suficiente para validar el guardado transaccional.','expectations',jsonb_build_array('Resultado claro'),
     'characteristics',jsonb_build_array('Característica'),'duration_minutes',60,'buffer_minutes',15,
-    'start_interval_minutes',30,'selection_mode','simple','price_cents',2500000,'image_path',null,'image_alt',null,
+    'start_interval_minutes',30,'service_frequency','weekly','monthly_weekday',null,
+    'monthly_occurrence_ordinals',jsonb_build_array(),'selection_mode','simple','price_cents',2500000,'image_path',null,'image_alt',null,
     'image_focal_x',0.5,'image_focal_y',0.5,'is_active',true,'display_order',0
   ),array['40000000-0000-0000-0000-000000000001']::uuid[],true,null
 );
@@ -89,6 +90,23 @@ do $$ begin
   exception when exclusion_violation then null; end;
 end $$;
 
+-- Administrative slot lookups obey the same recurring-date contract as the
+-- public booking flow. Existing weekly records remain valid; this fixture is
+-- switched to one concrete monthly occurrence only for the local transaction.
+update public.treatments
+set service_frequency='monthly',
+    monthly_weekday=extract(dow from current_date+14)::smallint,
+    monthly_occurrence_ordinals=array[((((extract(day from current_date+14)::integer)-1)/7)+1)::smallint]
+where id='50000000-0000-0000-0000-000000000001';
+do $$ begin
+  if not exists(select 1 from public.get_available_slots_for_reschedule_v2(
+    '70000000-0000-0000-0000-000000000001',current_date+14
+  )) then raise exception 'monthly reschedule date was hidden'; end if;
+  if exists(select 1 from public.get_available_slots_for_reschedule_v2(
+    '70000000-0000-0000-0000-000000000001',current_date+15
+  )) then raise exception 'off-frequency reschedule date was offered'; end if;
+end $$;
+
 -- Package slots keep the original specialty and the treatment's explicit
 -- professional assignment; another free professional from the specialty must
 -- not make an occupied hour appear available.
@@ -134,7 +152,7 @@ insert into public.bookings(
 set local role authenticated;
 do $$ begin
   if exists(
-    select 1 from public.get_available_slots_for_package(
+    select 1 from public.get_available_slots_for_package_v2(
       '81000000-0000-0000-0000-000000000001',current_date+14
     ) slot where (slot.starts_at at time zone 'America/Argentina/Cordoba')::time = time '14:00'
   ) then

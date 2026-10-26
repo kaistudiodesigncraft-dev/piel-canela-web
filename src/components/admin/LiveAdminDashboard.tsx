@@ -19,6 +19,7 @@ import {
   Trash2,
   UserPlus,
   NotebookPen,
+  TriangleAlert,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -59,6 +60,7 @@ import {
 } from "@/lib/admin/agenda";
 import { formatPrice } from "@/lib/format";
 import { idempotencyUuid } from "@/lib/idempotency";
+import type { AdminHealthNotice } from "@/lib/admin/catalog-health";
 
 interface SpecialtyRow {
   id: string;
@@ -107,7 +109,18 @@ interface TreatmentComboRow {
   fixed_price_cents: number;
   allow_public_extras: boolean;
   extra_ids: string[];
+  zone_ids: string[];
   is_active: boolean;
+}
+
+interface DepilationZoneOptionRow {
+  id: string;
+  name: string;
+  audience: "women" | "men" | "shared";
+  reference_price_cents: number;
+  duration_minutes: number;
+  is_active: boolean;
+  display_order: number;
 }
 
 interface TreatmentComboExtraRow {
@@ -198,7 +211,9 @@ interface LiveAdminDashboardProps {
   exceptions: AvailabilityExceptionRow[];
   treatments: TreatmentRow[];
   treatmentCombos: TreatmentComboRow[];
+  depilationZones: DepilationZoneOptionRow[];
   treatmentComboExtras: TreatmentComboExtraRow[];
+  zoneOrdersEnabled: boolean;
   professionals: ProfessionalOptionRow[];
   monthlySpecials: MonthlySpecialRow[];
   bookings: AdminBookingRow[];
@@ -211,6 +226,7 @@ interface LiveAdminDashboardProps {
   };
   feedback: Record<string, string | undefined>;
   warnings?: string[];
+  operationalNotices?: AdminHealthNotice[];
   supportCode?: string;
   unavailable?: Partial<Record<"bookings" | "manual" | "availability" | "exceptions" | "specialties" | "specials" | "summary", boolean>>;
 }
@@ -324,13 +340,16 @@ export function LiveAdminDashboard({
   exceptions,
   treatments,
   treatmentCombos,
+  depilationZones,
   treatmentComboExtras,
+  zoneOrdersEnabled,
   professionals,
   monthlySpecials,
   bookings,
   agenda,
   feedback,
   warnings = [],
+  operationalNotices = [],
   supportCode,
   unavailable = {},
 }: LiveAdminDashboardProps) {
@@ -345,6 +364,7 @@ export function LiveAdminDashboard({
   const [manualTreatmentId, setManualTreatmentId] = useState(treatments[0]?.id ?? "");
   const [manualComboId, setManualComboId] = useState("");
   const [manualExtraIds, setManualExtraIds] = useState<string[]>([]);
+  const [manualZoneIds, setManualZoneIds] = useState<string[]>([]);
   const manualIdempotencyKey = idempotencyUuid(useId());
   const [manualProfessionalId, setManualProfessionalId] = useState("");
   const [manualDate, setManualDate] = useState(defaultStart.slice(0, 10));
@@ -360,6 +380,11 @@ export function LiveAdminDashboard({
   const manualTreatment = treatments.find((treatment) => treatment.id === manualTreatmentId);
   const manualCombos = treatmentCombos.filter((combo) => combo.treatment_id === manualTreatmentId && combo.is_active);
   const manualCombo = manualCombos.find((combo) => combo.id === manualComboId);
+  const manualUsesZoneOrder = Boolean(zoneOrdersEnabled && manualTreatment && manualTreatment.selection_mode !== "simple");
+  const manualHasConfigSelection = manualTreatment?.selection_mode === "simple"
+    || Boolean(manualComboId)
+    || Boolean(manualUsesZoneOrder && manualZoneIds.length > 0);
+  const manualZones = depilationZones.filter((zone) => zone.is_active && !manualCombo?.zone_ids.includes(zone.id));
   const manualExtras = treatmentComboExtras.filter((extra) =>
     extra.is_active && extra.treatment_id === manualTreatmentId && manualCombo?.extra_ids.includes(extra.id),
   );
@@ -381,7 +406,9 @@ export function LiveAdminDashboard({
   };
   useEffect(() => {
     let isActive = true;
-    if (!manualTreatmentId || !manualDate || (manualTreatment?.selection_mode !== "simple" && !manualComboId)) {
+    const configurableWithoutSelection = manualTreatment?.selection_mode !== "simple"
+      && (manualUsesZoneOrder ? !manualComboId && manualZoneIds.length === 0 : !manualComboId);
+    if (!manualTreatmentId || !manualDate || configurableWithoutSelection) {
       return () => { isActive = false; };
     }
     void (async () => {
@@ -392,6 +419,8 @@ export function LiveAdminDashboard({
         treatmentId: manualTreatmentId,
         comboId: manualComboId || undefined,
         extraIds: manualExtraIds,
+        zoneOrder: manualUsesZoneOrder,
+        zoneIds: manualZoneIds,
         professionalId: manualProfessionalId || undefined,
         date: manualDate,
       });
@@ -410,7 +439,7 @@ export function LiveAdminDashboard({
       }
     });
     return () => { isActive = false; };
-  }, [manualComboId, manualDate, manualExtraIds, manualProfessionalId, manualTreatment?.selection_mode, manualTreatmentId]);
+  }, [manualComboId, manualDate, manualExtraIds, manualProfessionalId, manualTreatment?.selection_mode, manualTreatmentId, manualUsesZoneOrder, manualZoneIds]);
   const totalPages = Math.max(1, Math.ceil(agenda.total / agenda.pageSize));
 
   return (
@@ -436,6 +465,17 @@ export function LiveAdminDashboard({
         <article><span>Requieren atención</span><strong className="numeric">{agenda.summary.attention}</strong><small>Pendientes o esperando seña</small></article>
         <article><span>Confirmadas</span><strong className="numeric">{agenda.summary.confirmed}</strong><small>Próximas reservas confirmadas</small></article>
         <article><span>Especiales activos</span><strong className="numeric">{activeSpecials.length}</strong><small>Visibles según vigencia</small></article>
+      </section> : null}
+
+      {show("today") && operationalNotices.length > 0 ? <section className="admin-health" aria-labelledby="admin-health-title">
+        <div className="admin-section-heading"><div><h2 id="admin-health-title">Revisiones recomendadas</h2><p>Son avisos preventivos. No modificamos ningún dato automáticamente.</p></div></div>
+        <div className="admin-health__list">
+          {operationalNotices.map((notice) => <article key={notice.id} className="admin-health__item">
+            <TriangleAlert aria-hidden="true" strokeWidth={1.75} />
+            <div><h3>{notice.title}</h3><p>{notice.description}</p></div>
+            <Link className="button button--quiet" href={notice.href}>{notice.actionLabel}</Link>
+          </article>)}
+        </div>
       </section> : null}
 
       {(show("today") || show("agenda")) && !unavailable.bookings ? <section className="live-admin__section admin-bookings" id="reservas" aria-labelledby="bookings-title">
@@ -511,22 +551,27 @@ export function LiveAdminDashboard({
         <form action={createManualBooking} className="admin-form admin-form--wide">
           <input type="hidden" name="idempotencyKey" value={manualIdempotencyKey} />
           <div className="admin-form-grid admin-form-grid--3">
-            <label>Tratamiento<select name="treatmentId" required value={manualTreatmentId} onChange={(event) => { setManualTreatmentId(event.target.value); setManualComboId(""); setManualExtraIds([]); setManualProfessionalId(""); clearManualSlotSelection(); }}>{treatments.map((treatment) => <option key={treatment.id} value={treatment.id}>{treatment.name} · {specialtyName.get(treatment.specialty_id)}</option>)}</select></label>
-            {manualTreatment && manualTreatment.selection_mode !== "simple" ? <label>Combo<select name="comboId" value={manualComboId} onChange={(event) => { setManualComboId(event.target.value); setManualExtraIds([]); clearManualSlotSelection(); }} required><option value="">Seleccionar combo</option>{manualCombos.map((combo) => <option key={combo.id} value={combo.id}>{combo.name} · {combo.session_count} {combo.session_count === 1 ? "sesión" : "sesiones"} · {formatPrice(combo.fixed_price_cents)}</option>)}</select></label> : <label>Especial del mes<select name="monthlySpecialId" defaultValue=""><option value="">Sin promoción</option>{manualSpecials.map((special) => <option key={special.id} value={special.id}>{special.title}</option>)}</select></label>}
+            <label>Tratamiento<select name="treatmentId" required value={manualTreatmentId} onChange={(event) => { setManualTreatmentId(event.target.value); setManualComboId(""); setManualExtraIds([]); setManualZoneIds([]); setManualProfessionalId(""); clearManualSlotSelection(); }}>{treatments.map((treatment) => <option key={treatment.id} value={treatment.id}>{treatment.name} · {specialtyName.get(treatment.specialty_id)}</option>)}</select></label>
+            {manualTreatment && manualTreatment.selection_mode !== "simple" ? <label>{manualUsesZoneOrder ? "Combo opcional" : "Combo"}<select name="comboId" value={manualComboId} onChange={(event) => { const nextComboId = event.target.value; const included = treatmentCombos.find((combo) => combo.id === nextComboId)?.zone_ids ?? []; setManualComboId(nextComboId); setManualExtraIds([]); setManualZoneIds((current) => current.filter((id) => !included.includes(id))); clearManualSlotSelection(); }} required={!manualUsesZoneOrder}><option value="">{manualUsesZoneOrder ? "Solo zonas sueltas" : "Seleccionar combo"}</option>{manualCombos.map((combo) => <option key={combo.id} value={combo.id}>{combo.name} · {combo.session_count} {combo.session_count === 1 ? "sesión" : "sesiones"} · {formatPrice(combo.fixed_price_cents)}</option>)}</select>{manualUsesZoneOrder ? <small>Podés elegir un combo, zonas sueltas o combinar ambas opciones.</small> : null}</label> : <label>Especial del mes<select name="monthlySpecialId" defaultValue=""><option value="">Sin promoción</option>{manualSpecials.map((special) => <option key={special.id} value={special.id}>{special.title}</option>)}</select></label>}
             <label>Profesional<select name="professionalId" value={manualProfessionalId} onChange={(event) => { setManualProfessionalId(event.target.value); clearManualSlotSelection(); }}><option value="">Autoasignar disponible</option>{manualProfessionals.map((professional) => <option key={professional.id} value={professional.id}>{professional.public_name || professional.full_name}</option>)}</select><small>Si elegís una persona, solo se muestran horarios donde está disponible.</small></label>
             <label>Fecha<input name="manualDate" type="date" min={defaultStart.slice(0, 10)} value={manualDate} onChange={(event) => { setManualDate(event.target.value); clearManualSlotSelection(); }} required /></label>
           </div>
-          {manualCombo?.allow_public_extras && manualExtras.length > 0 ? <fieldset className="depilation-zone-picker"><legend>Extras del combo</legend>{manualExtras.map((extra) => <label className="admin-check" key={extra.id}><input type="checkbox" name="extraIds" value={extra.id} checked={manualExtraIds.includes(extra.id)} onChange={(event) => { setManualExtraIds((current) => event.target.checked ? [...current, extra.id] : current.filter((id) => id !== extra.id)); clearManualSlotSelection(); }} /><span><strong>{extra.name}</strong><small>+{formatPrice(extra.price_cents)} · +{extra.duration_minutes} min</small></span></label>)}</fieldset> : null}
+          {manualUsesZoneOrder ? <>
+            <input type="hidden" name="zoneOrder" value="on" />
+            <fieldset className="depilation-zone-picker"><legend>{manualCombo ? "Zonas adicionales" : "Zonas sueltas"}</legend>
+              {manualZones.length === 0 ? <p className="admin-field-note">No hay otras zonas activas disponibles para esta selección.</p> : manualZones.map((zone) => <label className="admin-check" key={zone.id}><input type="checkbox" name="zoneIds" value={zone.id} checked={manualZoneIds.includes(zone.id)} onChange={(event) => { setManualZoneIds((current) => event.target.checked ? [...current, zone.id] : current.filter((id) => id !== zone.id)); clearManualSlotSelection(); }} /><span><strong>{zone.name}</strong><small>{formatPrice(zone.reference_price_cents)} · {zone.duration_minutes} min</small></span></label>)}
+            </fieldset>
+          </> : manualCombo?.allow_public_extras && manualExtras.length > 0 ? <fieldset className="depilation-zone-picker"><legend>Extras del combo</legend>{manualExtras.map((extra) => <label className="admin-check" key={extra.id}><input type="checkbox" name="extraIds" value={extra.id} checked={manualExtraIds.includes(extra.id)} onChange={(event) => { setManualExtraIds((current) => event.target.checked ? [...current, extra.id] : current.filter((id) => id !== extra.id)); clearManualSlotSelection(); }} /><span><strong>{extra.name}</strong><small>+{formatPrice(extra.price_cents)} · +{extra.duration_minutes} min</small></span></label>)}</fieldset> : null}
           <input type="hidden" name="startsAt" value={manualStartsAt} />
           <div className="admin-slot-picker" role="group" aria-label="Horarios disponibles para el turno manual">
             <div className="admin-slot-picker__heading">
               <strong>Horarios disponibles</strong>
               <span>{manualProfessionalId ? "Filtrados por profesional elegido" : "Autoasignación al primer profesional disponible"}</span>
             </div>
-            {manualTreatment?.selection_mode !== "simple" && !manualComboId ? <p className="admin-slot-picker__message">Elegí un combo para consultar horarios.</p> : null}
+            {manualTreatment?.selection_mode !== "simple" && !manualComboId && (!manualUsesZoneOrder || manualZoneIds.length === 0) ? <p className="admin-slot-picker__message">{manualUsesZoneOrder ? "Elegí un combo o al menos una zona para consultar horarios." : "Elegí un combo para consultar horarios."}</p> : null}
             {manualSlotsLoading ? <p className="admin-slot-picker__message" role="status">Consultando disponibilidad real...</p> : null}
             {manualSlotsError ? <p className="form-message form-message--error" role="alert">No pudimos consultar horarios. Probá otra fecha o usá autoasignación.</p> : null}
-            {!manualSlotsLoading && !manualSlotsError && (!manualTreatment || manualTreatment.selection_mode === "simple" || manualComboId) && manualSlots.length === 0 ? <p className="admin-slot-picker__message">No hay horarios disponibles para esa combinación.</p> : null}
+            {!manualSlotsLoading && !manualSlotsError && manualHasConfigSelection && manualSlots.length === 0 ? <p className="admin-slot-picker__message">No hay horarios disponibles para esa combinación.</p> : null}
             {manualSlots.length > 0 ? <div className="admin-slot-picker__grid">{manualSlots.map((slot) => <label key={slot.startsAt} className={`admin-slot-option${manualStartsAt === slot.startsAt ? " is-selected" : ""}`}><input type="radio" name="manualSlot" checked={manualStartsAt === slot.startsAt} onChange={() => setManualStartsAt(slot.startsAt)} /><span>{bookingTime(slot.startsAt)}</span></label>)}</div> : null}
           </div>
           <div className="admin-form-grid admin-form-grid--3"><label>Nombre y apellido<input name="fullName" minLength={2} maxLength={100} required /></label><label>WhatsApp<input name="phone" type="tel" minLength={8} maxLength={30} required /></label><label>Correo opcional<input name="email" type="email" maxLength={180} /></label></div>

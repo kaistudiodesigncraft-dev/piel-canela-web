@@ -3,6 +3,7 @@ import { ChevronDown, Plus, Trash2, UserRound } from "lucide-react";
 import { deleteProfessional } from "@/app/admin/profesionales/actions";
 import { ProfessionalSaveForm } from "./ProfessionalSaveForm";
 import { randomUUID } from "node:crypto";
+import { findDuplicateProfessionalNames } from "@/lib/admin/catalog-health";
 
 interface SpecialtyRow {
   id: string;
@@ -45,12 +46,14 @@ function feedbackMessage(error?: string) {
 
 export function ProfessionalsAdmin({ specialties, professionals, feedback }: { specialties: SpecialtyRow[]; professionals: ProfessionalRow[]; feedback: Record<string, string | undefined> }) {
   const specialtyName = new Map(specialties.map((item) => [item.id, item.name]));
+  const duplicateNames = findDuplicateProfessionalNames(professionals);
   return (
     <section className="live-admin__section" id="equipo" aria-labelledby="professionals-title">
       <div className="admin-section-heading"><div><h2 id="professionals-title">Equipo profesional</h2><p>Usá un único perfil por persona y asignale todas sus especialidades. Los horarios de la especialidad habilitan turnos; la agenda del profesional evita superposiciones.</p></div><span className="admin-count numeric">{professionals.length} perfiles</span></div>
       {feedback.professionalSaved === "1" ? <p className="form-message" role="status">Perfil profesional guardado.</p> : null}
       {feedback.professionalDeleted === "1" ? <p className="form-message" role="status">Perfil profesional eliminado.</p> : null}
       {feedback.professionalError ? <p className="form-message form-message--error" role="alert">{feedbackMessage(feedback.professionalError)}</p> : null}
+      {duplicateNames.length > 0 ? <div className="form-message form-message--warning" role="status"><strong>Revisá los perfiles con el mismo nombre.</strong><p>{duplicateNames.join(", ")}. Si representan a la misma persona, mantené un solo perfil activo y asignale todas sus especialidades. El sistema no fusionará ni desactivará perfiles automáticamente.</p></div> : null}
       <details className="admin-disclosure admin-create-disclosure"><summary><span><Plus aria-hidden="true" strokeWidth={1.75} />Agregar profesional</span><ChevronDown aria-hidden="true" strokeWidth={1.75} /></summary><ProfessionalForm specialties={specialties} existingNames={professionals.flatMap((person) => [person.full_name, person.public_name ?? ""])} /></details>
       {professionals.length === 0 ? <div className="admin-empty"><UserRound aria-hidden="true" strokeWidth={1.75} /><h3>Todavía no hay profesionales.</h3><p>Creá el primer perfil para poder asignarlo a tratamientos.</p></div> : (
         <div className="admin-professional-list">

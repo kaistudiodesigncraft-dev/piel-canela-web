@@ -5729,7 +5729,17 @@ svg {
 
 .combo-selector__options {
   display: grid;
+  min-width: 0;
   border-top: 1px solid var(--color-border);
+}
+
+.treatment-detail--compact .combo-selector {
+  padding: 2rem 1.5rem;
+}
+
+.treatment-detail--compact .combo-selector__layout {
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 16rem);
+  gap: 1.25rem;
 }
 
 .combo-option {
@@ -5898,6 +5908,7 @@ svg {
 
 @media (max-width: 800px) {
   .combo-selector__layout { grid-template-columns: 1fr; }
+  .treatment-detail--compact .combo-selector__layout { grid-template-columns: 1fr; }
   .combo-selection-summary { position: sticky; bottom: 0.5rem; top: auto; z-index: 4; max-height: 70vh; overflow: auto; }
   .depilation-feature-control,
   .package-admin-item > header,
@@ -5916,6 +5927,38 @@ svg {
   .combo-option__facts strong { width: 100%; margin-left: 0; }
   .combo-selection-summary { padding: 1rem; }
   .package-admin-item > header dl { grid-template-columns: 1fr; }
+  .cookie-consent__actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .cookie-consent__actions .button { width: 100%; min-width: 0; white-space: normal; }
+}
+
+.admin-health {
+  display: grid;
+  gap: 1rem;
+  margin-block: 1.5rem;
+}
+
+.admin-health__list { display: grid; gap: .75rem; }
+
+.admin-health__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--color-warning) 35%, var(--color-border));
+  border-radius: var(--radius-md);
+  color: #654711;
+  background: #fff7e4;
+}
+
+.admin-health__item > svg { width: 1.35rem; height: 1.35rem; }
+.admin-health__item h3,
+.admin-health__item p { margin: 0; }
+.admin-health__item p { margin-top: .25rem; }
+
+@media (max-width: 720px) {
+  .admin-health__item { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
+  .admin-health__item .button { grid-column: 1 / -1; width: 100%; }
 }
 
 .admin-manual-grid {

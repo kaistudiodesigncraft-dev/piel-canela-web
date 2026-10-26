@@ -3,6 +3,7 @@ import Link from "next/link";
 import { InstagramLogo, WhatsappLogo } from "@phosphor-icons/react/dist/ssr";
 import { PrivacyPreferencesButton } from "./PrivacyPreferencesButton";
 import { publicEmailLink, publicInstagramLink, publicWhatsAppLink } from "./public-contact";
+import { formatReceptionHours } from "@/lib/public-information";
 import styles from "./PublicInformation.module.css";
 
 interface SiteFooterProps {
@@ -48,7 +49,7 @@ export function SiteFooter({ settings, hasMonthlySpecials = false }: SiteFooterP
         <div>
           <h2 className="site-footer__title">Encontranos</h2>
           {settings.address?.trim() ? <address className={styles.address}>{settings.address}</address> : null}
-          {settings.receptionHours?.trim() ? <div className={styles.address}><h3 className="site-footer__title">Horarios de recepción</h3><p>{settings.receptionHours}</p><p>La disponibilidad de turnos se consulta por tratamiento.</p></div> : null}
+          {settings.receptionHours?.trim() ? <div className={styles.address}><h3 className="site-footer__title">Horarios de recepción</h3><p>{formatReceptionHours(settings.receptionHours)}</p><p>La disponibilidad de turnos se consulta por tratamiento.</p></div> : null}
           {whatsapp || instagram ? (
             <ul className="site-footer__social-list" aria-label="Redes sociales y mensajería">
               {whatsapp ? (

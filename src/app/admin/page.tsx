@@ -8,6 +8,7 @@ import {
 } from "@/lib/admin/agenda";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { MESSAGE_EVENTS, type MessageEvent, type MessageTemplates } from "@/domain/whatsapp";
+import { buildAdminHealthNotices } from "@/lib/admin/catalog-health";
 
 export const metadata: Metadata = {
   title: "Panel administrativo",
@@ -86,6 +87,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     exceptionsResult,
     treatmentsResult,
     combosResult,
+    zonesResult,
+    comboZonesResult,
     comboExtrasResult,
     comboAllowedExtrasResult,
     professionalsResult,
@@ -102,6 +105,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     supabase.from("availability_exceptions").select("id,specialty_id,kind,starts_at,ends_at,public_reason,internal_reason").gte("ends_at", nowIso).order("starts_at").limit(40),
     supabase.from("treatments").select("id,name,specialty_id,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,price_cents,is_active").eq("is_active", true).order("name"),
     supabase.from("treatment_combos").select("id,treatment_id,name,mode,session_count,fixed_price_cents,allow_public_extras,is_active").eq("is_active", true).order("display_order"),
+    supabase.from("depilation_zones").select("id,name,audience,reference_price_cents,duration_minutes,is_active,display_order").eq("is_active", true).gt("reference_price_cents", 0).order("display_order").order("name"),
+    supabase.from("treatment_combo_zones").select("combo_id,zone_id"),
     supabase.from("treatment_combo_extras").select("id,treatment_id,name,price_cents,duration_minutes,is_active").eq("is_active", true).order("display_order"),
     supabase.from("treatment_combo_allowed_extras").select("combo_id,extra_id"),
     supabase.from("professionals").select("id,full_name,public_name,specialty_id,is_active,display_order").eq("is_active", true).order("display_order").order("full_name"),
@@ -122,7 +127,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const failures = [
     ["Especialidades", specialtiesResult.error], ["Horarios", rulesResult.error],
     ["Excepciones", exceptionsResult.error], ["Tratamientos", treatmentsResult.error],
-    ["Combos", combosResult.error ?? comboExtrasResult.error ?? comboAllowedExtrasResult.error], ["Profesionales", professionalsResult.error ?? treatmentProfessionalsResult.error ?? professionalSpecialtiesResult.error],
+    ["Combos", combosResult.error ?? zonesResult.error ?? comboZonesResult.error ?? comboExtrasResult.error ?? comboAllowedExtrasResult.error], ["Profesionales", professionalsResult.error ?? treatmentProfessionalsResult.error ?? professionalSpecialtiesResult.error],
     ["Especiales", specialsResult.error],
     ["Reservas", bookingsResult.error ?? searchError], ["Resumen de hoy", todayCountResult.error],
     ["Pendientes", attentionCountResult.error], ["Confirmadas", confirmedCountResult.error],
@@ -210,10 +215,23 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   for (const link of comboAllowedExtrasResult.data ?? []) {
     allowedExtraIdsByCombo.set(link.combo_id, [...(allowedExtraIdsByCombo.get(link.combo_id) ?? []), link.extra_id]);
   }
+  const zoneIdsByCombo = new Map<string, string[]>();
+  for (const link of comboZonesResult.data ?? []) {
+    zoneIdsByCombo.set(link.combo_id, [...(zoneIdsByCombo.get(link.combo_id) ?? []), link.zone_id]);
+  }
   const treatmentCombos = (combosResult.data ?? []).map((combo) => ({
     ...combo,
     extra_ids: allowedExtraIdsByCombo.get(combo.id) ?? [],
+    zone_ids: zoneIdsByCombo.get(combo.id) ?? [],
   }));
+  const operationalNotices = specialtiesResult.error || rulesResult.error || treatmentsResult.error || professionalsResult.error
+    ? []
+    : buildAdminHealthNotices({
+        specialties: specialtiesResult.data ?? [],
+        rules: rulesResult.data ?? [],
+        treatments: treatmentsResult.data ?? [],
+        professionals: professionalsResult.data ?? [],
+      });
 
   return (
     <LiveAdminDashboard
@@ -225,7 +243,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       exceptions={exceptionsResult.data ?? []}
       treatments={treatmentsResult.data ?? []}
       treatmentCombos={treatmentCombos}
+      depilationZones={zonesResult.data ?? []}
       treatmentComboExtras={comboExtrasResult.data ?? []}
+      zoneOrdersEnabled={process.env.DEPILATION_ZONES_ENABLED === "true"}
       professionals={professionals}
       monthlySpecials={specials}
       bookings={bookings}
@@ -242,6 +262,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       }}
       feedback={query}
       warnings={warnings}
+      operationalNotices={operationalNotices}
       supportCode={warnings.length ? correlationId : undefined}
       unavailable={{
         bookings: Boolean(bookingsResult.error || searchError),
