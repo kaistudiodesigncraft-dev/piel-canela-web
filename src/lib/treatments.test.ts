@@ -3,6 +3,7 @@ import { monthlySpecials, treatments } from "@/data/fixtures";
 import {
   buildBookingHref,
   buildCatalogHref,
+  buildTreatmentSelectionHref,
   filterTreatmentsByCategory,
   getActiveTreatments,
   getMonthlySpecialForTreatment,
@@ -43,6 +44,15 @@ describe("treatment domain helpers", () => {
       treatmentId: "treatment-depilacion",
       comboId: "combo-cerrado",
     })).toBe("/reservar?treatmentId=treatment-depilacion&comboId=combo-cerrado");
+  });
+
+  it("builds a return link that preserves a combo and its loose zones", () => {
+    expect(buildTreatmentSelectionHref("depilacion", {
+      treatmentId: "treatment-depilacion",
+      comboId: "combo-cerrado",
+      zoneOrder: true,
+      zoneIds: ["zona-a", "zona-b"],
+    })).toBe("/tratamientos/depilacion?comboId=combo-cerrado&zoneOrder=1&zoneId=zona-a&zoneId=zona-b#opciones");
   });
 
   it("resolves the applied price without overwriting the base price", () => {

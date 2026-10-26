@@ -1,10 +1,13 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { treatments } from "@/data/fixtures";
 import type { DepilationZone, Treatment, TreatmentCombo } from "@/domain/treatment";
 import { resolveZoneOrder } from "@/lib/depilation-selection";
 import { DepilationOrderSelector } from "./DepilationOrderSelector";
+
+const { navigation } = vi.hoisted(() => ({ navigation: { query: "" } }));
+vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(navigation.query) }));
 
 const zones: DepilationZone[] = [
   { id: "69000000-0000-4000-8000-000000000001", name: "Incluida", audience: "shared", referencePriceCents: 3000000, durationMinutes: 30, isActive: true, displayOrder: 1 },
@@ -20,7 +23,10 @@ const combo: TreatmentCombo = {
 };
 const treatment: Treatment = { ...treatments[0]!, isActive: true, selectionMode: "combo_with_extras", combos: [combo], bufferMinutes: 15,
   zoneOrder: { ready: true, discountPercent: 10, zones } };
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  navigation.query = "";
+});
 describe("depilation order selector", () => {
   it("shows combos in natural name order and zones alphabetically", () => {
     const scrambledCombos: TreatmentCombo[] = [
@@ -117,6 +123,13 @@ describe("depilation order selector", () => {
     const url = new URL(screen.getByRole("link", { name: "Elegir fecha y horario" }).getAttribute("href")!, "https://example.test");
     expect(url.searchParams.get("comboId")).toBe(combo.id);
     expect(url.searchParams.getAll("zoneId")).toEqual([zones[1]!.id, zones[2]!.id]);
+  });
+  it("restores the selected combo and zones when returning from the calendar", () => {
+    navigation.query = `comboId=${combo.id}&zoneOrder=1&zoneId=${zones[1]!.id}`;
+    render(<DepilationOrderSelector treatment={treatment} />);
+    expect(screen.getByRole("radio", { name: /Combo fijo/i })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /Axilas/i })).toBeChecked();
+    expect(screen.getByRole("complementary", { name: "Resumen de tu elección" })).toHaveTextContent("$ 43.000");
   });
   it("shows empty/error states and never pretends a zero-percent discount exists", async () => {
     const { rerender } = render(<DepilationOrderSelector treatment={{ ...treatment, combos: [], zoneOrder: { ready: true, discountPercent: 0, zones: [] } }} />);

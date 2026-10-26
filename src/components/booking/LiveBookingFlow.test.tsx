@@ -55,8 +55,8 @@ describe("LiveBookingFlow", () => {
     getAvailableSlotsMock.mockRejectedValueOnce(new Error("offline"));
     render(<LiveBookingFlow selection={selection} dates={dates} whatsappNumber={null} />);
     await user.click(await screen.findByRole("button", { name: "Reintentar horarios" }));
-    expect(await screen.findByRole("button", { name: "12:30" })).toBeEnabled();
-    await user.click(screen.getByRole("button", { name: /Lun 17 Ago/i }));
+    expect(await screen.findByRole("radio", { name: "12:30" })).toBeEnabled();
+    await user.click(screen.getByRole("radio", { name: /Lun 17 Ago/i }));
     expect(screen.queryByText("Consultando horarios…")).not.toBeInTheDocument();
     expect(getAvailableSlotsMock).toHaveBeenCalledTimes(2);
   });
@@ -65,7 +65,7 @@ describe("LiveBookingFlow", () => {
     const user = userEvent.setup();
     createPublicBookingMock.mockRejectedValueOnce(new Error("offline"));
     render(<LiveBookingFlow selection={selection} dates={dates} whatsappNumber={null} />);
-    await user.click(await screen.findByRole("button", { name: "12:30" }));
+    await user.click(await screen.findByRole("radio", { name: "12:30" }));
     await user.click(screen.getAllByRole("button", { name: /continuar/i })[0]!);
     fireEvent.change(screen.getByLabelText("Nombre y apellido"), { target: { value: "Laura Gómez" } });
     fireEvent.change(screen.getByLabelText("WhatsApp"), { target: { value: "3515550000" } });
@@ -81,7 +81,7 @@ describe("LiveBookingFlow", () => {
     const user = userEvent.setup();
     render(<LiveBookingFlow selection={selection} dates={dates} whatsappNumber="5493515550000" />);
 
-    const slot = await screen.findByRole("button", { name: "12:30" });
+    const slot = await screen.findByRole("radio", { name: "12:30" });
     await user.click(slot);
     await user.click(screen.getAllByRole("button", { name: /continuar/i })[0]!);
     await waitFor(() => expect(screen.getByRole("heading", { name: "Contanos cómo contactarte." })).toHaveFocus());
@@ -108,7 +108,7 @@ describe("LiveBookingFlow", () => {
     const user = userEvent.setup();
     render(<LiveBookingFlow selection={selection} dates={dates} whatsappNumber={null} />);
 
-    await user.click(await screen.findByRole("button", { name: "12:30" }));
+    await user.click(await screen.findByRole("radio", { name: "12:30" }));
     await user.click(screen.getAllByRole("button", { name: /continuar/i })[0]!);
     fireEvent.change(screen.getByLabelText("Nombre y apellido"), { target: { value: "Laura Gómez" } });
     fireEvent.change(screen.getByLabelText("WhatsApp"), { target: { value: "3515550000" } });
@@ -147,9 +147,9 @@ describe("LiveBookingFlow", () => {
 
     getAvailableDatesMock.mockResolvedValue({ ok: true, dates: [longWindow[1]!.value, longWindow[17]!.value] });
     render(<LiveBookingFlow selection={selection} dates={longWindow} whatsappNumber="5493515550000" />);
-    expect(await screen.findByRole("button", { name: /2 Sep/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /18 Sep/i })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /1 Sep/i })).not.toBeInTheDocument();
+    expect(await screen.findByRole("radio", { name: /2 Sep/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /18 Sep/i })).toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: /1 Sep/i })).not.toBeInTheDocument();
   });
 
   it("clears stale hours while loading a different month", async () => {
@@ -178,17 +178,17 @@ describe("LiveBookingFlow", () => {
       .mockReturnValueOnce(septemberRequest);
 
     render(<LiveBookingFlow selection={selection} dates={datesAcrossMonths} whatsappNumber={null} />);
-    expect(await screen.findByRole("button", { name: "12:30" })).toBeInTheDocument();
+    expect(await screen.findByRole("radio", { name: "12:30" })).toBeInTheDocument();
 
     await user.selectOptions(screen.getByLabelText("Mes disponible"), "2026-09");
     expect(screen.getByText("Consultando horarios…")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "12:30" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "12:30" })).not.toBeInTheDocument();
 
     resolveSeptember({
       ok: true,
       slots: [{ startsAt: "2026-09-18T16:00:00.000Z", endsAt: "2026-09-18T17:00:00.000Z" }],
     });
-    expect(await screen.findByRole("button", { name: "13:00" })).toBeInTheDocument();
+    expect(await screen.findByRole("radio", { name: "13:00" })).toBeInTheDocument();
   });
 
   it("recovers from a slot taken concurrently without losing customer data", async () => {
@@ -196,7 +196,7 @@ describe("LiveBookingFlow", () => {
     createPublicBookingMock.mockResolvedValueOnce({ ok: false, reason: "slot" });
     render(<LiveBookingFlow selection={selection} dates={dates} whatsappNumber="5493515550000" />);
 
-    await user.click(await screen.findByRole("button", { name: "12:30" }));
+    await user.click(await screen.findByRole("radio", { name: "12:30" }));
     await user.click(screen.getAllByRole("button", { name: /continuar/i })[0]!);
     fireEvent.change(screen.getByLabelText("Nombre y apellido"), { target: { value: "Laura Gómez" } });
     fireEvent.change(screen.getByLabelText("WhatsApp"), { target: { value: "3515550000" } });
@@ -207,7 +207,7 @@ describe("LiveBookingFlow", () => {
     expect(screen.getByRole("heading", { name: "Elegí cuándo querés venir." })).toBeInTheDocument();
     await waitFor(() => expect(getAvailableSlotsMock).toHaveBeenCalledTimes(2));
 
-    await user.click(await screen.findByRole("button", { name: "12:30" }));
+    await user.click(await screen.findByRole("radio", { name: "12:30" }));
     await user.click(screen.getAllByRole("button", { name: /continuar/i })[0]!);
     expect(screen.getByLabelText("Nombre y apellido")).toHaveValue("Laura Gómez");
     expect(screen.getByLabelText("WhatsApp")).toHaveValue("3515550000");

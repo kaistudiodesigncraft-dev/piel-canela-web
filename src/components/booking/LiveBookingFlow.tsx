@@ -41,13 +41,14 @@ interface LiveBookingFlowProps {
   selection: ResolvedBookingSelection;
   dates: readonly BookingDateOption[];
   whatsappNumber: string | null;
+  selectionHref?: string;
 }
 
 const initialCustomer: CustomerForm = { fullName: "", phone: "", email: "", notes: "" };
 const stepOrder: BookingStep[] = ["schedule", "details", "review", "success"];
 const INITIAL_VISIBLE_SLOTS = 12;
 
-export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookingFlowProps) {
+export function LiveBookingFlow({ selection, dates, whatsappNumber, selectionHref }: LiveBookingFlowProps) {
   const [step, setStep] = useState<BookingStep>("schedule");
   const [date, setDate] = useState("");
   const [availableDates, setAvailableDates] = useState<readonly BookingDateOption[]>([]);
@@ -338,6 +339,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
             {step === "details" && "Contanos cómo contactarte."}
             {step === "review" && "Revisá antes de crear la pre-reserva."}
           </h2>
+          {selectionHref ? <Link className="text-link booking-selection-back" href={selectionHref}><ArrowLeft aria-hidden="true" strokeWidth={1.75} />{selection.zoneOrder ? "Cambiar combo o zonas" : "Cambiar combo"}</Link> : null}
         </div>
         <p className="booking-step-caption">Paso {currentStepIndex + 1} de 3</p>
       </div>
@@ -374,13 +376,14 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
                     const first = availableDates.find((item) => item.value.startsWith(month));
                     if (first) selectBookingDate(first.value);
                   }}>{availableMonths.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label> : null}
-                  <div className="date-choice-grid" aria-label="Días con horarios disponibles">
+                  <div className="date-choice-grid" role="radiogroup" aria-label="Días con horarios disponibles">
                   {visibleDates.map((item) => (
                     <button
                       key={item.value}
                       className={`date-choice${date === item.value ? " is-selected" : ""}`}
                       type="button"
-                      aria-pressed={date === item.value}
+                      role="radio"
+                      aria-checked={date === item.value}
                       onClick={() => {
                         selectBookingDate(item.value);
                       }}
@@ -413,13 +416,14 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber }: LiveBookin
                   <p className="booking-inline-state">No quedan horarios para este día. Probá con otra fecha.</p>
                 ) : (
                   <>
-                    <div className="time-choice-grid numeric">
+                    <div className="time-choice-grid numeric" role="radiogroup" aria-label="Horarios disponibles">
                       {visibleSlots.map((slot) => (
                         <button
                           key={slot.startsAt}
                           className={`time-choice${selectedSlot === slot.startsAt ? " is-selected" : ""}`}
                           type="button"
-                          aria-pressed={selectedSlot === slot.startsAt}
+                          role="radio"
+                          aria-checked={selectedSlot === slot.startsAt}
                           onClick={() => setSelectedSlot(slot.startsAt)}
                         >
                           {formatBookingTime(slot.startsAt)}

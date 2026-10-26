@@ -89,7 +89,7 @@ export function CatalogExperience({
 
   function closeTreatment() {
     const treatmentSlugToRestore = selectedTreatmentSlug;
-    router.replace(withCurrentParams({ treatment: null, monthlySpecial: null }), {
+    router.replace(withCurrentParams({ treatment: null, monthlySpecial: null, comboId: null, zoneId: null, zoneOrder: null, extraId: null }), {
       scroll: false,
     });
     window.requestAnimationFrame(() => {
@@ -175,7 +175,7 @@ export function CatalogExperience({
                 <TreatmentEditorialCard
                   treatment={treatment}
                   category={category}
-                  detailHref={withCurrentParams({ treatment: treatment.slug, monthlySpecial: null })}
+                  detailHref={withCurrentParams({ treatment: treatment.slug, monthlySpecial: null, comboId: null, zoneId: null, zoneOrder: null, extraId: null })}
                   onOpen={rememberOpener}
                 />
               </div>

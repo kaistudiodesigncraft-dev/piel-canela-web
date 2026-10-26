@@ -13,6 +13,7 @@ import { getSiteContent } from "@/lib/supabase/site-content";
 import {
   getMonthlySpecialForTreatment,
   getTreatmentCombo,
+  buildTreatmentSelectionHref,
   resolveBookingSelection,
 } from "@/lib/treatments";
 
@@ -79,7 +80,7 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
         actionHref={`/tratamientos/${treatment.slug}`} actionLabel="Elegir zonas y combos" /></div>;
     }
     return <><h1 className="sr-only">Reservar {treatment.name}</h1><div className="site-container booking-demo-page">
-      <LiveBookingFlow selection={selection} dates={buildBookingDates(new Date(), settings.maximumAdvanceDays + 1)} whatsappNumber={settings.whatsappNumber} />
+      <LiveBookingFlow selection={selection} selectionHref={buildTreatmentSelectionHref(treatment.slug, selection)} dates={buildBookingDates(new Date(), settings.maximumAdvanceDays + 1)} whatsappNumber={settings.whatsappNumber} />
     </div></>;
   }
   if (query.zoneOrder || query.zoneId) {
@@ -105,6 +106,7 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
       <div className="site-container booking-demo-page">
         <LiveBookingFlow
           selection={resolveBookingSelection(treatment, treatment.selectionMode === "simple" ? monthlySpecial : undefined, combo, selectedExtras)}
+          selectionHref={combo ? buildTreatmentSelectionHref(treatment.slug, resolveBookingSelection(treatment, undefined, combo, selectedExtras)) : undefined}
           dates={buildBookingDates(new Date(), settings.maximumAdvanceDays + 1)}
           whatsappNumber={settings.whatsappNumber}
         />

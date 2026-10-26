@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import type { DepilationAudience, Treatment } from "@/domain/treatment";
 import { DISCOUNT_MIN_ZONES } from "@/lib/depilation-order";
@@ -17,11 +18,20 @@ const audienceLabels: Record<DepilationAudience, string> = {
 export function DepilationOrderSelector({ treatment, preview = false }: {
   treatment: Treatment; preview?: boolean;
 }) {
-  const [comboId, setComboId] = useState<string>();
-  const [zoneIds, setZoneIds] = useState<string[]>([]);
+  const searchParams = useSearchParams();
+  const catalog = treatment.zoneOrder;
+  const [comboId, setComboId] = useState<string | undefined>(() => {
+    const requested = searchParams.get("comboId") ?? undefined;
+    return treatment.combos.some((combo) => combo.id === requested && combo.isActive) ? requested : undefined;
+  });
+  const [zoneIds, setZoneIds] = useState<string[]>(() => {
+    const included = new Set(treatment.combos.find((combo) => combo.id === searchParams.get("comboId"))?.zones.map((zone) => zone.id) ?? []);
+    return [...new Set(searchParams.getAll("zoneId"))].filter((id) =>
+      !included.has(id) && Boolean(catalog?.zones.some((zone) => zone.id === id && zone.isActive && zone.referencePriceCents > 0)),
+    );
+  });
   const [comboFilter, setComboFilter] = useState<"all" | "women" | "men">("all");
   const [filter, setFilter] = useState<"all" | DepilationAudience>("all");
-  const catalog = treatment.zoneOrder;
   if (!catalog?.ready) {
     return <section className="combo-selector" aria-label="Opciones de depilación">
       <h2>No pudimos cargar las zonas</h2>
@@ -52,15 +62,16 @@ export function DepilationOrderSelector({ treatment, preview = false }: {
       chooseCombo(undefined);
     }
   }
-  return <section className="combo-selector depilation-order" aria-labelledby={`order-${treatment.id}`}>
+  return <section id="opciones" className="combo-selector depilation-order" aria-labelledby={`order-${treatment.id}`}>
     <div className="combo-selector__heading"><div>
       <h2 id={`order-${treatment.id}`}>Elegí cómo querés depilarte</h2>
       <p>Podés elegir un combo, sumar zonas adicionales o seleccionar solo las zonas que necesitás.</p>
     </div></div>
     <div className="combo-selector__layout">
       <div className="combo-selector__options">
-        <fieldset className="depilation-order__choices">
-          <legend>Tu punto de partida</legend>
+        <fieldset className="depilation-order__choices depilation-order__panel">
+          <legend>Combos preparados</legend>
+          <p className="depilation-order__intro">Elegí una propuesta armada por Piel Canela o continuá solo con zonas sueltas.</p>
           <div className="combo-selector__filters" role="group" aria-label="Filtrar combos">
             {(["all", "women", "men"] as const).map(value => <button key={value} type="button"
               className={`filter-chip${comboFilter === value ? " is-active" : ""}`} aria-pressed={comboFilter === value}
@@ -80,9 +91,10 @@ export function DepilationOrderSelector({ treatment, preview = false }: {
           </label>)}
           {visibleCombos.length === 0 ? <p>Todavía no hay combos publicados para este filtro.</p> : null}
         </fieldset>
-        <fieldset className="depilation-order__choices">
-          <legend>{selectedCombo ? "Zonas adicionales" : "Seleccioná tus zonas"}</legend>
-          <div className="combo-selector__filters" aria-label="Filtrar zonas">
+        <fieldset className="depilation-order__choices depilation-order__panel">
+          <legend>{selectedCombo ? "Zonas adicionales" : "Zonas sueltas"}</legend>
+          <p className="depilation-order__intro">{selectedCombo ? "Sumá únicamente las zonas que no están incluidas en el combo." : "Elegí una zona o armá tu propia combinación."}</p>
+          <div className="combo-selector__filters" role="group" aria-label="Filtrar zonas">
             {(["all", "women", "men", "shared"] as const).map(value => <button key={value} type="button"
               className={`filter-chip${filter === value ? " is-active" : ""}`} aria-pressed={filter === value}
               onClick={() => setFilter(value)}>{value === "all" ? "Todas" : audienceLabels[value]}</button>)}

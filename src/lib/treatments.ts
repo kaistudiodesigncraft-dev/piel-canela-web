@@ -110,6 +110,19 @@ export function buildBookingHref(selection: BookingInitialSelection): string {
   return `/reservar?${params.toString()}`;
 }
 
+export function buildTreatmentSelectionHref(
+  treatmentSlug: string,
+  selection: BookingInitialSelection,
+): string {
+  const params = new URLSearchParams();
+  if (selection.comboId) params.set("comboId", selection.comboId);
+  for (const extraId of selection.extraIds ?? []) params.append("extraId", extraId);
+  if (selection.zoneOrder) params.set("zoneOrder", "1");
+  for (const zoneId of selection.zoneIds ?? []) params.append("zoneId", zoneId);
+  const query = params.toString();
+  return `/tratamientos/${treatmentSlug}${query ? `?${query}` : ""}#opciones`;
+}
+
 export function resolveBookingSelection(
   treatment: Treatment,
   monthlySpecial?: MonthlySpecial,

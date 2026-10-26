@@ -5816,6 +5816,11 @@ svg {
 
 .depilation-order__choices { border: 0; padding: 0; margin: 0 0 1.5rem; display: grid; gap: 0.75rem; min-width: 0; }
 .depilation-order__choices legend { margin-bottom: 0.75rem; font-weight: 700; }
+.depilation-order__panel { padding: clamp(1rem, 2.5vw, 1.5rem); border: 1px solid var(--color-border); border-radius: var(--radius-large); background: var(--color-white); }
+.depilation-order__panel legend { padding-inline: 0.35rem; font-family: var(--font-title); font-size: clamp(1.2rem, 2vw, 1.55rem); }
+.depilation-order__intro { margin: -0.35rem 0 0.25rem; color: var(--color-text-secondary); line-height: 1.55; }
+.booking-selection-back { width: fit-content; margin-top: 0.75rem; display: inline-flex; align-items: center; gap: 0.4rem; }
+.booking-selection-back svg { width: 1rem; }
 .depilation-order .combo-option input { position: static; opacity: 1; width: 1.25rem; height: 1.25rem; accent-color: var(--color-petrol); }
 .depilation-order .combo-option:focus-within { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 .depilation-order__zone { display: flex; align-items: center; gap: 0.75rem; min-height: 44px; padding: 0.75rem 0; border-bottom: 1px solid var(--color-border); cursor: pointer; }
