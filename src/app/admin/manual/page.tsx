@@ -61,6 +61,8 @@ const sections = [
     title: "Disponibilidad y agenda",
     steps: [
       "Definí la disponibilidad habitual por especialidad.",
+      "Si un tratamiento se ofrece una sola vez al mes, dejá abierto su día en la disponibilidad habitual y después abrí el tratamiento desde Catálogo.",
+      "En Cuándo se ofrece, elegí Días específicos del mes, seleccioná el día y marcá una sola aparición, por ejemplo el segundo jueves. Solo esa fecha aparecerá en el calendario público.",
       "La duración, preparación y frecuencia de inicio se configuran en cada tratamiento.",
       "Usá excepciones para bloquear fechas puntuales, feriados o ausencias.",
       "Los cambios de disponibilidad afectan turnos futuros disponibles, no reservas ya tomadas.",

@@ -16,6 +16,9 @@ const treatments = [{
   duration_minutes: 60,
   buffer_minutes: 15,
   start_interval_minutes: 30,
+  service_frequency: "weekly" as const,
+  monthly_weekday: null,
+  monthly_occurrence_ordinals: [],
   is_active: true,
 }];
 const rules = [{
@@ -32,6 +35,7 @@ describe("WeeklyAvailabilityEditor", () => {
     expect(screen.getByLabelText("Especialidad")).toHaveValue(specialtyId);
     expect(screen.getByText("Relajación profunda")).toBeInTheDocument();
     expect(screen.getByText("Inicios cada 30 min")).toBeInTheDocument();
+    expect(screen.getByText("Se ofrece: Todas las semanas")).toBeInTheDocument();
     expect(screen.getByText("09:00–13:00")).toBeInTheDocument();
   });
 

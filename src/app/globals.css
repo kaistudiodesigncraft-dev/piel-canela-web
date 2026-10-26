@@ -6440,6 +6440,29 @@ svg {
   margin-top: 1.5rem;
 }
 
+.weekly-availability__monthly-help {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-aquamarine) 10%, var(--color-white));
+  color: var(--color-text);
+}
+
+.weekly-availability__monthly-help > svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--color-petrol);
+}
+
+.weekly-availability__monthly-help p {
+  margin: 0.25rem 0 0;
+  color: var(--color-text-muted);
+}
+
 .weekly-availability__editor {
   min-width: 0;
   border-top: 1px solid var(--color-border);
@@ -6640,6 +6663,23 @@ svg {
   border-bottom: 1px solid color-mix(in srgb, var(--color-border) 68%, transparent);
 }
 
+.weekly-summary__treatment-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.weekly-summary__treatment-heading a {
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.weekly-summary__treatments small.is-monthly {
+  color: var(--color-petrol);
+  font-weight: 750;
+}
+
 .weekly-summary__warning {
   padding: 0.75rem;
   border: 1px solid color-mix(in srgb, var(--color-action) 35%, var(--color-border));
@@ -6703,6 +6743,15 @@ svg {
 }
 
 @media (max-width: 48rem) {
+  .weekly-availability__monthly-help {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .weekly-availability__monthly-help .button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
   .weekly-availability__toolbar,
   .weekly-availability__footer {
     align-items: stretch;

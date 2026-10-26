@@ -1,6 +1,7 @@
 "use client";
 
-import { Copy, Plus, X } from "lucide-react";
+import { CalendarRange, Copy, ExternalLink, Plus, X } from "lucide-react";
+import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
@@ -31,6 +32,9 @@ interface AvailabilityTreatment {
   duration_minutes: number;
   buffer_minutes: number;
   start_interval_minutes: number;
+  service_frequency: "weekly" | "monthly";
+  monthly_weekday: number | null;
+  monthly_occurrence_ordinals: number[];
   is_active: boolean;
 }
 
@@ -76,6 +80,17 @@ export function WeeklyAvailabilityEditor({
   const selectedSpecialty = activeSpecialties.find((specialty) => specialty.id === selectedSpecialtyId);
   const linkedTreatments = treatments.filter((treatment) => treatment.specialty_id === selectedSpecialtyId && treatment.is_active);
   const enabledDays = days.filter((day) => day.enabled && day.ranges.length > 0);
+
+  function monthlyScheduleLabel(treatment: AvailabilityTreatment) {
+    if (treatment.service_frequency !== "monthly" || treatment.monthly_weekday === null) return "Todas las semanas";
+    const day = WEEKDAY_NAMES[treatment.monthly_weekday] ?? "Día";
+    const labels = treatment.monthly_occurrence_ordinals.map((ordinal) => {
+      if (ordinal === -1) return `último ${day.toLowerCase()}`;
+      const names: Record<number, string> = { 1: "primer", 2: "segundo", 3: "tercer", 4: "cuarto" };
+      return `${names[ordinal] ?? ordinal} ${day.toLowerCase()}`;
+    });
+    return labels.length > 0 ? labels.join(" y ") : `Un ${day.toLowerCase()} del mes`;
+  }
 
   function selectSpecialty(id: string) {
     if (id === selectedSpecialtyId) return;
@@ -171,6 +186,15 @@ export function WeeklyAvailabilityEditor({
         </button>
       </div>
 
+      <div className="weekly-availability__monthly-help">
+        <CalendarRange aria-hidden="true" strokeWidth={1.75} />
+        <div>
+          <strong>¿Un tratamiento se ofrece una sola vez al mes?</strong>
+          <p>Acá dejá abierto el día y su franja habitual. Después, en el tratamiento, elegí <b>Días específicos del mes</b> y marcá un solo jueves. El calendario público mostrará únicamente esa fecha.</p>
+        </div>
+        <Link className="button button--quiet" href="/admin/catalogo">Configurar tratamiento <ExternalLink aria-hidden="true" /></Link>
+      </div>
+
       {saved ? <p className="form-message" role="status">La semana quedó guardada. Los turnos ya reservados no se modificaron.</p> : null}
       {isDirty ? <p className="admin-unsaved-note" role="status">Tenés cambios sin guardar en esta semana.</p> : null}
       {actionState.status === "error" ? <p className="form-message form-message--error" role="alert">{actionMessages[actionState.error ?? "save"]}</p> : null}
@@ -241,9 +265,13 @@ export function WeeklyAvailabilityEditor({
               <ul>
                 {linkedTreatments.map((treatment) => (
                   <li key={treatment.id}>
-                    <strong>{treatment.name}</strong>
+                    <div className="weekly-summary__treatment-heading">
+                      <strong>{treatment.name}</strong>
+                      <Link href={`/admin/catalogo/${treatment.id}`} aria-label={`Editar frecuencia de ${treatment.name}`}>Editar</Link>
+                    </div>
                     <span>{treatment.duration_minutes} min + {treatment.buffer_minutes} min de preparación</span>
                     <small>Inicios cada {treatment.start_interval_minutes} min</small>
+                    <small className={treatment.service_frequency === "monthly" ? "is-monthly" : ""}>Se ofrece: {monthlyScheduleLabel(treatment)}</small>
                   </li>
                 ))}
               </ul>

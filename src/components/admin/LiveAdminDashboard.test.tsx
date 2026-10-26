@@ -40,7 +40,7 @@ describe("Reception modules", () => {
       {...props}
       feedback={{ module: "agenda" }}
       specialties={[{ id: "specialty", name: "Estética", slug: "estetica", description: "", display_order: 1, is_active: true }]}
-      treatments={[{ id: "treatment", name: "Depilación", specialty_id: "specialty", duration_minutes: 30, buffer_minutes: 10, start_interval_minutes: 15, selection_mode: "simple", price_cents: 10000, is_active: true }]}
+      treatments={[{ id: "treatment", name: "Depilación", specialty_id: "specialty", duration_minutes: 30, buffer_minutes: 10, start_interval_minutes: 15, service_frequency: "weekly", monthly_weekday: null, monthly_occurrence_ordinals: [], selection_mode: "simple", price_cents: 10000, is_active: true }]}
       professionals={[
         { id: "professional-a", full_name: "Agustina", public_name: "Agustina Spertino", specialty_id: null, is_active: true, display_order: 1, specialty_ids: [], treatment_ids: ["treatment"] },
         { id: "professional-b", full_name: "Melina", public_name: null, specialty_id: "other", is_active: true, display_order: 2, specialty_ids: [], treatment_ids: [] },
@@ -55,7 +55,7 @@ describe("Reception modules", () => {
       {...props}
       feedback={{ module: "agenda" }}
       specialties={[{ id: "specialty", name: "Estética", slug: "estetica", description: "", display_order: 1, is_active: true }]}
-      treatments={[{ id: "treatment", name: "Depilación", specialty_id: "specialty", duration_minutes: 30, buffer_minutes: 10, start_interval_minutes: 15, selection_mode: "combo_with_extras", price_cents: 0, is_active: true }]}
+      treatments={[{ id: "treatment", name: "Depilación", specialty_id: "specialty", duration_minutes: 30, buffer_minutes: 10, start_interval_minutes: 15, service_frequency: "weekly", monthly_weekday: null, monthly_occurrence_ordinals: [], selection_mode: "combo_with_extras", price_cents: 0, is_active: true }]}
       depilationZones={[{ id: "zone-a", name: "Axilas", audience: "shared", reference_price_cents: 150000, duration_minutes: 15, is_active: true, display_order: 1 }]}
     />);
 

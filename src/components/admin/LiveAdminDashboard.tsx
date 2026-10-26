@@ -95,6 +95,9 @@ interface TreatmentRow {
   duration_minutes: number;
   buffer_minutes: number;
   start_interval_minutes: number;
+  service_frequency: "weekly" | "monthly";
+  monthly_weekday: number | null;
+  monthly_occurrence_ordinals: number[];
   selection_mode: TreatmentSelectionMode;
   price_cents: number;
   is_active: boolean;

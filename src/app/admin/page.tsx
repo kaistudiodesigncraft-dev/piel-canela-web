@@ -103,7 +103,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     supabase.from("specialties").select("id,name,slug,description,display_order,is_active").order("display_order"),
     supabase.from("availability_rules").select("id,specialty_id,weekday,start_time,end_time").eq("is_active", true).order("weekday").order("start_time"),
     supabase.from("availability_exceptions").select("id,specialty_id,kind,starts_at,ends_at,public_reason,internal_reason").gte("ends_at", nowIso).order("starts_at").limit(40),
-    supabase.from("treatments").select("id,name,specialty_id,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,price_cents,is_active").eq("is_active", true).order("name"),
+    supabase.from("treatments").select("id,name,specialty_id,duration_minutes,buffer_minutes,start_interval_minutes,service_frequency,monthly_weekday,monthly_occurrence_ordinals,selection_mode,price_cents,is_active").eq("is_active", true).order("name"),
     supabase.from("treatment_combos").select("id,treatment_id,name,mode,session_count,fixed_price_cents,allow_public_extras,is_active").eq("is_active", true).order("display_order"),
     supabase.from("depilation_zones").select("id,name,audience,reference_price_cents,duration_minutes,is_active,display_order").eq("is_active", true).gt("reference_price_cents", 0).order("display_order").order("name"),
     supabase.from("treatment_combo_zones").select("combo_id,zone_id"),
