@@ -12,14 +12,15 @@ type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient
 const treatmentSelect = "id,updated_at,category_id,specialty_id,professional_id,requires_professional_assignment,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,service_frequency,monthly_weekday,monthly_occurrence_ordinals,selection_mode,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order";
 
 export async function loadTreatmentEditorTaxonomies(supabase: SupabaseServerClient) {
-  const [categoriesResult, specialtiesResult, professionalsResult, professionalSpecialtiesResult, reassignmentResult] = await Promise.all([
+  const [categoriesResult, specialtiesResult, professionalsResult, professionalSpecialtiesResult, availabilityResult, reassignmentResult] = await Promise.all([
     supabase.from("treatment_categories").select("id,name,slug,short_description,icon_name,display_order,is_active").order("display_order"),
     supabase.from("specialties").select("id,name,is_active").order("display_order"),
     supabase.from("professionals").select("id,specialty_id,full_name,public_name,is_active").order("display_order"),
     supabase.from("professional_specialties").select("professional_id,specialty_id"),
+    supabase.from("availability_rules").select("specialty_id").eq("is_active", true),
     supabase.from("treatments").select("id,name,selection_mode").order("name"),
   ]);
-  const error = categoriesResult.error ?? specialtiesResult.error ?? professionalsResult.error ?? professionalSpecialtiesResult.error;
+  const error = categoriesResult.error ?? specialtiesResult.error ?? professionalsResult.error ?? professionalSpecialtiesResult.error ?? availabilityResult.error;
   if (error) throw new Error(`treatment_editor_taxonomies:${error.code ?? "query"}`);
   const specialtyIdsByProfessional = new Map<string, string[]>();
   for (const relation of professionalSpecialtiesResult.data ?? []) {
@@ -34,9 +35,13 @@ export async function loadTreatmentEditorTaxonomies(supabase: SupabaseServerClie
       ...(specialtyIdsByProfessional.get(professional.id) ?? []),
     ])],
   }));
+  const specialtiesWithAvailability = new Set((availabilityResult.data ?? []).map((rule) => rule.specialty_id));
   return {
     categories: (categoriesResult.data ?? []) as AdminCategoryRow[],
-    specialties: (specialtiesResult.data ?? []) as AdminSpecialtyRow[],
+    specialties: (specialtiesResult.data ?? []).map((specialty) => ({
+      ...specialty,
+      has_active_availability: specialtiesWithAvailability.has(specialty.id),
+    })) as AdminSpecialtyRow[],
     professionals: professionals as AdminProfessionalRow[],
     specialReassignmentTargets: reassignmentResult.error ? [] : reassignmentResult.data ?? [],
   };

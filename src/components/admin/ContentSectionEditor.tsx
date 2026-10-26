@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useActionState, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Eye, History, RotateCcw, Save, Send } from "lucide-react";
@@ -13,6 +13,7 @@ import {
   type SiteContentEditorState,
 } from "@/app/admin/contenido/actions";
 import { SiteContentImageField } from "./SiteContentImageField";
+import { useUnsavedChangesGuard } from "@/lib/admin/use-unsaved-changes-guard";
 
 const initialState: SiteContentEditorState = { status: "idle", fieldErrors: {} };
 
@@ -94,7 +95,6 @@ export function ContentSectionEditor({
   const [previewWidth, setPreviewWidth] = useState<390 | 1440>(390);
   const [previewFields, setPreviewFields] = useState<readonly SiteContentField[]>(fields);
   const [isDirty, setIsDirty] = useState(false);
-  const isDirtyRef = useRef(false);
   const hasUnpublishedChanges = useMemo(
     () => JSON.stringify(comparableFields(fields)) !== JSON.stringify(comparableFields(publishedFields)),
     [fields, publishedFields],
@@ -102,7 +102,6 @@ export function ContentSectionEditor({
 
   useEffect(() => {
     if (state.status === "saved" || state.status === "published") {
-      isDirtyRef.current = false;
       // Resetting the dirty flag here mirrors the server action result (an external
       // system) so the unsaved-changes guard clears once the save is confirmed.
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -111,36 +110,7 @@ export function ContentSectionEditor({
     }
   }, [router, state.status]);
 
-  useEffect(() => {
-    isDirtyRef.current = isDirty;
-  }, [isDirty]);
-
-  useEffect(() => {
-    const beforeUnload = (event: BeforeUnloadEvent) => {
-      if (!isDirtyRef.current) return;
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    const protectInternalNavigation = (event: MouseEvent) => {
-      if (!isDirtyRef.current || event.defaultPrevented || event.button !== 0) return;
-      const target = event.target instanceof Element ? event.target.closest("a[href]") : null;
-      if (!(target instanceof HTMLAnchorElement) || target.target === "_blank") return;
-      const destination = new URL(target.href, window.location.href);
-      if (destination.origin !== window.location.origin) return;
-      if (!window.confirm("Hay cambios sin guardar en esta sección. ¿Querés salir y descartarlos?")) {
-        event.preventDefault();
-        event.stopPropagation();
-      } else {
-        isDirtyRef.current = false;
-      }
-    };
-    window.addEventListener("beforeunload", beforeUnload);
-    document.addEventListener("click", protectInternalNavigation, true);
-    return () => {
-      window.removeEventListener("beforeunload", beforeUnload);
-      document.removeEventListener("click", protectInternalNavigation, true);
-    };
-  }, []);
+  useUnsavedChangesGuard(isDirty, "Hay cambios sin guardar en esta sección. ¿Querés salir y descartarlos?", () => setIsDirty(false));
 
   function updatePreviewField(nextField: SiteContentField) {
     setIsDirty(true);

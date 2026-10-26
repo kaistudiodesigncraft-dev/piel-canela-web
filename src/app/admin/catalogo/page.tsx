@@ -21,13 +21,14 @@ export default async function AdminCatalogPage({ searchParams }: { searchParams:
   const { supabase, profile } = await requireAdmin();
   const now = new Date().toISOString();
   const correlationId = createCatalogCorrelationId();
-  const [categoriesResult, specialtiesResult, professionalsResult, treatmentsResult, assignmentsResult, combosResult, bookingsResult] = await Promise.all([
+  const [categoriesResult, specialtiesResult, professionalsResult, treatmentsResult, assignmentsResult, combosResult, availabilityResult, bookingsResult] = await Promise.all([
     supabase.from("treatment_categories").select("id,name,slug,short_description,icon_name,display_order,is_active").order("display_order"),
     supabase.from("specialties").select("id,name,is_active").order("display_order"),
     supabase.from("professionals").select("id,specialty_id,full_name,public_name,is_active").order("display_order"),
     supabase.from("treatments").select("id,category_id,specialty_id,professional_id,requires_professional_assignment,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,service_frequency,monthly_weekday,monthly_occurrence_ordinals,selection_mode,catalog_group,is_combo,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order").order("display_order").order("name"),
     supabase.from("treatment_professionals").select("treatment_id,professional_id").eq("is_active", true),
     supabase.from("treatment_combos").select("treatment_id").eq("is_active", true),
+    supabase.from("availability_rules").select("specialty_id").eq("is_active", true),
     supabase.from("bookings").select("treatment_id").in("status", [...OCCUPYING_BOOKING_STATUSES]).gte("starts_at", now),
   ]);
 
@@ -38,6 +39,7 @@ export default async function AdminCatalogPage({ searchParams }: { searchParams:
     ["treatments", treatmentsResult],
     ["assignments", assignmentsResult],
     ["combos", combosResult],
+    ["availability", availabilityResult],
   ] as const;
   const essentialIncidents = essentialResults.flatMap(([stage, result]) =>
     result.error ? [reportCatalogQueryFailure(correlationId, stage, result.error)] : [],
@@ -77,10 +79,14 @@ export default async function AdminCatalogPage({ searchParams }: { searchParams:
     professionalsByTreatment.set(assignment.treatment_id, current);
   }
   const treatmentsWithActiveCombo = new Set((combosResult.data ?? []).map((combo) => combo.treatment_id));
+  const activeProfessionalIds = new Set((professionalsResult.data ?? []).filter((professional) => professional.is_active).map((professional) => professional.id));
+  const specialtiesWithAvailability = new Set((availabilityResult.data ?? []).map((rule) => rule.specialty_id));
   const treatments = (treatmentsResult.data ?? []).map((item) => ({
     ...item,
     professional_ids: professionalsByTreatment.get(item.id) ?? (item.professional_id ? [item.professional_id] : []),
     has_active_combo: treatmentsWithActiveCombo.has(item.id),
+    has_active_professional: (professionalsByTreatment.get(item.id) ?? []).some((professionalId) => activeProfessionalIds.has(professionalId)),
+    has_active_availability: specialtiesWithAvailability.has(item.specialty_id),
     image_url: item.image_path ? (item.image_path.startsWith("/") || item.image_path.startsWith("https://") ? item.image_path : supabase.storage.from("treatment-media").getPublicUrl(item.image_path).data.publicUrl) : null,
     future_booking_count: futureCounts.get(item.id) ?? 0,
   }));

@@ -10,9 +10,9 @@ import { formatDuration, formatPrice } from "@/lib/format";
 import { sortByNaturalName } from "@/lib/natural-order";
 
 type Audience = "women" | "men" | "shared";
-interface ZoneRow { id: string; name: string; audience: Audience; reference_price_cents: number; duration_minutes: number; is_active: boolean; display_order: number; link_count: number }
+interface ZoneRow { id: string; name: string; audience: Audience; reference_price_cents: number; duration_minutes: number; is_active: boolean; display_order: number; updated_at: string; link_count: number }
 interface ExtraRow { id: string; treatment_id: string; name: string; description: string; audience: Audience; price_cents: number; duration_minutes: number; is_active: boolean; display_order: number }
-interface ComboRow { id: string; name: string; description: string; audience: Audience; mode: "single_session" | "package"; session_count: number; pricing_mode: "fixed_price" | "percentage_discount" | "tiered_discount"; discount_percent: number | string | null; tier_min_items: number | null; tier_discount_percent: number | string | null; allow_public_extras: boolean; fixed_price_cents: number; appointment_duration_minutes: number | null; validity_days: number | null; is_active: boolean; display_order: number; zone_ids: string[]; extra_ids: string[]; booking_count: number; package_count: number }
+interface ComboRow { id: string; name: string; description: string; audience: Audience; mode: "single_session" | "package"; session_count: number; pricing_mode: "fixed_price" | "percentage_discount" | "tiered_discount"; discount_percent: number | string | null; tier_min_items: number | null; tier_discount_percent: number | string | null; allow_public_extras: boolean; fixed_price_cents: number; appointment_duration_minutes: number | null; validity_days: number | null; is_active: boolean; display_order: number; updated_at: string; zone_ids: string[]; extra_ids: string[]; booking_count: number; package_count: number }
 
 const audienceLabels: Record<Audience, string> = { women: "Mujeres", men: "Hombres", shared: "Compartido" };
 
@@ -27,7 +27,7 @@ function ProtectedDeleteForm({ treatmentId, recordId, label, action }: { treatme
 }
 
 function ZoneForm({ treatmentId, zone }: { treatmentId: string; zone?: ZoneRow }) {
-  return <DepilationZoneEditorForm submitLabel={zone ? "Guardar zona" : "Crear zona"}>
+  return <DepilationZoneEditorForm submitLabel={zone ? "Guardar zona" : "Crear zona"} expectedUpdatedAt={zone?.updated_at}>
     <input type="hidden" name="treatmentId" value={treatmentId} />
     {zone ? <input type="hidden" name="zoneId" value={zone.id} /> : null}
     <div className="admin-form-grid admin-form-grid--3">
@@ -63,7 +63,7 @@ function ExtraForm({ treatmentId, extra }: { treatmentId: string; extra?: ExtraR
 }
 
 function ComboForm({ treatmentId, zones, extras, combo, zoneOrdersEnabled = false }: { treatmentId: string; zones: ZoneRow[]; extras: ExtraRow[]; combo?: ComboRow; zoneOrdersEnabled?: boolean }) {
-  return <ComboEditorForm>
+  return <ComboEditorForm expectedUpdatedAt={combo?.updated_at}>
     <input type="hidden" name="treatmentId" value={treatmentId} />
     {combo ? <input type="hidden" name="comboId" value={combo.id} /> : null}
     <div className="admin-form-grid admin-form-grid--3">
@@ -107,7 +107,7 @@ export function DepilationComboAdmin({ treatmentId, treatmentName, treatmentBuff
     </nav>
     {feedback.zoneSaved === "1" || feedback.extraSaved === "1" || feedback.comboSaved === "1" || feedback.featureSaved === "1" ? <p className="form-message" role="status">Los cambios quedaron guardados.</p> : null}
     {feedback.zoneDeleted === "1" || feedback.comboDeleted === "1" ? <p className="form-message" role="status">El elemento sin historial fue eliminado.</p> : null}
-    {feedback.zoneError || feedback.extraError || feedback.comboError || feedback.featureError ? <p className="form-message form-message--error" role="alert">{feedback.featureError === "activeTreatments" ? "Antes de pausar el selector, desactivá los tratamientos que usan combos cerrados." : "No pudimos guardar. Revisá los datos, las zonas/extras elegidos y que no exista otro nombre igual."}</p> : null}
+    {feedback.zoneError || feedback.extraError || feedback.comboError || feedback.featureError ? <p className="form-message form-message--error" role="alert">{feedback.extraError === "legacyReadOnly" ? "Los extras anteriores son solo de consulta. Usá Zonas disponibles para ofrecer un adicional en la web." : feedback.featureError === "activeTreatments" ? "Antes de pausar el selector, desactivá los tratamientos que usan combos cerrados." : "No pudimos guardar. Revisá los datos, las zonas/extras elegidos y que no exista otro nombre igual."}</p> : null}
     {feedback.deleteError ? <p className="form-message form-message--error" role="alert">{feedback.deleteError === "linked" ? "No puede eliminarse porque ya está vinculado. Pausalo para conservar el historial." : feedback.deleteError === "rateLimited" ? "Se alcanzó el límite de intentos. Por seguridad, esperá una hora antes de volver a probar." : "No pudimos validar la eliminación. Revisá el código e intentá nuevamente."}</p> : null}
 
     <section className="live-admin__section" id="zonas-depilacion" aria-labelledby="zones-title"><div className="admin-section-heading"><div><h2 id="zones-title">Zonas disponibles</h2><p>Cargá cada parte que puede integrar una propuesta de depilación. Su valor individual permite calcular el ahorro del combo.</p></div><span className="admin-count numeric">{zones.length} zonas</span></div>
@@ -115,10 +115,9 @@ export function DepilationComboAdmin({ treatmentId, treatmentName, treatmentBuff
       <div className="depilation-admin-list">{orderedZones.map((zone) => <details key={zone.id} className="admin-disclosure"><summary><span><strong>{zone.name}</strong><small>{audienceLabels[zone.audience]} · {formatDuration(zone.duration_minutes)} · {formatPrice(zone.reference_price_cents)}</small></span><span className={`status-badge ${zone.is_active ? "status-confirmed" : "status-expired"}`}>{zone.is_active ? "Activa" : "Pausada"}</span></summary><ZoneForm treatmentId={treatmentId} zone={zone} />{zone.link_count === 0 ? <ProtectedDeleteForm treatmentId={treatmentId} recordId={zone.id} label={zone.name} action={deleteDepilationZone} /> : <p className="depilation-reference-note">Esta zona integra {zone.link_count} {zone.link_count === 1 ? "combo" : "combos"}. Puede pausarse, pero no eliminarse.</p>}</details>)}</div>
     </section>
 
-    <section className="live-admin__section" id="extras-depilacion" aria-labelledby="extras-title"><div className="admin-section-heading"><div><h2 id="extras-title">Extras opcionales</h2><p>Son agregados que recepción permite sumar solo en los combos donde estén habilitados.</p></div><span className="admin-count numeric">{extras.length} extras</span></div>
-      {zoneOrdersEnabled ? <p role="note">Estos registros anteriores se conservan, pero no alimentan el nuevo selector. Para cambiar un adicional en la web, editá su zona en “Zonas disponibles”. No hace falta duplicar la carga.</p> : null}
-      <details className="admin-disclosure admin-create-disclosure"><summary><span><Plus aria-hidden="true" />Agregar extra</span></summary><ExtraForm treatmentId={treatmentId} /></details>
-      <div className="depilation-admin-list">{orderedExtras.map((extra) => <details key={extra.id} className="admin-disclosure"><summary><span><strong>{extra.name}</strong><small>{audienceLabels[extra.audience]} · +{formatDuration(extra.duration_minutes)} · {formatPrice(extra.price_cents)}</small></span><span className={`status-badge ${extra.is_active ? "status-confirmed" : "status-expired"}`}>{extra.is_active ? "Activo" : "Pausado"}</span></summary><ExtraForm treatmentId={treatmentId} extra={extra} /></details>)}</div>
+    <section className="live-admin__section" id="extras-depilacion" aria-labelledby="extras-title"><div className="admin-section-heading"><div><h2 id="extras-title">{zoneOrdersEnabled ? "Extras anteriores" : "Extras opcionales"}</h2><p>{zoneOrdersEnabled ? "Consulta histórica de los extras creados antes de usar zonas adicionales." : "Son agregados que recepción permite sumar solo en los combos donde estén habilitados."}</p></div><span className="admin-count numeric">{extras.length} extras</span></div>
+      {zoneOrdersEnabled ? <p role="note">Se conservan para no perder historial, pero ya no alimentan el selector público y no admiten nuevas cargas. Para ofrecer un adicional, cargalo o editalo en “Zonas disponibles”.</p> : <details className="admin-disclosure admin-create-disclosure"><summary><span><Plus aria-hidden="true" />Agregar extra</span></summary><ExtraForm treatmentId={treatmentId} /></details>}
+      <div className="depilation-admin-list">{orderedExtras.map((extra) => zoneOrdersEnabled ? <article key={extra.id} className="admin-disclosure depilation-legacy-extra"><div><strong>{extra.name}</strong><small>{audienceLabels[extra.audience]} · +{formatDuration(extra.duration_minutes)} · {formatPrice(extra.price_cents)}</small></div><span className="status-badge status-expired">Histórico</span></article> : <details key={extra.id} className="admin-disclosure"><summary><span><strong>{extra.name}</strong><small>{audienceLabels[extra.audience]} · +{formatDuration(extra.duration_minutes)} · {formatPrice(extra.price_cents)}</small></span><span className={`status-badge ${extra.is_active ? "status-confirmed" : "status-expired"}`}>{extra.is_active ? "Activo" : "Pausado"}</span></summary><ExtraForm treatmentId={treatmentId} extra={extra} /></details>)}</div>
     </section>
 
     <section className="live-admin__section" id="combos-depilacion" aria-labelledby="combos-title"><div className="admin-section-heading"><div><h2 id="combos-title">Combos cerrados</h2><p>Armá propuestas completas con zonas, sesiones y regla de precio. El público elige una opción publicada y luego reserva.</p></div><span className="admin-count numeric">{combos.length} combos</span></div>

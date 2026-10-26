@@ -12,6 +12,7 @@ export interface AdminSpecialtyRow {
   id: string;
   name: string;
   is_active: boolean;
+  has_active_availability?: boolean;
 }
 
 export interface AdminProfessionalRow {
@@ -63,5 +64,7 @@ export interface AdminTreatmentRow {
   treatment_combo_count?: number;
   deletion_usage_available?: boolean;
   has_active_combo?: boolean;
+  has_active_professional?: boolean;
+  has_active_availability?: boolean;
   future_booking_count_available?: boolean;
 }

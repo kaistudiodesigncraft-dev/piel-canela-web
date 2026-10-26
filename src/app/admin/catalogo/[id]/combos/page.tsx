@@ -18,8 +18,8 @@ export default async function TreatmentCombosPage({ params, searchParams }: { pa
     .select("depilation_discount_percent").eq("singleton", true).maybeSingle() : null;
   const [treatmentResult, zonesResult, combosResult, linksResult, extrasResult, allowedExtrasResult, bookingsResult, packagesResult, settingsResult] = await Promise.all([
     supabase.from("treatments").select("id,name,slug,selection_mode,buffer_minutes,start_interval_minutes").eq("id", id).maybeSingle(),
-    supabase.from("depilation_zones").select("id,name,audience,reference_price_cents,duration_minutes,is_active,display_order").order("display_order").order("name"),
-    supabase.from("treatment_combos").select("id,name,description,audience,mode,session_count,pricing_mode,discount_percent,tier_min_items,tier_discount_percent,allow_public_extras,fixed_price_cents,appointment_duration_minutes,validity_days,is_active,display_order").eq("treatment_id", id).order("display_order").order("name"),
+    supabase.from("depilation_zones").select("id,name,audience,reference_price_cents,duration_minutes,is_active,display_order,updated_at").order("display_order").order("name"),
+    supabase.from("treatment_combos").select("id,name,description,audience,mode,session_count,pricing_mode,discount_percent,tier_min_items,tier_discount_percent,allow_public_extras,fixed_price_cents,appointment_duration_minutes,validity_days,is_active,display_order,updated_at").eq("treatment_id", id).order("display_order").order("name"),
     supabase.from("treatment_combo_zones").select("combo_id,zone_id,display_order").order("display_order"),
     supabase.from("treatment_combo_extras").select("id,treatment_id,name,description,audience,price_cents,duration_minutes,is_active,display_order").eq("treatment_id", id).order("display_order").order("name"),
     supabase.from("treatment_combo_allowed_extras").select("combo_id,extra_id"),

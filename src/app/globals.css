@@ -5874,6 +5874,32 @@ svg {
 .depilation-admin-list .admin-disclosure > summary { min-height: 64px; }
 .depilation-admin-list .admin-disclosure > summary > span:first-child { display: grid; gap: 0.2rem; }
 .depilation-admin-list .admin-disclosure > summary small { color: var(--color-text-muted); }
+.depilation-legacy-extra {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
+}
+.depilation-legacy-extra > div { display: grid; gap: 0.2rem; }
+.depilation-legacy-extra small { color: var(--color-text-muted); }
+.admin-publication-readiness { display: grid; gap: 0.65rem; }
+.admin-publication-readiness > p {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr;
+  gap: 0.65rem;
+  align-items: start;
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-soft);
+}
+.admin-publication-readiness svg { width: 1.1rem; height: 1.1rem; margin-top: 0.15rem; }
+.admin-publication-readiness span { display: grid; gap: 0.1rem; }
+.admin-publication-readiness small { color: var(--color-text-muted); line-height: 1.35; }
+.admin-publication-readiness .is-ready svg { color: var(--color-action); }
+.admin-publication-readiness .is-pending svg { color: var(--color-error); }
 .depilation-zone-form,
 .depilation-combo-form { margin-top: 1rem; }
 .depilation-zone-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }

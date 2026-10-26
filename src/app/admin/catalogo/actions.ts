@@ -278,6 +278,18 @@ async function saveTreatmentImpl(
   if (isActive && parsed.data.requiresProfessionalAssignment && selectedProfessionalIds.length === 0) {
     return treatmentFailure("professional", { professionalIds: ["Asigná al menos un profesional para evitar turnos pisados."] });
   }
+  if (isActive) {
+    const availabilityResult = await supabase.from("availability_rules")
+      .select("id", { count: "exact", head: true })
+      .eq("specialty_id", parsed.data.specialtyId)
+      .eq("is_active", true);
+    if (availabilityResult.error) return operationalFailure("validate_availability", availabilityResult.error.code);
+    if ((availabilityResult.count ?? 0) === 0) {
+      return treatmentFailure("publishable", {
+        specialtyId: ["Esta especialidad no tiene horarios activos. Configurá al menos una franja de disponibilidad antes de publicar."],
+      });
+    }
+  }
 
   let existing: {
     slug: string;

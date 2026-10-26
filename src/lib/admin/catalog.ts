@@ -33,6 +33,8 @@ export function getTreatmentPublicationState(input: {
   priceCents?: number;
   selectionMode?: "simple" | "closed_combo" | "combo_with_extras";
   hasActiveCombo?: boolean;
+  hasActiveProfessional?: boolean;
+  hasActiveAvailability?: boolean;
 }) {
   if (input.isActive) return "published" as const;
   const imageIsValid = !input.imagePath || Boolean(input.imageAlt?.trim());
@@ -43,6 +45,8 @@ export function getTreatmentPublicationState(input: {
     && (input.selectionMode && input.selectionMode !== "simple"
       ? Boolean(input.hasActiveCombo)
       : (input.priceCents ?? 0) > 0)
+    && (input.hasActiveProfessional ?? true)
+    && (input.hasActiveAvailability ?? true)
   ) return "ready" as const;
   return "draft" as const;
 }

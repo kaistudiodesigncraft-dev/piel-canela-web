@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { preserveSubmittedForm } from "@/lib/admin/preserve-form";
 import { preventImplicitFormSubmit } from "@/lib/admin/form-safety";
+import { useUnsavedChangesGuard } from "@/lib/admin/use-unsaved-changes-guard";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
@@ -142,7 +143,6 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
   const [mediaIssue, setMediaIssue] = useState<string | null>(null);
   const [mediaMetadata, setMediaMetadata] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
-  const isDirtyRef = useRef(false);
   const uploadSequence = useRef(0);
   const activeSpecialties = specialties.filter((item) => item.is_active || item.id === treatment?.specialty_id);
   const supportsSelectedSpecialty = (professional: AdminProfessionalRow, specialtyId = selectedSpecialty) =>
@@ -152,43 +152,19 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
   );
   const mediaBusy = mediaStage === "preparing" || mediaStage === "uploading" || mediaStage === "processing";
   const fieldError = (name: string) => actionState.fieldErrors?.[name];
+  const selectedSpecialtyRow = specialties.find((item) => item.id === selectedSpecialty);
+  const hasReadyProfessional = selectedProfessionals.some((id) => {
+    const professional = professionals.find((item) => item.id === id);
+    return Boolean(professional?.is_active && supportsSelectedSpecialty(professional));
+  });
+  const hasReadyAvailability = Boolean(selectedSpecialtyRow?.has_active_availability);
 
   useEffect(() => {
     const urls = previewUrls.current;
     return () => { urls.forEach((url) => URL.revokeObjectURL(url)); };
   }, []);
 
-  useEffect(() => {
-    isDirtyRef.current = isDirty;
-  }, [isDirty]);
-
-  useEffect(() => {
-    const beforeUnload = (event: BeforeUnloadEvent) => {
-      if (!isDirtyRef.current) return;
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    const protectInternalNavigation = (event: MouseEvent) => {
-      if (!isDirtyRef.current || event.defaultPrevented || event.button !== 0) return;
-      const target = event.target instanceof Element ? event.target.closest("a[href]") : null;
-      if (!(target instanceof HTMLAnchorElement) || target.target === "_blank") return;
-      const destination = new URL(target.href, window.location.href);
-      if (destination.pathname === window.location.pathname && destination.search === window.location.search) return;
-      if (destination.origin !== window.location.origin) return;
-      if (!window.confirm("Hay cambios sin guardar. ¿Querés salir y descartarlos?")) {
-        event.preventDefault();
-        event.stopPropagation();
-      } else {
-        isDirtyRef.current = false;
-      }
-    };
-    window.addEventListener("beforeunload", beforeUnload);
-    document.addEventListener("click", protectInternalNavigation, true);
-    return () => {
-      window.removeEventListener("beforeunload", beforeUnload);
-      document.removeEventListener("click", protectInternalNavigation, true);
-    };
-  }, []);
+  useUnsavedChangesGuard(isDirty, "Hay cambios sin guardar. ¿Querés salir y descartarlos?", () => setIsDirty(false));
 
   async function uploadImage(file: File | undefined, input: HTMLInputElement) {
     const sequence = ++uploadSequence.current;
@@ -421,6 +397,10 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
       <aside className="admin-treatment-editor-side" aria-label="Estado del tratamiento">
         <strong>{treatment?.is_active ? "Publicado" : "Borrador"}</strong>
         <p>La URL queda estable después del primer guardado.</p>
+        <div className="admin-publication-readiness" aria-label="Requisitos operativos para publicar">
+          <p className={hasReadyProfessional ? "is-ready" : "is-pending"}>{hasReadyProfessional ? <Check aria-hidden="true" /> : <AlertCircle aria-hidden="true" />}<span><strong>Profesional</strong><small>{hasReadyProfessional ? "Hay una persona activa asignada." : "Falta asignar una persona activa compatible."}</small></span></p>
+          <p className={hasReadyAvailability ? "is-ready" : "is-pending"}>{hasReadyAvailability ? <Check aria-hidden="true" /> : <AlertCircle aria-hidden="true" />}<span><strong>Disponibilidad</strong><small>{hasReadyAvailability ? "La especialidad tiene horarios activos." : "Falta abrir al menos una franja para la especialidad."}</small></span></p>
+        </div>
         {isDirty ? <p className="admin-unsaved-note" role="status">Tenés cambios sin guardar.</p> : null}
         {!isNew && treatment ? <Link className="button button--quiet" href={`/admin/catalogo/${treatment.id}/preview`}><Eye aria-hidden="true" strokeWidth={1.75} />Abrir vista previa</Link> : null}
         <Link className="button button--quiet" href="/admin/catalogo">Volver al catálogo</Link>

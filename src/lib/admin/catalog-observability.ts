@@ -9,6 +9,7 @@ export type CatalogQueryStage =
   | "treatments"
   | "assignments"
   | "combos"
+  | "availability"
   | "future-bookings";
 
 interface CatalogQueryError {
