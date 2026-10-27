@@ -1,4 +1,5 @@
 \set ON_ERROR_STOP on
+\echo 1..1
 -- Run only in isolated development/test DB. All fixtures roll back.
 begin;
 
@@ -89,3 +90,4 @@ do $$ begin
   end if;
 end $$;
 rollback;
+\echo ok 1 - public mixed combo assertions passed

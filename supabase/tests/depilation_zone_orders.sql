@@ -1,5 +1,6 @@
 -- LOCAL ISOLATED DATABASE ONLY. No production execution. All rows roll back.
 \set ON_ERROR_STOP on
+\echo 1..1
 begin;
 insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data)
 values('19000000-0000-4000-8000-000000000001','authenticated','authenticated','zone-order-qa@example.test','',now(),'{}','{}');
@@ -200,3 +201,4 @@ do $$ begin
   end if;
 end $$;
 rollback;
+\echo ok 1 - depilation zone order assertions passed

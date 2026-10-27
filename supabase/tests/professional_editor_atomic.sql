@@ -1,4 +1,5 @@
 \set ON_ERROR_STOP on
+\echo 1..1
 begin;
 insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data)
 values('10000000-0000-0000-0000-000000000092','authenticated','authenticated','atomic-editor@example.test','',now(),'{}','{}');
@@ -39,3 +40,4 @@ do $$ begin
   exception when insufficient_privilege then null; end;
 end $$;
 rollback;
+\echo ok 1 - professional editor assertions passed

@@ -1,5 +1,6 @@
 -- LOCAL ISOLATED DATABASE ONLY. Every fixture and mutation rolls back.
 \set ON_ERROR_STOP on
+\echo 1..1
 begin;
 insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data)
 values('17000000-0000-4000-8000-000000000001','authenticated','authenticated','catalog-removal@example.test','',now(),'{}','{}');
@@ -92,3 +93,4 @@ do $$ begin
   end if;
 end $$;
 rollback;
+\echo ok 1 - catalog removal assertions passed
