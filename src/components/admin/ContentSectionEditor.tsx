@@ -1,8 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useActionState, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { Eye, History, RotateCcw, Save, Send } from "lucide-react";
 import type { SiteContentField, SiteContentSection } from "@/domain/site-content";
 import { getSiteContentCharacterLimit } from "@/domain/site-content";
@@ -27,54 +26,6 @@ function comparableFields(fields: readonly SiteContentField[]) {
   }));
 }
 
-function Preview({ fields, width }: { fields: readonly SiteContentField[]; width: 390 | 1440 }) {
-  const text = fields.filter((field) => field.kind !== "image");
-  const image = fields.find((field) => field.kind === "image" && field.settings.enabled && field.value);
-  const backgroundImage = image?.settings.presentation === "background" ? image : undefined;
-  const contentImage = image?.settings.presentation === "content" ? image : undefined;
-  const title = text.find((field) => field.key.endsWith("_title")) ?? text[0];
-  const eyebrow = text.find((field) => field.key.endsWith("_eyebrow"));
-  const copy = text.filter((field) => field !== title && field !== eyebrow).slice(0, width === 390 ? 2 : 4);
-
-  return (
-    <div className={`content-preview content-preview--${width === 390 ? "mobile" : "desktop"} content-preview--surface-${image?.settings.surfacePreset ?? "plain"}`} style={{ maxWidth: width }}>
-      {backgroundImage ? (
-        <div
-          className={`content-preview__background content-preview__background--${backgroundImage.settings.overlayPreset}`}
-          aria-hidden="true"
-        >
-          <Image
-            src={backgroundImage.value}
-            alt=""
-            fill
-            sizes={width === 390 ? "390px" : "900px"}
-            style={{ objectPosition: `${backgroundImage.settings.focalX}% ${backgroundImage.settings.focalY}%` }}
-          />
-          <span />
-        </div>
-      ) : null}
-      <div className={`content-preview__layout${contentImage ? " content-preview__layout--with-image" : ""}`}>
-        <div className="content-preview__copy">
-          {eyebrow ? <p className="eyebrow">{eyebrow.value}</p> : null}
-          {title ? <h3>{title.value}</h3> : null}
-          {copy.map((field) => <p key={field.key}>{field.value}</p>)}
-        </div>
-        {contentImage ? (
-          <div className="content-preview__image">
-            <Image
-              src={contentImage.value}
-              alt={contentImage.imageAlt ?? ""}
-              fill
-              sizes={width === 390 ? "358px" : "420px"}
-              style={{ objectPosition: `${contentImage.settings.focalX}% ${contentImage.settings.focalY}%` }}
-            />
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
 export function ContentSectionEditor({
   section,
   title,
@@ -94,6 +45,8 @@ export function ContentSectionEditor({
   const [state, action, pending] = useActionState(submitSiteContentSection, initialState);
   const [previewWidth, setPreviewWidth] = useState<390 | 1440>(390);
   const [previewFields, setPreviewFields] = useState<readonly SiteContentField[]>(fields);
+  const previewFrame = useRef<HTMLIFrameElement>(null);
+  const [previewHeight, setPreviewHeight] = useState(560);
   const [isDirty, setIsDirty] = useState(false);
   const hasUnpublishedChanges = useMemo(
     () => JSON.stringify(comparableFields(fields)) !== JSON.stringify(comparableFields(publishedFields)),
@@ -111,6 +64,21 @@ export function ContentSectionEditor({
   }, [router, state.status]);
 
   useUnsavedChangesGuard(isDirty, "Hay cambios sin guardar en esta sección. ¿Querés salir y descartarlos?", () => setIsDirty(false));
+
+  const sendPreview = useCallback(() => {
+    previewFrame.current?.contentWindow?.postMessage({ type: "piel-canela-content-preview", section, fields: previewFields }, window.location.origin);
+  }, [previewFields, section]);
+
+  useEffect(() => {
+    const receive = (event: MessageEvent<{ type?: string; height?: number }>) => {
+      if (event.origin !== window.location.origin || event.source !== previewFrame.current?.contentWindow) return;
+      if (event.data.type === "piel-canela-content-preview-ready") sendPreview();
+      if (event.data.type === "piel-canela-content-preview-height" && typeof event.data.height === "number") setPreviewHeight(Math.min(Math.max(event.data.height, 320), 1200));
+    };
+    window.addEventListener("message", receive);
+    sendPreview();
+    return () => window.removeEventListener("message", receive);
+  }, [sendPreview, previewWidth]);
 
   function updatePreviewField(nextField: SiteContentField) {
     setIsDirty(true);
@@ -204,8 +172,15 @@ export function ContentSectionEditor({
               <button type="button" aria-pressed={previewWidth === 1440} onClick={() => setPreviewWidth(1440)}>1440 px</button>
             </div>
           </div>
-          <div className="content-preview-viewport">
-            <Preview key={previewWidth} fields={previewFields} width={previewWidth} />
+          <div className="content-preview-viewport" tabIndex={0} role="region" aria-label={`Área desplazable de vista previa de ${title}`}>
+            <iframe
+              ref={previewFrame}
+              className={`content-preview-frame content-preview-frame--${previewWidth === 390 ? "mobile" : "desktop"}`}
+              style={{ width: previewWidth, height: previewHeight }}
+              src={`/admin/contenido/preview?section=${section}`}
+              title={`Vista previa real de ${title} a ${previewWidth} píxeles`}
+              onLoad={sendPreview}
+            />
           </div>
 
           <details className="content-revisions">

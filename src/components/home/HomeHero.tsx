@@ -51,6 +51,7 @@ export function HomeHero({ eyebrow, title, lead, caption, image }: HomeHeroProps
                   fill
                   priority
                   sizes="(max-width: 767px) 92vw, (max-width: 1279px) 46vw, 590px"
+                  unoptimized={Boolean(image?.value?.startsWith("blob:"))}
                   style={{ objectPosition: `${image?.settings.focalX ?? 38}% ${image?.settings.focalY ?? 50}%` }}
                 />
               </div>

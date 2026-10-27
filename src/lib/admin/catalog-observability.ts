@@ -1,6 +1,6 @@
 import "server-only";
 
-import { randomUUID } from "node:crypto";
+import { createSupportCode, reportOperationalEvent } from "@/lib/observability";
 
 export type CatalogQueryStage =
   | "categories"
@@ -24,7 +24,7 @@ export interface CatalogIncident {
 }
 
 export function createCatalogCorrelationId() {
-  return randomUUID();
+  return createSupportCode();
 }
 
 /**
@@ -38,15 +38,12 @@ export function reportCatalogQueryFailure(
 ): CatalogIncident {
   const incident: CatalogIncident = {
     correlationId,
-    incidentId: randomUUID(),
+    incidentId: createSupportCode(),
     stage,
     code: error.code || "unknown",
   };
 
-  console.error(JSON.stringify({
-    event: "admin_catalog_query_failed",
-    ...incident,
-  }));
+  reportOperationalEvent({ event: "admin_catalog_query_failed", stage, code: incident.code, supportCode: incident.incidentId });
 
   return incident;
 }

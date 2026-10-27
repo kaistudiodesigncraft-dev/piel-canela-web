@@ -61,8 +61,9 @@ const sections = [
     title: "Disponibilidad y agenda",
     steps: [
       "Definí la disponibilidad habitual por especialidad.",
-      "Si un tratamiento se ofrece una sola vez al mes, dejá abierto su día en la disponibilidad habitual y después abrí el tratamiento desde Catálogo.",
-      "En Cuándo se ofrece, elegí Días específicos del mes, seleccioná el día y marcá una sola aparición, por ejemplo el segundo jueves. Solo esa fecha aparecerá en el calendario público.",
+      "Si un tratamiento se ofrece una sola vez al mes, dejá abierto su día en la disponibilidad habitual y después abrí ese tratamiento desde Tratamientos.",
+      "En Cuándo se ofrece, elegí Días específicos del mes, seleccioná el día y marcá una sola aparición, por ejemplo Segundo jueves. El calendario público mostrará únicamente las fechas habilitadas.",
+      "Para un tratamiento semanal, elegí Todas las semanas. Los tratamientos ya cargados mantienen su configuración mientras no la cambies.",
       "La duración, preparación y frecuencia de inicio se configuran en cada tratamiento.",
       "Usá excepciones para bloquear fechas puntuales, feriados o ausencias.",
       "Los cambios de disponibilidad afectan turnos futuros disponibles, no reservas ya tomadas.",
@@ -80,11 +81,15 @@ const sections = [
     ],
   },
   {
-    title: "Depilación, combos y paquetes",
+    title: "Depilación: zonas, combos y descuentos",
     steps: [
       "Depilación funciona como tratamiento configurable, no como un tratamiento por combo.",
-      "Cargá zonas, extras y combos desde la configuración del tratamiento Depilación.",
-      "El público elige un combo publicado y, si está permitido, extras compatibles.",
+      "Abrí Tratamientos, editá Depilación y entrá a Zonas, combos y extras.",
+      "En Zonas cargá cada zona una sola vez con nombre, público, precio individual, duración y estado activo. Una zona activa con precio puede elegirse sola en la web.",
+      "En Combos seleccioná zonas ya cargadas, definí el precio propio, la duración real por turno y publicá cuando esté completo. El precio del combo no recibe el descuento de zonas sueltas.",
+      "El público puede elegir una zona, combinar varias zonas sueltas o sumar zonas permitidas a un combo. Una zona incluida en el combo no se puede repetir como adicional.",
+      "El porcentaje global se configura en la misma pantalla. Desde dos zonas sueltas se aplica sobre esas zonas; en un combo solo alcanza a dos o más zonas adicionales.",
+      "Antes de publicar, revisá el resumen de precio, ahorro y duración. Cambios posteriores no modifican reservas ya realizadas.",
       "La primera sesión se agenda online; las sesiones restantes se administran desde Paquetes.",
     ],
   },
@@ -101,7 +106,7 @@ const sections = [
     steps: [
       "Contenido permite ajustar textos e imágenes de secciones aprobadas.",
       "No crea ni elimina secciones; mantiene la estructura visual definida por Kai Studio.",
-      "Previsualizá antes de publicar cuando la sección tenga imagen o textos extensos.",
+      "Previsualizá a 390 px y 1440 px antes de publicar. La vista usa los mismos componentes que la web pública.",
     ],
   },
   {

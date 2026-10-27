@@ -39,6 +39,7 @@ export function EditableSectionMedia({
         fill
         priority={priority}
         sizes={sizes}
+        unoptimized={field.value.startsWith("blob:")}
         style={{ objectPosition: `${field.settings.focalX}% ${field.settings.focalY}%` }}
       />
       <span className="editable-section-media__overlay" />

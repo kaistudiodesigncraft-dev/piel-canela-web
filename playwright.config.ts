@@ -28,8 +28,8 @@ export default defineConfig({
         timeout: 120_000,
         env: {
           ...process.env,
-          NEXT_PUBLIC_DATA_SOURCE: "fixtures",
-          NEXT_PUBLIC_RELEASE_STAGE: "beta",
+          NEXT_PUBLIC_DATA_SOURCE: process.env.NEXT_PUBLIC_DATA_SOURCE ?? "fixtures",
+          NEXT_PUBLIC_RELEASE_STAGE: process.env.NEXT_PUBLIC_RELEASE_STAGE ?? "beta",
         },
       }
     : undefined,

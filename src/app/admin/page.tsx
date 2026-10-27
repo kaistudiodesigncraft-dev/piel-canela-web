@@ -9,6 +9,7 @@ import {
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { MESSAGE_EVENTS, type MessageEvent, type MessageTemplates } from "@/domain/whatsapp";
 import { buildAdminHealthNotices } from "@/lib/admin/catalog-health";
+import { createSupportCode, reportOperationalEvent } from "@/lib/observability";
 
 export const metadata: Metadata = {
   title: "Panel administrativo",
@@ -133,10 +134,10 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     ["Pendientes", attentionCountResult.error], ["Confirmadas", confirmedCountResult.error],
   ] as const;
   const warnings: string[] = [];
-  const correlationId = crypto.randomUUID();
+  const correlationId = createSupportCode();
   for (const [stage, error] of failures) {
     if (!error) continue;
-    console.error(JSON.stringify({ event: "admin_module_failed", stage, code: error.code, correlationId }));
+    reportOperationalEvent({ event: "admin_module_failed", stage, code: error.code, supportCode: correlationId });
     warnings.push(`${stage} no pudo cargarse.`);
   }
 
@@ -146,7 +147,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   if (bookingRows.length > 0) {
     const templatesResult = await supabase.from("treatment_message_templates").select("treatment_id,event,body").in("treatment_id", [...new Set(bookingRows.map((booking) => booking.treatment_id))]);
     if (templatesResult.error) {
-      console.error(JSON.stringify({ event: "admin_module_failed", stage: "message_templates", code: templatesResult.error.code, correlationId }));
+      reportOperationalEvent({ event: "admin_module_failed", stage: "message_templates", code: templatesResult.error.code, supportCode: correlationId });
       warnings.push("Los mensajes personalizados no están disponibles; se usará el texto estándar.");
     }
     for (const template of templatesResult.data ?? []) {
@@ -163,7 +164,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       .in("booking_id", bookingIds)
       .order("created_at", { ascending: false });
     if (bookingHistoryResult.error) {
-      console.error(JSON.stringify({ event: "admin_module_failed", stage: "history", code: bookingHistoryResult.error.code, correlationId }));
+      reportOperationalEvent({ event: "admin_module_failed", stage: "history", code: bookingHistoryResult.error.code, supportCode: correlationId });
       warnings.push("El historial de cambios no está disponible; las reservas siguen operativas.");
     }
     bookingHistoryRows = (bookingHistoryResult.data ?? []) as BookingHistoryRow[];
@@ -232,6 +233,14 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         treatments: treatmentsResult.data ?? [],
         professionals: professionalsResult.data ?? [],
       });
+
+  reportOperationalEvent({
+    event: "admin_dashboard_loaded",
+    stage: "operational_overview",
+    code: "ok",
+    itemCount: bookings.length,
+    warningCount: warnings.length,
+  });
 
   return (
     <LiveAdminDashboard

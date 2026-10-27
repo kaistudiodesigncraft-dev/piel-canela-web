@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { EditableSectionMedia, editableSurfaceClassName } from "@/components/content/EditableSectionMedia";
+import { PublicSiteContentSection } from "@/components/content/PublicSiteContentSection";
 import { LiveBookingFlow } from "@/components/booking/LiveBookingFlow";
 import { StatePanel } from "@/components/ui/StatePanel";
-import { siteContentMap } from "@/domain/site-content";
 import { buildBookingDates } from "@/lib/booking";
 import { resolveZoneOrder } from "@/lib/depilation-selection";
 import {
@@ -27,7 +26,6 @@ export const dynamic = "force-dynamic";
 interface BookingPageProps {
   searchParams: Promise<{ treatmentId?: string; monthlySpecialId?: string; comboId?: string; extraId?: string | string[]; zoneId?: string | string[]; zoneOrder?: string }>;
 }
-
 export default async function BookingPage({ searchParams }: BookingPageProps) {
   const [query, catalog, settings, siteFields] = await Promise.all([
     searchParams,
@@ -35,8 +33,6 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
     getPublicBookingSettings(),
     getSiteContent(),
   ]);
-  const content = siteContentMap(siteFields);
-  const headerImage = content.get("booking_header_image");
   const treatment = catalog.treatments.find(
     (item) => item.id === query.treatmentId && item.isActive,
   );
@@ -44,7 +40,7 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
   if (!treatment) {
     return (
       <>
-        <BookingHeader content={content} image={headerImage} />
+        <PublicSiteContentSection section="booking_header" fields={siteFields} />
         <div className="site-container route-state">
           <StatePanel
             kind="empty"
@@ -89,7 +85,7 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
   }
   if (treatment.selectionMode !== "simple" && !combo) {
     const hasPublicCombos = treatment.combos.some((item) => item.isActive);
-    return <><BookingHeader content={content} image={headerImage} /><div className="site-container route-state"><StatePanel
+    return <><PublicSiteContentSection section="booking_header" fields={siteFields} /><div className="site-container route-state"><StatePanel
       kind="empty"
       title={query.comboId ? "Este combo no está disponible para reservar" : "Elegí un combo antes de reservar"}
       description={hasPublicCombos
@@ -112,24 +108,5 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
         />
       </div>
     </>
-  );
-}
-
-function BookingHeader({
-  content,
-  image,
-}: {
-  content: ReturnType<typeof siteContentMap>;
-  image: ReturnType<ReturnType<typeof siteContentMap>["get"]>;
-}) {
-  return (
-    <section className={editableSurfaceClassName("page-hero page-hero--booking", image)}>
-      <EditableSectionMedia field={image} priority />
-      <div className="site-container page-hero__content">
-        <p className="eyebrow">{content.get("booking_header_eyebrow")?.value}</p>
-        <h1>{content.get("booking_header_title")?.value}</h1>
-        <p>{content.get("booking_header_lead")?.value}</p>
-      </div>
-    </section>
   );
 }
