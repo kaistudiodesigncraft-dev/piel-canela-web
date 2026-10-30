@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   adminSubmittedDateTimeToIso,
   argentinaLocalDateTimeToIso,
+  BOOKING_STATUS_TRANSITIONS,
   bookingSearchText,
   bookingStatusRequiresReason,
   pesosToCents,
@@ -37,5 +38,10 @@ describe("admin operations", () => {
     expect(bookingStatusRequiresReason("cancelled")).toBe(true);
     expect(bookingStatusRequiresReason("no_show")).toBe(true);
     expect(bookingStatusRequiresReason("confirmed")).toBe(false);
+  });
+
+  it("lets reception recover an expired future reservation without reopening a stale pending hold", () => {
+    expect(BOOKING_STATUS_TRANSITIONS.expired).toEqual(["awaiting_deposit", "confirmed"]);
+    expect(BOOKING_STATUS_TRANSITIONS.cancelled).toEqual([]);
   });
 });

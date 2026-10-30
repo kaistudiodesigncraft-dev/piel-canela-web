@@ -17,7 +17,7 @@ export const BOOKING_STATUS_TRANSITIONS: Record<BookingStatus, readonly BookingS
   completed: [],
   cancelled: [],
   no_show: [],
-  expired: [],
+  expired: ["awaiting_deposit", "confirmed"],
 };
 
 export const BOOKING_STATUS_ACTION_LABELS: Record<BookingStatus, string> = {

@@ -374,6 +374,10 @@ export async function updateBookingStatus(formData: FormData) {
   if (error) {
     const errorCode = error.message.includes("status_reason_required")
       ? "reason"
+      : error.message.includes("booking_start_passed")
+        ? "past"
+        : error.code === "23P01"
+          ? "conflict"
       : error.message.includes("invalid_status_transition")
         ? "transition"
         : "save";

@@ -26,12 +26,31 @@ set role = excluded.role,
 
 -- Reuse one restored local booking only inside this transaction. The rollback at
 -- the end leaves both the booking and its audit history exactly as they were.
+set local session_replication_role = replica;
+
 update public.bookings
 set status = 'pending',
     status_reason = null,
     status_changed_at = null,
     status_changed_by = null
 where id = (select id from public.bookings order by created_at limit 1);
+
+update public.bookings
+set status = 'expired',
+    starts_at = now() + interval '30 days',
+    ends_at = now() + interval '30 days 1 hour',
+    status_reason = null,
+    status_changed_at = null,
+    status_changed_by = null
+where id = (
+  select id
+  from public.bookings
+  order by created_at
+  offset 1
+  limit 1
+);
+
+set local session_replication_role = origin;
 
 set local role authenticated;
 select set_config(
@@ -43,6 +62,7 @@ select set_config(
 do $$
 declare
   target_booking_id uuid;
+  expired_booking_id uuid;
   history_before bigint;
   history_after bigint;
   resulting_status public.booking_status;
@@ -82,6 +102,44 @@ begin
 
   if history_after <> history_before + 1 then
     raise exception 'qa_history_not_written';
+  end if;
+
+  select id into expired_booking_id
+  from public.bookings
+  where status = 'expired'
+    and id <> target_booking_id
+  order by created_at
+  limit 1;
+
+  if expired_booking_id is null then
+    raise exception 'qa_expired_booking_missing';
+  end if;
+
+  select count(*) into history_before
+  from public.booking_status_history
+  where booking_id = expired_booking_id;
+
+  perform *
+  from public.transition_admin_booking(
+    expired_booking_id,
+    'confirmed'::public.booking_status,
+    null
+  );
+
+  select status into resulting_status
+  from public.bookings
+  where id = expired_booking_id;
+
+  select count(*) into history_after
+  from public.booking_status_history
+  where booking_id = expired_booking_id;
+
+  if resulting_status <> 'confirmed'::public.booking_status then
+    raise exception 'qa_expired_booking_not_recovered';
+  end if;
+
+  if history_after <> history_before + 1 then
+    raise exception 'qa_expired_history_not_written';
   end if;
 end;
 $$;
