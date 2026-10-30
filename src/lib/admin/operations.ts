@@ -20,6 +20,17 @@ export const BOOKING_STATUS_TRANSITIONS: Record<BookingStatus, readonly BookingS
   expired: ["awaiting_deposit", "confirmed"],
 };
 
+export function availableBookingStatusTransitions(
+  status: BookingStatus,
+  startsAt: string,
+  referenceTime: string,
+) {
+  if (status === "expired" && new Date(startsAt).getTime() <= new Date(referenceTime).getTime()) {
+    return [] as const;
+  }
+  return BOOKING_STATUS_TRANSITIONS[status];
+}
+
 export const BOOKING_STATUS_ACTION_LABELS: Record<BookingStatus, string> = {
   pending: "Volver a pendiente",
   awaiting_deposit: "Esperar seña",

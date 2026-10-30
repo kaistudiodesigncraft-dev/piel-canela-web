@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   adminSubmittedDateTimeToIso,
   argentinaLocalDateTimeToIso,
+  availableBookingStatusTransitions,
   BOOKING_STATUS_TRANSITIONS,
   bookingSearchText,
   bookingStatusRequiresReason,
@@ -42,6 +43,10 @@ describe("admin operations", () => {
 
   it("lets reception recover an expired future reservation without reopening a stale pending hold", () => {
     expect(BOOKING_STATUS_TRANSITIONS.expired).toEqual(["awaiting_deposit", "confirmed"]);
+    expect(availableBookingStatusTransitions("expired", "2026-11-05T21:00:00.000Z", "2026-10-30T12:00:00.000Z"))
+      .toEqual(["awaiting_deposit", "confirmed"]);
+    expect(availableBookingStatusTransitions("expired", "2026-10-29T21:00:00.000Z", "2026-10-30T12:00:00.000Z"))
+      .toEqual([]);
     expect(BOOKING_STATUS_TRANSITIONS.cancelled).toEqual([]);
   });
 });

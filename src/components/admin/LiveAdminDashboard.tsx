@@ -49,8 +49,8 @@ import {
   normalizePhone,
 } from "@/lib/admin/customer-operations";
 import {
+  availableBookingStatusTransitions,
   BOOKING_STATUS_LABELS,
-  BOOKING_STATUS_TRANSITIONS,
   toArgentinaDateTimeInput,
 } from "@/lib/admin/operations";
 import {
@@ -507,7 +507,7 @@ export function LiveAdminDashboard({
         ) : (
           <div className="live-booking-list">
             {filteredBookings.map((booking) => {
-              const transitions = BOOKING_STATUS_TRANSITIONS[booking.status] ?? [];
+              const transitions = availableBookingStatusTransitions(booking.status, booking.starts_at, referenceTime);
               const customerName = booking.customer?.full_name ?? "Cliente";
               const treatmentName = booking.treatment?.name ?? "Tratamiento";
               const phone = booking.customer?.phone ?? "";
