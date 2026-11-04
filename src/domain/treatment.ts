@@ -113,6 +113,10 @@ export interface Treatment {
   bufferMinutes: number;
   startIntervalMinutes: 15 | 30 | 60;
   selectionMode: TreatmentSelectionMode;
+  configEnabled?: boolean;
+  bookingConfig?: import("@/lib/booking-config").BookingConfig;
+  bookingOptions?: readonly import("@/lib/option-catalog").CatalogOption[];
+  bookingCombinations?: readonly import("@/lib/option-catalog").CatalogCombination[];
   catalogGroup?: import("@/lib/catalog-order").CatalogGroup;
   isCombo?: boolean;
   combos: readonly TreatmentCombo[];
@@ -162,7 +166,12 @@ export interface BookingInitialSelection {
 }
 
 export interface ResolvedBookingSelection extends BookingInitialSelection {
-  orderSnapshot?: import("@/lib/depilation-order").OrderTotal;
+  orderSnapshot?: import("@/lib/depilation-order").OrderTotal | import("@/lib/booking-engine").BookingOrder;
+  bookingOrderV2?: {
+    combinationId: string | null;
+    optionIds: readonly string[];
+  };
+  optionLabelPlural?: string;
   treatmentName: string;
   monthlySpecialTitle?: string;
   comboId?: string;

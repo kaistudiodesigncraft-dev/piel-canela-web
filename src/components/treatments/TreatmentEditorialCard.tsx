@@ -22,6 +22,17 @@ export function TreatmentEditorialCard({
   const activeCombos = treatment.combos.filter((combo) => combo.isActive);
   const comboPrice = treatment.zoneOrder ? getMinimumZoneOrderPrice(treatment)
     : activeCombos.length > 0 ? Math.min(...activeCombos.map((combo) => quoteCombo(combo).priceCents)) : null;
+  const configured = treatment.configEnabled === true ? treatment.bookingConfig : undefined;
+  const configuredOptions = treatment.bookingOptions?.filter((option) => option.isActive) ?? [];
+  const configuredCombinations = treatment.bookingCombinations?.filter((combination) => combination.isActive) ?? [];
+  const configuredPrices = [
+    ...(configured?.allowLooseOptions ? configuredOptions.map((option) => option.priceCents) : []),
+    ...(configured?.allowCombos ? configuredCombinations.map((combination) => combination.priceCents) : []),
+  ];
+  const configuredPrice = configured?.mode === "simple" && configured.priceRule.type === "fixed"
+    ? configured.priceRule.priceCents
+    : configuredPrices.length ? Math.min(...configuredPrices) : null;
+  const configurable = Boolean(configured && configured.mode !== "simple");
   return (
     <article className={`treatment-editorial-card${treatment.image ? "" : " treatment-editorial-card--text"}`}>
       <div className="treatment-editorial-card__top">
@@ -49,10 +60,14 @@ export function TreatmentEditorialCard({
       </div>
       <div className="treatment-editorial-card__footer numeric">
         <span className="treatment-editorial-card__duration">
-          {treatment.selectionMode !== "simple" ? <Layers3 aria-hidden="true" strokeWidth={1.75} /> : <Clock3 aria-hidden="true" strokeWidth={1.75} />}
-          {treatment.zoneOrder ? "Zonas y combos" : treatment.selectionMode !== "simple" ? `${activeCombos.length} ${activeCombos.length === 1 ? "combo" : "combos"}` : formatDuration(treatment.durationMinutes)}
+          {configurable || treatment.selectionMode !== "simple" ? <Layers3 aria-hidden="true" strokeWidth={1.75} /> : <Clock3 aria-hidden="true" strokeWidth={1.75} />}
+          {configurable
+            ? `${configuredOptions.length + configuredCombinations.length} opciones`
+            : treatment.zoneOrder ? "Zonas y combos" : treatment.selectionMode !== "simple" ? `${activeCombos.length} ${activeCombos.length === 1 ? "combo" : "combos"}` : formatDuration(configured?.durationRule.type === "fixed" ? configured.durationRule.durationMinutes : treatment.durationMinutes)}
         </span>
-        <strong>{treatment.selectionMode !== "simple" ? (comboPrice === null ? "En preparación" : `Desde ${formatPrice(comboPrice)}`) : formatPrice(treatment.priceCents)}</strong>
+        <strong>{configured
+          ? configuredPrice === null ? "En preparación" : configurable ? `Desde ${formatPrice(configuredPrice)}` : formatPrice(configuredPrice)
+          : treatment.selectionMode !== "simple" ? (comboPrice === null ? "En preparación" : `Desde ${formatPrice(comboPrice)}`) : formatPrice(treatment.priceCents)}</strong>
         <Link
           className="treatment-editorial-card__arrow"
           href={detailHref}

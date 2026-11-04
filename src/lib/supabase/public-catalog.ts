@@ -12,6 +12,9 @@ import type {
   TreatmentCategory,
   DepilationZone,
 } from "@/domain/treatment";
+import { BookingConfigSchema } from "@/lib/booking-config";
+import type { CatalogCombination, CatalogOption } from "@/lib/option-catalog";
+import { shouldAttachLegacyZoneOrder } from "@/lib/public-booking-strategy";
 import { createSupabasePublicServerClient } from "./public-server";
 import { usesSupabaseDataSource } from "./env";
 import { hasPublicTreatmentPrice } from "@/lib/treatments";
@@ -107,6 +110,8 @@ interface TreatmentRow {
   buffer_minutes: number;
   start_interval_minutes: 15 | 30 | 60;
   selection_mode: "simple" | "closed_combo" | "combo_with_extras";
+  booking_config?: unknown;
+  config_enabled?: boolean;
   catalog_group?: import("@/lib/catalog-order").CatalogGroup;
   is_combo?: boolean;
   requires_professional_assignment?: boolean;
@@ -179,6 +184,35 @@ interface ComboAllowedExtraRow {
   extra_id: string;
 }
 
+interface GenericOptionRow {
+  id: string;
+  treatment_id: string;
+  name: string;
+  price_cents: number;
+  duration_minutes: number;
+  display_order: number;
+  is_active: boolean;
+}
+
+interface GenericCombinationRow {
+  id: string;
+  treatment_id: string;
+  name: string;
+  kind: "combo" | "package";
+  price_cents: number;
+  duration_minutes: number;
+  session_count: number;
+  display_order: number;
+  is_active: boolean;
+}
+
+interface GenericCombinationItemRow {
+  combo_id: string;
+  option_id: string;
+  role: "included" | "addon";
+  display_order: number;
+}
+
 interface MonthlySpecialRow {
   id: string;
   treatment_id: string;
@@ -243,14 +277,25 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
   // signal and turn it into a misleading catalog-query error during prerender.
   await connection();
   const supabase = createSupabasePublicServerClient();
-  let [categoriesResult, treatmentsResult, specialsResult, combosResult, treatmentProfessionalsResult, extrasResult, allowedExtrasResult] = await Promise.all([
+  let [
+    categoriesResult,
+    treatmentsResult,
+    specialsResult,
+    combosResult,
+    treatmentProfessionalsResult,
+    extrasResult,
+    allowedExtrasResult,
+    genericOptionsResult,
+    genericCombinationsResult,
+    genericCombinationItemsResult,
+  ] = await Promise.all([
     supabase
       .from("treatment_categories")
       .select("id,name,slug,short_description,icon_name,display_order,is_active")
       .order("display_order"),
     supabase
       .from("treatments")
-      .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,catalog_group,is_combo,requires_professional_assignment,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,professional:professionals!treatments_professional_id_fkey(public_name,is_active)")
+      .select("id,category_id,specialty_id,professional_id,name,slug,short_description,description,expectations,characteristics,duration_minutes,buffer_minutes,start_interval_minutes,selection_mode,booking_config,config_enabled,catalog_group,is_combo,requires_professional_assignment,price_cents,preparation,contraindications,image_path,image_alt,image_focal_x,image_focal_y,is_active,display_order,created_at,updated_at,professional:professionals!treatments_professional_id_fkey(public_name,is_active)")
       .order("display_order"),
     supabase
       .from("monthly_specials")
@@ -273,7 +318,24 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
     supabase
       .from("treatment_combo_allowed_extras")
       .select("combo_id,extra_id"),
+    supabase
+      .from("treatment_options")
+      .select("id,treatment_id,name,price_cents,duration_minutes,display_order,is_active")
+      .order("display_order")
+      .order("name"),
+    supabase
+      .from("treatment_option_combos")
+      .select("id,treatment_id,name,kind,price_cents,duration_minutes,session_count,display_order,is_active")
+      .order("display_order")
+      .order("name"),
+    supabase
+      .from("treatment_option_combo_items")
+      .select("combo_id,option_id,role,display_order")
+      .order("display_order"),
   ]) as [
+    CatalogQueryResult,
+    CatalogQueryResult,
+    CatalogQueryResult,
     CatalogQueryResult,
     CatalogQueryResult,
     CatalogQueryResult,
@@ -283,7 +345,9 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
     CatalogQueryResult,
   ];
 
-  let firstError = categoriesResult.error ?? treatmentsResult.error ?? specialsResult.error ?? combosResult.error ?? treatmentProfessionalsResult.error ?? extrasResult.error ?? allowedExtrasResult.error;
+  let firstError = categoriesResult.error ?? treatmentsResult.error ?? specialsResult.error ?? combosResult.error
+    ?? treatmentProfessionalsResult.error ?? extrasResult.error ?? allowedExtrasResult.error
+    ?? genericOptionsResult.error ?? genericCombinationsResult.error ?? genericCombinationItemsResult.error;
   if (isPendingCatalogSchemaError(firstError)) {
     [categoriesResult, treatmentsResult, specialsResult, combosResult] = await Promise.all([
       supabase
@@ -312,6 +376,9 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
     treatmentProfessionalsResult = { data: [], error: null, count: null, status: 200, statusText: "OK", success: true };
     extrasResult = { data: [], error: null, count: null, status: 200, statusText: "OK", success: true };
     allowedExtrasResult = { data: [], error: null, count: null, status: 200, statusText: "OK", success: true };
+    genericOptionsResult = { data: [], error: null, count: null, status: 200, statusText: "OK", success: true };
+    genericCombinationsResult = { data: [], error: null, count: null, status: 200, statusText: "OK", success: true };
+    genericCombinationItemsResult = { data: [], error: null, count: null, status: 200, statusText: "OK", success: true };
     firstError = categoriesResult.error ?? treatmentsResult.error ?? specialsResult.error ?? combosResult.error;
   }
   if (firstError) {
@@ -400,8 +467,52 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
     combosByTreatment.set(row.treatment_id, [...(combosByTreatment.get(row.treatment_id) ?? []), combo]);
   }
 
+  const genericOptionsByTreatment = new Map<string, CatalogOption[]>();
+  for (const row of (genericOptionsResult.data ?? []) as GenericOptionRow[]) {
+    const option: CatalogOption = {
+      id: row.id,
+      name: row.name,
+      priceCents: row.price_cents,
+      durationMinutes: row.duration_minutes,
+      displayOrder: row.display_order,
+      isActive: row.is_active,
+    };
+    genericOptionsByTreatment.set(row.treatment_id, [
+      ...(genericOptionsByTreatment.get(row.treatment_id) ?? []),
+      option,
+    ]);
+  }
+
+  const genericItems = (genericCombinationItemsResult.data ?? []) as GenericCombinationItemRow[];
+  const genericCombinationsByTreatment = new Map<string, CatalogCombination[]>();
+  for (const row of (genericCombinationsResult.data ?? []) as GenericCombinationRow[]) {
+    const combination: CatalogCombination = {
+      id: row.id,
+      name: row.name,
+      kind: row.kind,
+      priceCents: row.price_cents,
+      durationMinutes: row.duration_minutes,
+      includedOptionIds: genericItems
+        .filter((item) => item.combo_id === row.id && item.role === "included")
+        .map((item) => item.option_id),
+      allowedAddonOptionIds: genericItems
+        .filter((item) => item.combo_id === row.id && item.role === "addon")
+        .map((item) => item.option_id),
+      sessionCount: row.session_count,
+      displayOrder: row.display_order,
+      isActive: row.is_active,
+    };
+    genericCombinationsByTreatment.set(row.treatment_id, [
+      ...(genericCombinationsByTreatment.get(row.treatment_id) ?? []),
+      combination,
+    ]);
+  }
+
   const treatments = (treatmentsResult.data as TreatmentRow[]).map((row) => {
     const professional = Array.isArray(row.professional) ? row.professional[0] : null;
+    const parsedBookingConfig = row.config_enabled
+      ? BookingConfigSchema.safeParse(row.booking_config)
+      : null;
     return {
       id: row.id,
       categoryId: row.category_id,
@@ -419,6 +530,10 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
       bufferMinutes: row.buffer_minutes,
       startIntervalMinutes: row.start_interval_minutes,
       selectionMode: row.selection_mode,
+      configEnabled: row.config_enabled === true,
+      bookingConfig: parsedBookingConfig?.success ? parsedBookingConfig.data : undefined,
+      bookingOptions: row.config_enabled ? (genericOptionsByTreatment.get(row.id) ?? []) : undefined,
+      bookingCombinations: row.config_enabled ? (genericCombinationsByTreatment.get(row.id) ?? []) : undefined,
       catalogGroup: row.catalog_group ?? "default",
       isCombo: row.is_combo ?? false,
       combos: combosByTreatment.get(row.id) ?? [],
@@ -452,7 +567,10 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
       id: row.id, name: row.name, audience: row.audience, referencePriceCents: row.reference_price_cents,
       durationMinutes: row.duration_minutes, isActive: row.is_active, displayOrder: row.display_order,
     }));
-    for (const treatment of treatments as Treatment[]) if (treatment.selectionMode !== "simple") {
+    for (const treatment of treatments as Treatment[]) if (shouldAttachLegacyZoneOrder({
+      configEnabled: treatment.configEnabled === true,
+      selectionMode: treatment.selectionMode,
+    })) {
       treatment.zoneOrder = { zones, discountPercent: Number(discountResult.data?.depilation_discount_percent ?? 0),
         ready: !zonesResult.error && !discountResult.error };
     }

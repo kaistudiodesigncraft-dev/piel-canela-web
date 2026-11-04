@@ -3,12 +3,15 @@ import { monthlySpecials, treatments } from "@/data/fixtures";
 import {
   buildBookingHref,
   buildCatalogHref,
+  buildConfiguredBookingHref,
+  buildConfiguredTreatmentSelectionHref,
   buildTreatmentSelectionHref,
   filterTreatmentsByCategory,
   getActiveTreatments,
   getMonthlySpecialForTreatment,
   getPublicMonthlySpecials,
   resolveBookingSelection,
+  resolveConfiguredBookingSelection,
 } from "./treatments";
 
 describe("treatment domain helpers", () => {
@@ -53,6 +56,47 @@ describe("treatment domain helpers", () => {
       zoneOrder: true,
       zoneIds: ["zona-a", "zona-b"],
     })).toBe("/tratamientos/depilacion?comboId=combo-cerrado&zoneOrder=1&zoneId=zona-a&zoneId=zona-b#opciones");
+  });
+
+  it("keeps configured selection parameters separate from the legacy flow", () => {
+    expect(buildConfiguredBookingHref({
+      treatmentId: "treatment-configured",
+      combinationId: "combination-a",
+      optionIds: ["option-a", "option-b"],
+    })).toBe("/reservar?treatmentId=treatment-configured&bookingOrder=1&combinationId=combination-a&optionId=option-a&optionId=option-b");
+    expect(buildConfiguredTreatmentSelectionHref("hifu", {
+      combinationId: "combination-a",
+      optionIds: ["option-a"],
+    })).toBe("/tratamientos/hifu?combinationId=combination-a&optionId=option-a#opciones");
+  });
+
+  it("resolves a configured order from its neutral catalog", () => {
+    const base = treatments[0]!;
+    const configured = {
+      ...base,
+      configEnabled: true,
+      bookingConfig: {
+        version: 1 as const,
+        mode: "options" as const,
+        optionsLabel: { singular: "área", plural: "áreas" },
+        selectionMode: "multiple" as const,
+        minSelections: 1,
+        maxSelections: null,
+        allowLooseOptions: true,
+        allowCombos: false,
+        allowAddons: false,
+        priceRule: { type: "sum_of_options" as const },
+        durationRule: { type: "sum_of_options" as const },
+      },
+      bookingOptions: [{ id: "option-a", name: "Área A", priceCents: 120000, durationMinutes: 25, displayOrder: 1, isActive: true }],
+      bookingCombinations: [],
+    };
+    const selection = resolveConfiguredBookingSelection(configured, null, ["option-a"]);
+    expect(selection.bookingOrderV2).toEqual({ combinationId: null, optionIds: ["option-a"] });
+    expect(selection.appliedPriceCents).toBe(120000);
+    expect(selection.durationMinutes).toBe(25);
+    expect(selection.occupiedDurationMinutes).toBe(25 + base.bufferMinutes);
+    expect(selection.optionLabelPlural).toBe("áreas");
   });
 
   it("resolves the applied price without overwriting the base price", () => {

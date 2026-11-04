@@ -1,5 +1,7 @@
 import { quoteCombo } from "./combo-quote";
 import { sortCatalogItems } from "./catalog-order";
+import { calculateOrder } from "./booking-engine";
+import { GenericCatalog } from "./option-catalog";
 import type {
   BookingInitialSelection,
   MonthlySpecial,
@@ -11,6 +13,18 @@ import type {
 } from "@/domain/treatment";
 
 export function hasPublicTreatmentPrice(treatment: Treatment): boolean {
+  if (treatment.configEnabled) {
+    const config = treatment.bookingConfig;
+    if (!config || config.mode === "package") return false;
+    if (config.mode === "simple") {
+      return config.priceRule.type === "fixed" && config.priceRule.priceCents > 0;
+    }
+    const hasOption = treatment.bookingOptions?.some((option) => option.isActive && option.priceCents > 0) ?? false;
+    const hasCombination = treatment.bookingCombinations?.some((combination) => combination.isActive && combination.priceCents > 0) ?? false;
+    if (config.mode === "options") return hasOption || (config.allowCombos && hasCombination);
+    if (config.mode === "closed_combos") return hasCombination;
+    return hasCombination || (config.allowLooseOptions && hasOption);
+  }
   if (treatment.selectionMode === "simple") return Number.isFinite(treatment.priceCents) && treatment.priceCents > 0;
   if (treatment.zoneOrder?.ready && treatment.zoneOrder.zones.some(z => z.isActive && z.referencePriceCents > 0)) return true;
   if (treatment.zoneOrder) return treatment.combos.some(c => c.isActive && c.fixedPriceCents > 0);
@@ -121,6 +135,86 @@ export function buildTreatmentSelectionHref(
   for (const zoneId of selection.zoneIds ?? []) params.append("zoneId", zoneId);
   const query = params.toString();
   return `/tratamientos/${treatmentSlug}${query ? `?${query}` : ""}#opciones`;
+}
+
+export function buildConfiguredBookingHref(input: {
+  treatmentId: string;
+  combinationId: string | null;
+  optionIds: readonly string[];
+}) {
+  const params = new URLSearchParams({ treatmentId: input.treatmentId, bookingOrder: "1" });
+  if (input.combinationId) params.set("combinationId", input.combinationId);
+  for (const optionId of input.optionIds) params.append("optionId", optionId);
+  return `/reservar?${params.toString()}`;
+}
+
+export function buildConfiguredTreatmentSelectionHref(
+  treatmentSlug: string,
+  input: { combinationId: string | null; optionIds: readonly string[] },
+) {
+  const params = new URLSearchParams();
+  if (input.combinationId) params.set("combinationId", input.combinationId);
+  for (const optionId of input.optionIds) params.append("optionId", optionId);
+  const query = params.toString();
+  return `/tratamientos/${treatmentSlug}${query ? `?${query}` : ""}#opciones`;
+}
+
+function configuredCatalog(treatment: Treatment) {
+  return new GenericCatalog(
+    treatment.id,
+    (treatment.bookingOptions ?? []).map((option) => ({
+      id: option.id,
+      treatment_id: treatment.id,
+      name: option.name,
+      price_cents: option.priceCents,
+      duration_minutes: option.durationMinutes,
+      display_order: option.displayOrder,
+      is_active: option.isActive,
+    })),
+    (treatment.bookingCombinations ?? []).map((combination) => ({
+      id: combination.id,
+      treatment_id: treatment.id,
+      name: combination.name,
+      kind: combination.kind,
+      price_cents: combination.priceCents,
+      duration_minutes: combination.durationMinutes,
+      included_option_ids: combination.includedOptionIds,
+      allowed_addon_option_ids: combination.allowedAddonOptionIds,
+      session_count: combination.sessionCount,
+      display_order: combination.displayOrder,
+      is_active: combination.isActive,
+    })),
+  );
+}
+
+export function resolveConfiguredBookingSelection(
+  treatment: Treatment,
+  combinationId: string | null,
+  optionIds: readonly string[],
+): ResolvedBookingSelection {
+  if (!treatment.configEnabled || !treatment.bookingConfig) throw new Error("configured_flow_unavailable");
+  const catalog = configuredCatalog(treatment);
+  const order = calculateOrder(treatment.bookingConfig, catalog, { combinationId, optionIds });
+  const combination = combinationId ? catalog.getCombination(combinationId) : undefined;
+  const selectedOptions = optionIds.map((id) => catalog.getOption(id)).filter((option) => option !== undefined);
+  const includedNames = combination?.includedOptionIds
+    .map((id) => catalog.getOption(id)?.name)
+    .filter((name): name is string => Boolean(name)) ?? [];
+  return {
+    treatmentId: treatment.id,
+    treatmentName: treatment.name,
+    bookingOrderV2: { combinationId, optionIds: [...optionIds] },
+    optionLabelPlural: treatment.bookingConfig.optionsLabel.plural,
+    comboName: combination?.name,
+    comboZones: includedNames,
+    comboExtras: selectedOptions.map((option) => option.name),
+    sessionCount: combination?.sessionCount,
+    durationMinutes: order.durationMinutes,
+    occupiedDurationMinutes: order.durationMinutes + treatment.bufferMinutes,
+    basePriceCents: order.subtotalCents,
+    appliedPriceCents: order.totalCents,
+    orderSnapshot: order,
+  };
 }
 
 export function resolveBookingSelection(

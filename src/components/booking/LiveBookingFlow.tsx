@@ -84,6 +84,8 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, selectionHre
   })).entries()), [availableDates]);
   const visibleDates = availableDates.filter((item) => item.value.startsWith(selectedMonth));
   const canContinueByWhatsApp = Boolean(whatsappNumber && normalizeWhatsAppPhone(whatsappNumber));
+  const selectedOptionsLabel = selection.optionLabelPlural
+    ?? (selection.comboId ? "Zonas adicionales" : "Zonas");
 
   useEffect(() => {
     if (initialStepRender.current) {
@@ -117,6 +119,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, selectionHre
     if (!dates.length) return;
     void getAvailableDates({
       treatmentId: selection.treatmentId,
+      bookingOrderV2: selection.bookingOrderV2,
       comboId: selection.comboId ?? null,
       extraIds: [...(selection.extraIds ?? [])],
       zoneOrder: selection.zoneOrder,
@@ -149,14 +152,14 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, selectionHre
       if (active) setIsLoadingDates(false);
     });
     return () => { active = false; };
-  }, [dates, datesRefresh, selection.appliedPriceCents, selection.comboId, selection.durationMinutes, selection.extraIds, selection.treatmentId, selection.zoneIds, selection.zoneOrder]);
+  }, [dates, datesRefresh, selection.appliedPriceCents, selection.bookingOrderV2, selection.comboId, selection.durationMinutes, selection.extraIds, selection.treatmentId, selection.zoneIds, selection.zoneOrder]);
 
   useEffect(() => {
     let active = true;
 
     if (!date) return;
 
-    void getAvailableSlots({ treatmentId: selection.treatmentId, comboId: selection.comboId ?? null, extraIds: [...(selection.extraIds ?? [])], zoneOrder: selection.zoneOrder, zoneIds: selection.zoneIds, expectedTotalCents: selection.appliedPriceCents, expectedDurationMinutes: selection.durationMinutes, date }).then((result) => {
+    void getAvailableSlots({ treatmentId: selection.treatmentId, bookingOrderV2: selection.bookingOrderV2, comboId: selection.comboId ?? null, extraIds: [...(selection.extraIds ?? [])], zoneOrder: selection.zoneOrder, zoneIds: selection.zoneIds, expectedTotalCents: selection.appliedPriceCents, expectedDurationMinutes: selection.durationMinutes, date }).then((result) => {
       if (!active) return;
       if (result.ok) {
         setSlots(result.slots);
@@ -177,13 +180,13 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, selectionHre
     return () => {
       active = false;
     };
-  }, [date, selection.comboId, selection.extraIds, selection.treatmentId, selection.zoneOrder, selection.zoneIds, selection.appliedPriceCents, selection.durationMinutes, slotRefresh]);
+  }, [date, selection.bookingOrderV2, selection.comboId, selection.extraIds, selection.treatmentId, selection.zoneOrder, selection.zoneIds, selection.appliedPriceCents, selection.durationMinutes, slotRefresh]);
 
   const whatsappMessage = useMemo(() => {
     if (!booking || !selectedDate || !selectedTime) return "";
     return buildManualPreReservationMessage({
       name: customer.fullName,
-      treatment: `${selection.monthlySpecialTitle ?? selection.treatmentName}${selection.zoneOrder && selection.comboExtras?.length ? ` · Zonas: ${selection.comboExtras.join(", ")}` : ""}`,
+      treatment: `${selection.monthlySpecialTitle ?? selection.treatmentName}${(selection.zoneOrder || selection.bookingOrderV2) && selection.comboExtras?.length ? ` · ${selectedOptionsLabel}: ${selection.comboExtras.join(", ")}` : ""}`,
       combo: selection.comboName
         ? `${selection.comboName} (${selection.sessionCount ?? 1} sesiones)`
         : null,
@@ -191,7 +194,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, selectionHre
       time: selectedTime,
       bookingCode: booking.code,
     });
-  }, [booking, customer.fullName, selectedDate, selectedTime, selection]);
+  }, [booking, customer.fullName, selectedDate, selectedOptionsLabel, selectedTime, selection]);
 
   function updateCustomer(field: keyof CustomerForm, value: string) {
     setCustomer((current) => ({ ...current, [field]: value }));
@@ -225,6 +228,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, selectionHre
 
     const result = await createPublicBooking({
       treatmentId: selection.treatmentId,
+      bookingOrderV2: selection.bookingOrderV2,
       monthlySpecialId: selection.monthlySpecialId ?? null,
       comboId: selection.comboId ?? null,
       extraIds: [...(selection.extraIds ?? [])],
@@ -297,8 +301,8 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, selectionHre
         <dl className="booking-confirmation numeric">
           <div><dt>Código</dt><dd>{booking.code}</dd></div>
           <div><dt>Tratamiento</dt><dd>{selection.monthlySpecialTitle ?? selection.treatmentName}</dd></div>
-          {selection.comboName ? <div><dt>Combo</dt><dd>{selection.comboName} · {selection.sessionCount} {selection.sessionCount === 1 ? "sesión" : "sesiones"}</dd></div> : null}
-          {selection.comboExtras?.length ? <div><dt>{selection.comboId ? "Zonas adicionales" : "Zonas"}</dt><dd>{selection.comboExtras.join(" · ")}</dd></div> : null}
+          {selection.comboName ? <div><dt>{selection.bookingOrderV2 ? "Propuesta" : "Combo"}</dt><dd>{selection.comboName} · {selection.sessionCount} {selection.sessionCount === 1 ? "sesión" : "sesiones"}</dd></div> : null}
+          {selection.comboExtras?.length ? <div><dt>{selectedOptionsLabel}</dt><dd>{selection.comboExtras.join(" · ")}</dd></div> : null}
           <div><dt>Cuándo</dt><dd>{selectedDate.longLabel}, {selectedTime}</dd></div>
           <div><dt>Valor</dt><dd>{formatPrice(selection.appliedPriceCents)}</dd></div>
         </dl>
@@ -339,7 +343,7 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, selectionHre
             {step === "details" && "Contanos cómo contactarte."}
             {step === "review" && "Revisá antes de crear la pre-reserva."}
           </h2>
-          {selectionHref ? <Link className="text-link booking-selection-back" href={selectionHref}><ArrowLeft aria-hidden="true" strokeWidth={1.75} />{selection.zoneOrder ? "Cambiar combo o zonas" : "Cambiar combo"}</Link> : null}
+          {selectionHref ? <Link className="text-link booking-selection-back" href={selectionHref}><ArrowLeft aria-hidden="true" strokeWidth={1.75} />{selection.bookingOrderV2 ? "Cambiar elección" : selection.zoneOrder ? "Cambiar combo o zonas" : "Cambiar combo"}</Link> : null}
         </div>
         <p className="booking-step-caption">Paso {currentStepIndex + 1} de 3</p>
       </div>
@@ -527,13 +531,13 @@ export function LiveBookingFlow({ selection, dates, whatsappNumber, selectionHre
           <h2>{selection.monthlySpecialTitle ?? selection.treatmentName}</h2>
           {selection.monthlySpecialTitle ? <p>{selection.treatmentName}</p> : null}
           {selection.comboName ? <><p className="booking-selection-rail__combo">{selection.comboName}</p><p>{selection.comboZones?.join(" · ")}</p></> : null}
-          {selection.comboExtras?.length ? <p>{selection.comboId ? "Zonas adicionales" : "Zonas"}: {selection.comboExtras.join(" · ")}</p> : null}
+          {selection.comboExtras?.length ? <p>{selectedOptionsLabel}: {selection.comboExtras.join(" · ")}</p> : null}
           <dl className="numeric">
             <div><dt>Duración</dt><dd>{formatDuration(selection.durationMinutes)}</dd></div>
             {selection.sessionCount && selection.sessionCount > 1 ? <div><dt>Sesiones</dt><dd>{selection.sessionCount}</dd></div> : null}
             <div><dt>Valor total</dt><dd>{formatPrice(selection.appliedPriceCents)}</dd></div>
             {selection.orderSnapshot ? <div><dt>Subtotal</dt><dd>{formatPrice(selection.orderSnapshot.subtotalCents)}</dd></div> : null}
-            {selection.orderSnapshot && selection.orderSnapshot.discountCents > 0 ? <div><dt>Descuento en zonas ({selection.orderSnapshot.discountPercent} %)</dt><dd>−{formatPrice(selection.orderSnapshot.discountCents)}</dd></div> : null}
+            {selection.orderSnapshot && selection.orderSnapshot.discountCents > 0 ? <div><dt>Descuento en {selection.optionLabelPlural ?? "zonas"} ({selection.orderSnapshot.discountPercent} %)</dt><dd>−{formatPrice(selection.orderSnapshot.discountCents)}</dd></div> : null}
             {selection.pricePerSessionCents && selection.sessionCount && selection.sessionCount > 1 ? <div><dt>Por sesión</dt><dd>{formatPrice(selection.pricePerSessionCents)}</dd></div> : null}
           </dl>
           {selectedDate && selectedTime ? (

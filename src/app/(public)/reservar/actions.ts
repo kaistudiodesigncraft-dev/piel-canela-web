@@ -6,6 +6,12 @@ import { z } from "zod";
 import { usesSupabaseDataSource } from "@/lib/supabase/env";
 import { createSupabasePublicServerClient } from "@/lib/supabase/public-server";
 import { createZoneOrderQuote } from "@/lib/supabase/depilation-order";
+import { createBookingOrderQuoteV2 } from "@/lib/supabase/booking-order-v2";
+
+const configuredSelectionSchema = z.object({
+  combinationId: z.string().uuid().nullable(),
+  optionIds: z.array(z.string().uuid()).max(100),
+}).optional();
 
 const zoneSelectionFields = {
   zoneOrder: z.boolean().optional().default(false),
@@ -19,6 +25,7 @@ const availabilitySchema = z.object({
   treatmentId: z.string().uuid(),
   comboId: z.string().uuid().nullable().optional().default(null),
   extraIds: z.array(z.string().uuid()).optional().default([]),
+  bookingOrderV2: configuredSelectionSchema,
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 
@@ -27,6 +34,7 @@ const availableDatesSchema = z.object({
   treatmentId: z.string().uuid(),
   comboId: z.string().uuid().nullable().optional().default(null),
   extraIds: z.array(z.string().uuid()).optional().default([]),
+  bookingOrderV2: configuredSelectionSchema,
   fromDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   toDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
@@ -37,6 +45,7 @@ const bookingSchema = z.object({
   monthlySpecialId: z.string().uuid().nullable(),
   comboId: z.string().uuid().nullable().optional().default(null),
   extraIds: z.array(z.string().uuid()).optional().default([]),
+  bookingOrderV2: configuredSelectionSchema,
   startsAt: z.string().datetime({ offset: true }),
   idempotencyKey: z.string().uuid(),
   website: z.string().max(0).optional().default(""),
@@ -85,6 +94,32 @@ export async function getAvailableSlots(input: unknown): Promise<AvailabilityRes
   });
   if (offeredResult.error) return { ok: false, reason: "unavailable" };
   if (!offeredResult.data) return { ok: true, slots: [] };
+  if (parsed.data.bookingOrderV2) {
+    if (parsed.data.comboId || parsed.data.extraIds.length || parsed.data.zoneOrder || parsed.data.zoneIds.length) {
+      return { ok: false, reason: "invalid" };
+    }
+    const secret = process.env.BOOKING_GUARD_SECRET;
+    if (!secret || secret.length < 32) return { ok: false, reason: "configuration" };
+    try {
+      const quote = await createBookingOrderQuoteV2({
+        treatmentId: parsed.data.treatmentId,
+        combinationId: parsed.data.bookingOrderV2.combinationId,
+        optionIds: parsed.data.bookingOrderV2.optionIds,
+      }, secret);
+      if (quote.order.totalCents !== parsed.data.expectedTotalCents || quote.order.durationMinutes !== parsed.data.expectedDurationMinutes) {
+        return { ok: false, reason: "price_changed" };
+      }
+      const { data, error } = await supabase.rpc("get_available_slots_for_booking_order_v2", {
+        payload: quote.payload,
+        signature: quote.signature,
+        requested_date: parsed.data.date,
+      });
+      if (error) return { ok: false, reason: error.message.includes("quote_changed") ? "price_changed" : "unavailable" };
+      return { ok: true, slots: ((data ?? []) as { starts_at: string; ends_at: string }[]).map((slot) => ({ startsAt: slot.starts_at, endsAt: slot.ends_at })) };
+    } catch {
+      return { ok: false, reason: "unavailable" };
+    }
+  }
   if (parsed.data.zoneOrder) {
     const secret = process.env.BOOKING_GUARD_SECRET;
     if (!secret || secret.length < 32) return { ok: false, reason: "configuration" };
@@ -130,6 +165,34 @@ export async function getAvailableDates(input: unknown): Promise<AvailableDatesR
   const to = new Date(`${parsed.data.toDate}T12:00:00Z`);
   const days = Math.round((to.getTime() - from.getTime()) / 86_400_000);
   if (!Number.isFinite(days) || days < 0 || days > 366) return { ok: false, reason: "invalid" };
+  if (parsed.data.bookingOrderV2) {
+    if (parsed.data.comboId || parsed.data.extraIds.length || parsed.data.zoneOrder || parsed.data.zoneIds.length) {
+      return { ok: false, reason: "invalid" };
+    }
+    const secret = process.env.BOOKING_GUARD_SECRET;
+    if (!secret || secret.length < 32) return { ok: false, reason: "configuration" };
+    try {
+      const quote = await createBookingOrderQuoteV2({
+        treatmentId: parsed.data.treatmentId,
+        combinationId: parsed.data.bookingOrderV2.combinationId,
+        optionIds: parsed.data.bookingOrderV2.optionIds,
+      }, secret);
+      if (quote.order.totalCents !== parsed.data.expectedTotalCents || quote.order.durationMinutes !== parsed.data.expectedDurationMinutes) {
+        return { ok: false, reason: "price_changed" };
+      }
+      const supabase = createSupabasePublicServerClient();
+      const { data, error } = await supabase.rpc("get_available_dates_for_booking_order_v2", {
+        payload: quote.payload,
+        signature: quote.signature,
+        requested_from_date: parsed.data.fromDate,
+        requested_to_date: parsed.data.toDate,
+      });
+      if (error) return { ok: false, reason: error.message.includes("quote_changed") ? "price_changed" : "unavailable" };
+      return { ok: true, dates: ((data ?? []) as { available_date: string }[]).map((row) => row.available_date) };
+    } catch {
+      return { ok: false, reason: "unavailable" };
+    }
+  }
   if (process.env.DEPILATION_ZONES_ENABLED === "true" && parsed.data.comboId && !parsed.data.zoneOrder) return { ok: false, reason: "invalid" };
 
   const supabase = createSupabasePublicServerClient();
@@ -181,6 +244,25 @@ export async function createPublicBooking(input: unknown): Promise<CreateBooking
   const guard = createBookingGuard({ secret: guardSecret, fingerprintSource });
 
   const supabase = createSupabasePublicServerClient();
+  let configuredQuote: Awaited<ReturnType<typeof createBookingOrderQuoteV2>> | undefined;
+  if (parsed.data.bookingOrderV2) {
+    if (parsed.data.monthlySpecialId || parsed.data.comboId || parsed.data.extraIds.length || parsed.data.zoneOrder || parsed.data.zoneIds.length) {
+      return { ok: false, reason: "invalid" };
+    }
+    try {
+      configuredQuote = await createBookingOrderQuoteV2({
+        treatmentId: parsed.data.treatmentId,
+        combinationId: parsed.data.bookingOrderV2.combinationId,
+        optionIds: parsed.data.bookingOrderV2.optionIds,
+      }, guardSecret);
+    } catch {
+      return { ok: false, reason: "treatment" };
+    }
+    if (configuredQuote.order.totalCents !== parsed.data.expectedTotalCents
+      || configuredQuote.order.durationMinutes !== parsed.data.expectedDurationMinutes) {
+      return { ok: false, reason: "price_changed" };
+    }
+  }
   if (parsed.data.zoneIds.length && !parsed.data.zoneOrder) return { ok: false, reason: "invalid" };
   let zoneQuote: Awaited<ReturnType<typeof createZoneOrderQuote>> | undefined;
   if (parsed.data.zoneOrder) {
@@ -191,27 +273,42 @@ export async function createPublicBooking(input: unknown): Promise<CreateBooking
     // Client values only detect a changed offer; authoritative values always come from the database.
     if (zoneQuote.order.totalCents !== parsed.data.expectedTotalCents || zoneQuote.order.durationMinutes !== parsed.data.expectedDurationMinutes) return { ok: false, reason: "price_changed" };
   }
-  const { data, error } = zoneQuote ? await supabase.rpc("create_booking_for_zone_order", {
-    payload: zoneQuote.payload, signature: zoneQuote.signature,
-    requested_starts_at: parsed.data.startsAt, requested_idempotency_key: parsed.data.idempotencyKey,
-    customer_full_name: parsed.data.fullName, customer_phone: parsed.data.phone,
-    customer_email: parsed.data.email || null, customer_notes: parsed.data.notes || null,
-    request_guard_nonce: guard.nonce, request_guard_fingerprint: guard.fingerprint, request_guard_secret: guardSecret,
-  }) : await supabase.rpc("create_booking_for_selection_v2", {
-    requested_treatment_id: parsed.data.treatmentId,
-    requested_combo_id: parsed.data.comboId,
-    requested_monthly_special_id: parsed.data.monthlySpecialId,
-    requested_starts_at: parsed.data.startsAt,
-    requested_idempotency_key: parsed.data.idempotencyKey,
-    customer_full_name: parsed.data.fullName,
-    customer_phone: parsed.data.phone,
-    customer_email: parsed.data.email || null,
-    customer_notes: parsed.data.notes || null,
-    request_guard_nonce: guard.nonce,
-    request_guard_fingerprint: guard.fingerprint,
-    request_guard_secret: guardSecret,
-    requested_extra_ids: parsed.data.extraIds,
-  });
+  const bookingResult = configuredQuote
+    ? await supabase.rpc("create_booking_for_booking_order_v2", {
+      payload: configuredQuote.payload,
+      signature: configuredQuote.signature,
+      requested_starts_at: parsed.data.startsAt,
+      requested_idempotency_key: parsed.data.idempotencyKey,
+      customer_full_name: parsed.data.fullName,
+      customer_phone: parsed.data.phone,
+      customer_email: parsed.data.email || null,
+      customer_notes: parsed.data.notes || null,
+      request_guard_nonce: guard.nonce,
+      request_guard_fingerprint: guard.fingerprint,
+      request_guard_secret: guardSecret,
+    })
+    : zoneQuote ? await supabase.rpc("create_booking_for_zone_order", {
+      payload: zoneQuote.payload, signature: zoneQuote.signature,
+      requested_starts_at: parsed.data.startsAt, requested_idempotency_key: parsed.data.idempotencyKey,
+      customer_full_name: parsed.data.fullName, customer_phone: parsed.data.phone,
+      customer_email: parsed.data.email || null, customer_notes: parsed.data.notes || null,
+      request_guard_nonce: guard.nonce, request_guard_fingerprint: guard.fingerprint, request_guard_secret: guardSecret,
+    }) : await supabase.rpc("create_booking_for_selection_v2", {
+      requested_treatment_id: parsed.data.treatmentId,
+      requested_combo_id: parsed.data.comboId,
+      requested_monthly_special_id: parsed.data.monthlySpecialId,
+      requested_starts_at: parsed.data.startsAt,
+      requested_idempotency_key: parsed.data.idempotencyKey,
+      customer_full_name: parsed.data.fullName,
+      customer_phone: parsed.data.phone,
+      customer_email: parsed.data.email || null,
+      customer_notes: parsed.data.notes || null,
+      request_guard_nonce: guard.nonce,
+      request_guard_fingerprint: guard.fingerprint,
+      request_guard_secret: guardSecret,
+      requested_extra_ids: parsed.data.extraIds,
+    });
+  const { data, error } = bookingResult;
 
   if (error) {
     if (error.message.includes("quote_changed") || error.message.includes("quote_expired")) return { ok: false, reason: "price_changed" };

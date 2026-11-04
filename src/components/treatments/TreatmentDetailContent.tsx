@@ -7,7 +7,8 @@ import type {
   TreatmentCategory,
 } from "@/domain/treatment";
 import { formatDuration, formatPrice } from "@/lib/format";
-import { buildBookingHref } from "@/lib/treatments";
+import { buildBookingHref, buildConfiguredBookingHref } from "@/lib/treatments";
+import { ConfigurableBookingSelector } from "./ConfigurableBookingSelector";
 import { TreatmentComboSelector } from "./TreatmentComboSelector";
 
 interface TreatmentDetailContentProps {
@@ -27,8 +28,15 @@ export function TreatmentDetailContent({
   preview = false,
   bookableComboIds,
 }: TreatmentDetailContentProps) {
-  const activeSpecial = treatment.selectionMode === "simple" ? monthlySpecial : undefined;
-  const price = activeSpecial?.specialPriceCents ?? treatment.priceCents;
+  const configured = treatment.configEnabled === true ? treatment.bookingConfig : undefined;
+  const configuredNeedsSelection = Boolean(configured && configured.mode !== "simple");
+  const legacyNeedsSelection = !configured && treatment.selectionMode !== "simple";
+  const activeSpecial = !configured && treatment.selectionMode === "simple" ? monthlySpecial : undefined;
+  const configuredPrice = configured?.priceRule.type === "fixed" ? configured.priceRule.priceCents : treatment.priceCents;
+  const configuredDuration = configured?.durationRule.type === "fixed" || configured?.durationRule.type === "per_session"
+    ? configured.durationRule.durationMinutes
+    : treatment.durationMinutes;
+  const price = activeSpecial?.specialPriceCents ?? configuredPrice;
   const image = activeSpecial?.image ?? treatment.image;
 
   return (
@@ -37,7 +45,8 @@ export function TreatmentDetailContent({
         <div className="treatment-detail__intro">
           <p className="eyebrow">{activeSpecial ? "Especial del mes" : category.name}</p>
           <h1>{activeSpecial?.title ?? treatment.name}</h1>
-          {treatment.selectionMode !== "simple" ? <p>{treatment.zoneOrder ? "Elegí zonas sueltas o un combo para conocer duración y precio." : "Elegí un combo para conocer duración y precio."}</p> : null}
+          {configuredNeedsSelection ? <p>Elegí las opciones disponibles para conocer duración y precio.</p> : null}
+          {legacyNeedsSelection ? <p>{treatment.zoneOrder ? "Elegí zonas sueltas o un combo para conocer duración y precio." : "Elegí un combo para conocer duración y precio."}</p> : null}
           <p className="treatment-detail__lead">
             {activeSpecial?.shortDescription ?? treatment.shortDescription}
           </p>
@@ -60,10 +69,10 @@ export function TreatmentDetailContent({
             </span>
           )}
         </div>
-      {treatment.selectionMode === "simple" ? <div className="treatment-detail__booking numeric">
+      {!configuredNeedsSelection && !legacyNeedsSelection ? <div className="treatment-detail__booking numeric">
         <div>
           <span><Clock3 aria-hidden="true" strokeWidth={1.75} />Duración</span>
-          <strong>{formatDuration(treatment.durationMinutes)}</strong>
+          <strong>{formatDuration(configuredDuration)}</strong>
         </div>
         <div>
           <span>{activeSpecial ? "Valor especial" : "Valor"}</span>
@@ -75,7 +84,9 @@ export function TreatmentDetailContent({
             Volver a edición<ArrowRight aria-hidden="true" strokeWidth={1.75} />
           </Link>
         ) : (
-          <Link className="button button--light" href={buildBookingHref({ treatmentId: treatment.id, monthlySpecialId: activeSpecial?.id })}>
+          <Link className="button button--light" href={configured
+            ? buildConfiguredBookingHref({ treatmentId: treatment.id, combinationId: null, optionIds: [] })
+            : buildBookingHref({ treatmentId: treatment.id, monthlySpecialId: activeSpecial?.id })}>
             Iniciar reserva<ArrowRight aria-hidden="true" strokeWidth={1.75} />
           </Link>
         )}
@@ -120,7 +131,8 @@ export function TreatmentDetailContent({
         </div>
       </div>
 
-      {treatment.selectionMode !== "simple" ? (
+      {configuredNeedsSelection ? <ConfigurableBookingSelector treatment={treatment} preview={preview} /> : null}
+      {!configured && treatment.selectionMode !== "simple" ? (
         treatment.zoneOrder || treatment.combos.length > 0 ? <TreatmentComboSelector treatment={treatment} preview={preview} bookableComboIds={bookableComboIds} /> : <section className="combo-selector combo-selector--empty"><h2>No hay combos disponibles para reservar</h2><p>En este momento no hay opciones publicadas disponibles. Podés volver al catálogo para elegir otro tratamiento.</p><Link className="button button--quiet" href="/tratamientos">Ver tratamientos</Link></section>
       ) : null}
     </article>

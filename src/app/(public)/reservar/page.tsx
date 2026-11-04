@@ -12,7 +12,9 @@ import { getSiteContent } from "@/lib/supabase/site-content";
 import {
   getMonthlySpecialForTreatment,
   getTreatmentCombo,
+  buildConfiguredTreatmentSelectionHref,
   buildTreatmentSelectionHref,
+  resolveConfiguredBookingSelection,
   resolveBookingSelection,
 } from "@/lib/treatments";
 
@@ -24,7 +26,17 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 interface BookingPageProps {
-  searchParams: Promise<{ treatmentId?: string; monthlySpecialId?: string; comboId?: string; extraId?: string | string[]; zoneId?: string | string[]; zoneOrder?: string }>;
+  searchParams: Promise<{
+    treatmentId?: string;
+    monthlySpecialId?: string;
+    comboId?: string;
+    extraId?: string | string[];
+    zoneId?: string | string[];
+    zoneOrder?: string;
+    bookingOrder?: string;
+    combinationId?: string;
+    optionId?: string | string[];
+  }>;
 }
 export default async function BookingPage({ searchParams }: BookingPageProps) {
   const [query, catalog, settings, siteFields] = await Promise.all([
@@ -52,6 +64,53 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
         </div>
       </>
     );
+  }
+
+  if (treatment.configEnabled) {
+    const optionIds = Array.isArray(query.optionId) ? query.optionId : query.optionId ? [query.optionId] : [];
+    const hasLegacySelection = Boolean(
+      query.monthlySpecialId || query.comboId || query.extraId || query.zoneId || query.zoneOrder,
+    );
+    let selection;
+    try {
+      if (query.bookingOrder !== "1" || hasLegacySelection) throw new Error("invalid_configured_selection");
+      selection = resolveConfiguredBookingSelection(treatment, query.combinationId ?? null, optionIds);
+    } catch {
+      selection = null;
+    }
+    if (!selection) {
+      return <div className="site-container route-state"><StatePanel
+        kind="empty"
+        title="Revisá tu elección"
+        description="La propuesta cambió o ya no está disponible. Volvé al tratamiento para elegir entre las opciones publicadas."
+        actionHref={`/tratamientos/${treatment.slug}#opciones`}
+        actionLabel="Volver a las opciones"
+      /></div>;
+    }
+    const selectionHref = treatment.bookingConfig?.mode === "simple"
+      ? undefined
+      : buildConfiguredTreatmentSelectionHref(treatment.slug, {
+        combinationId: query.combinationId ?? null,
+        optionIds,
+      });
+    return <><h1 className="sr-only">Reservar {treatment.name}</h1><div className="site-container booking-demo-page">
+      <LiveBookingFlow
+        selection={selection}
+        selectionHref={selectionHref}
+        dates={buildBookingDates(new Date(), settings.maximumAdvanceDays + 1)}
+        whatsappNumber={settings.whatsappNumber}
+      />
+    </div></>;
+  }
+
+  if (query.bookingOrder || query.combinationId || query.optionId) {
+    return <div className="site-container route-state"><StatePanel
+      kind="error"
+      title="Esta selección no corresponde al tratamiento"
+      description="Volvé a la ficha para elegir una opción disponible."
+      actionHref={`/tratamientos/${treatment.slug}`}
+      actionLabel="Ver tratamiento"
+    /></div>;
   }
 
   const monthlySpecial = getMonthlySpecialForTreatment(
