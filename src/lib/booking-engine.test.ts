@@ -59,6 +59,32 @@ describe("booking-engine", () => {
     expect(() => calculateOrder(comboWithAddons, catalog, { combinationId: "combo", optionIds: ["c"] })).toThrow("option_already_in_combination");
   });
 
+  it("enforces selection limits and rejects unavailable or invalid-priced options", () => {
+    const limitedConfig: BookingConfig = {
+      ...comboWithAddons,
+      mode: "options",
+      allowCombos: false,
+      allowAddons: false,
+      minSelections: 2,
+      maxSelections: 2,
+      priceRule: { type: "sum_of_options" },
+      durationRule: { type: "sum_of_options" },
+    };
+    expect(() => calculateOrder(limitedConfig, catalog, { optionIds: ["a"] })).toThrow("too_few_options");
+    expect(() => calculateOrder(limitedConfig, catalog, { optionIds: ["a", "b", "c"] })).toThrow("too_many_options");
+
+    const inactiveCatalog = new GenericCatalog(treatmentId, [
+      ...options,
+      { id: "inactive", treatment_id: treatmentId, name: "Inactiva", price_cents: 100_000, duration_minutes: 10, display_order: 4, is_active: false },
+    ], combinations);
+    expect(() => calculateOrder({ ...limitedConfig, minSelections: 1 }, inactiveCatalog, { optionIds: ["inactive"] })).toThrow("option_unavailable");
+
+    const zeroPriceCatalog = new GenericCatalog(treatmentId, [
+      { id: "zero", treatment_id: treatmentId, name: "Sin precio", price_cents: 0, duration_minutes: 10, display_order: 1, is_active: true },
+    ], []);
+    expect(() => calculateOrder({ ...limitedConfig, minSelections: 1, maxSelections: 1 }, zeroPriceCatalog, { optionIds: ["zero"] })).toThrow("invalid_price");
+  });
+
   it("enforces package-only selections", () => {
     const packageConfig: BookingConfig = {
       version: 1, mode: "package", optionsLabel: { singular: "sesión", plural: "sesiones" },

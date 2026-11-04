@@ -1393,7 +1393,7 @@ svg {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  color: color-mix(in srgb, var(--color-white) 76%, transparent);
+  color: var(--color-white);
   font-size: 0.82rem;
 }
 
@@ -1404,7 +1404,7 @@ svg {
 }
 
 .treatment-detail__booking del {
-  color: color-mix(in srgb, var(--color-white) 65%, transparent);
+  color: var(--color-white);
   font-size: 0.85rem;
 }
 
