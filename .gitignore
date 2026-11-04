@@ -20,8 +20,15 @@
 # synchronized and internal project material
 /sources/
 /codex-handoff/
+/.agents/
+/.codex-remote-attachments/
+/audits/
 /design/
-/docs/
+/docs/*
+!/docs/sprint-0/
+!/docs/sprint-0/**
+!/docs/sprint-1/
+!/docs/sprint-1/**
 /presentation/
 /design-qa.md
 /AGENTS.md
@@ -48,6 +55,7 @@ branding-source/
 PIEL CANELA - BRANDING-*.zip
 /tmp/
 /.tmp/
+/backups/
 
 # typescript
 *.tsbuildinfo

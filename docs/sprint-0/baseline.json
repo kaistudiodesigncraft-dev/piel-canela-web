@@ -1,0 +1,1494 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-10-28T01:32:57-03:00",
+  "source": {
+    "projectRef": "dlrdlwjighvcyhirwgfu",
+    "mode": "production-read-only-select-export"
+  },
+  "tableSummary": {
+    "audit_log": {
+      "count": 1894,
+      "sha256": "93e03c4c6da5276401eb99545261d11a2062262a9a019892547e3540c8d47183"
+    },
+    "availability_exceptions": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "availability_rules": {
+      "count": 82,
+      "sha256": "2dca50800ecc9089ae162f34692ab0c0aaf798ebf1f59cb00a3fbc567f1e5f32"
+    },
+    "bookings": {
+      "count": 5,
+      "sha256": "864504f585548ff2764e886c95ad7c8090e50386dca022b08379f8498e7a5405"
+    },
+    "booking_status_history": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "booking_whatsapp_consents": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "business_settings": {
+      "count": 1,
+      "sha256": "01e70d0131f2ea64d9b65076eb19b39e3db6abd3aac9afd00d7a82d3bb008adc"
+    },
+    "customers": {
+      "count": 9,
+      "sha256": "04de90ff2bfb9286818f34e0bdc83bcf17c418dc2832080e7203eb4493ae5fc7"
+    },
+    "customer_packages": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "depilation_zones": {
+      "count": 21,
+      "sha256": "03fbcd5d51248585a34ae0ec6ef4a57c8b1d0164084c63a8e33e2697b3d51122"
+    },
+    "monthly_specials": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "package_redemptions": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "professionals": {
+      "count": 6,
+      "sha256": "5cf7ba799adcb9bf445c03e4dc46eec3fdb95debcfee712e00277dfec62572be"
+    },
+    "professional_availability_exceptions": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "professional_availability_rules": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "professional_specialties": {
+      "count": 10,
+      "sha256": "22f43b5064be6e2c99aab31bd0632932cee4c23c510c6b484da0e66b4f526124"
+    },
+    "site_content": {
+      "count": 46,
+      "sha256": "42436c3771d3ca076b45f9df57aeb00e0dfdd3a9ec06fcc0409c61a376b53f48"
+    },
+    "site_content_drafts": {
+      "count": 46,
+      "sha256": "42436c3771d3ca076b45f9df57aeb00e0dfdd3a9ec06fcc0409c61a376b53f48"
+    },
+    "site_content_revisions": {
+      "count": 25,
+      "sha256": "f6c408ced8d5c0c835b68cb6f0fc49cf0c5169aaa0e4aadb144920b1e46db739"
+    },
+    "specialties": {
+      "count": 7,
+      "sha256": "a43ba6c6af3f7c97b1f562bfa0cd3dcdad44ffdd3647566783c4a352bab95993"
+    },
+    "treatments": {
+      "count": 19,
+      "sha256": "ab7171a46592d312951e75f2164d3972ceef094e7667d8e73ed5810e4bf30c3e"
+    },
+    "treatment_categories": {
+      "count": 3,
+      "sha256": "cce4aca002b26031677eeeaae62c1d989a80e210300df8db03d4379dfa69175f"
+    },
+    "treatment_combos": {
+      "count": 14,
+      "sha256": "201c5cdb05eccc4974c78f67f5d4b59992dfc8246a36ac29d089d9cad09c175f"
+    },
+    "treatment_combo_allowed_extras": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "treatment_combo_extras": {
+      "count": 20,
+      "sha256": "cc04618f2a5ed95dab588203887786b952a9b4c5211714cae790fa94af7847b6"
+    },
+    "treatment_combo_zones": {
+      "count": 47,
+      "sha256": "a6b4a803438ee22492aaed4d7eeb34d4c20d68ffe207baf461759a2ef3fc9584"
+    },
+    "treatment_media_uploads": {
+      "count": 29,
+      "sha256": "7ae0be34b3e4ac223206efadca3dc0cbfc56f637becf6340abacb62e7cd454fe"
+    },
+    "treatment_message_templates": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "treatment_professionals": {
+      "count": 26,
+      "sha256": "f112c0310a0a12f4c73a2c3aa254589fe118e8444bbfeb56b032984de73eb2f4"
+    },
+    "whatsapp_delivery_events": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "whatsapp_outbox": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "fingerprints": {
+    "bookings": {
+      "12fe2199-c0e6-490a-ad5e-5bb2df1bcec5": "ce3b61f89d552e7ace8a2398c9f0590d77bb81b83d414df49b384082acabfad5",
+      "4f9c66f5-b6a7-4db1-946b-de10edfa712d": "c8bd032d5c12f513c70d89895a783904292214c12e45c8a63e01a657c1bbe0f2",
+      "550ace65-e664-483c-a746-c32af1524517": "c458aa29b9a0fde7ecb3d71ca41ca722762bb39fd9d390c1a2f6a60f10b7e808",
+      "c86c1d3c-5b1b-490b-8e8d-3fdef513deb6": "f007c9832ff4a4c041be3b02e6d2697d2c64f84a1358fd3fc77d18052cab3c25",
+      "dbeaefc5-3ba4-4172-83cc-382b3c62509b": "c28716b8651a6d3e4624662864f6d114d2c8058da01ceda4034de237a5c848d9"
+    },
+    "business_settings": {
+      "true": "f95ff330a1c90e928609e5d7ea0066df8bf4571b1e9a09ca0e9893e1ba9494fc"
+    },
+    "depilation_zones": {
+      "0ed13aa8-bc16-4e09-b84c-eda9bf1804ab": "b9cb141902eb549d3a8d130d9841b27589971f7683f863655844783c4250d8d7",
+      "0f71e9e9-d2d4-45e8-8255-f79eabfc91c7": "4eded738d8faf613acff2444f694f56b954d539074835109769c03abad5fd65d",
+      "1e48f9dc-8055-469b-988e-6714bafebd8f": "ef06d0beba9e9332dfd2dc791d569b0e681a47b98ee3794061534443f7c42b06",
+      "215a59e8-da56-4739-b87c-4fe179466c7d": "35b887f16341a9efec2c20a9bfc448fb09145c9a3e1c595f8dcaf8c747001762",
+      "21aed588-17c9-481d-ba12-8ef5d38405fc": "032321cecd15b404ac9f4360b2658c7d311acb5105746def336ba176797a0a8f",
+      "21b19e9e-e382-4208-9478-2a7773a848d4": "7b66e796135dc706bf820ddb82d8f535c6706910da5c59dc4a7da5da1db83b70",
+      "4132c421-2e34-46c5-9348-910636a109f5": "d5bd8e90608e034c0ca6acbbeb76d6d53971b7a40e812149956212836d343d1a",
+      "4254836a-a560-4baa-914e-daacff3a1fb2": "7d46c519d533e0c622b03053bd36e7e27a05fe0b72ec678e3c65c0b5ab248f27",
+      "5ca3117b-0987-4f7e-8303-a4fd43869635": "4d29d49c629b1f5c90bf427477f2e8d56fe2defd813cadfd22de3384028abf59",
+      "5d4fde01-e57f-4a89-be25-394ad21a64e0": "4f8a91add3922a0ed1a962cb1d5ae023d609bc6b032af372c6ec077c698b0ce2",
+      "63db7a14-d6f8-46a1-8e57-ba3bd7d5712f": "0108493b86b45ec7a01aaded26d5c103e25f5bb93eb4db41d67a4a404ff341e2",
+      "9b940ab3-0e4b-4e36-bf05-98020eea2c58": "94eb94118129972fe3b275c4eaf2363136eb7910d3cd2cea941189c8dec50bd5",
+      "b62c2456-482f-4377-b6dc-9a0f7f6cf83d": "e8f342b4da30db906e5d92bb9e9f75092b0750f488fdf61a0d817f35e1cb0e33",
+      "b72ae176-dc48-4854-8f76-a92b64741ae7": "5f1071e8caa7da8c41b0940a09aa90a9985bfb3f4e4a46204cabde58435f1212",
+      "cd538350-a637-497f-854e-12408a49ef57": "97bd158eb2a7841eba54082e9043519b69f6fb866b8230ab3341107bbe46112d",
+      "e1b68069-e84e-471e-94c2-32ba04d36ef7": "6b1d4def3c3cfd84f42c35bebe9f9821e2fb3961f1931a577813e6cfeb1e2c56",
+      "e254e641-2f7e-4c43-ab1a-a7f881fd9f4d": "b24355cb80b7b5d232916d3a7b98c25ea12091c8c7f981d1f85feb0b8fc315d4",
+      "e3b4c07e-6e5a-4cbe-839d-683638fba0ef": "21eb005f018817d499c3e4de61e2137d93d1ddba617c9a6fe93bb5e78792503c",
+      "e5cb3e1d-9d12-417f-a0da-b4f25e41029a": "42c915877e8d1e75e4e22568ab385cb113da3f256a2d68eed164251de8f13efd",
+      "e9355773-7ba4-4423-bc11-8433248c23c6": "0593833beeaa11905b3b53baea8aa3bdfc0e025c7eb0a8d2fbde450b09f34a26",
+      "feb28135-531d-44a2-8f4c-9ba5dcfec0bd": "b3109aa7c7842a31d0fe3186fab22e8f61623977bbbbf65c141c0fb09917579d"
+    },
+    "site_content": {
+      "0::03a5cb68845100eb": "03a5cb68845100ebaff51db87adb4b0b1afefc992db81b919a6de89ddb3aa183",
+      "1::d44ac32e6efbe8a1": "d44ac32e6efbe8a139a9812d603f806321bf79d22c75baf846019a61444ff479",
+      "10::ac3361ebfac51ae6": "ac3361ebfac51ae635b591ddb93dac7e213942093863a8fe320b074e74e47d9d",
+      "11::a9e5f1d75e126be1": "a9e5f1d75e126be15fd41050ff4c7599034b41d53e3a18e170f4b036489b0f46",
+      "12::969437b79e848256": "969437b79e848256d5c4b4379bd793d2545b8c9171d05c651670cf3b0a147709",
+      "13::89518bca198e6136": "89518bca198e6136565ed048cab9240502b2109716f9b942508383098696f40e",
+      "14::b6c925e77223ce74": "b6c925e77223ce74b62ff8c3707713e09e61606b5549d09fa99b6646df7335de",
+      "15::b07c38e67534fda3": "b07c38e67534fda31e96d1f350e680b30e11100a11a7704137c92445dbd27825",
+      "16::f3ebfe33020a3f4e": "f3ebfe33020a3f4ea25e52b184a9f149fdedb80662ecf02872c423c35aedc183",
+      "17::877c3d123900db02": "877c3d123900db02ccff85c2b398f11f2f8033f9e82ea36df4c9feb959607194",
+      "18::412b013be7bd8ad4": "412b013be7bd8ad47c38d8e3b48c4f4316566eaa5723d43b63decac0e1dd60f5",
+      "19::711cc39e6e7449cb": "711cc39e6e7449cb291b3cd5dac33442bd85a18201670fe5554f7c38bcdf4cba",
+      "2::66944e6fa3dee998": "66944e6fa3dee9984035e0e63a7f51285e3e13dc3dcf95339f53c406ced20203",
+      "20::409f0ff24bcdb46b": "409f0ff24bcdb46b242fbb5f6ea7c0a739310027073a13925a5d6d88e360ab9c",
+      "21::b99c3d89374982b0": "b99c3d89374982b0afbdc5ff238e451bfd78daf9f8f9146641a85b74fc3a5de6",
+      "22::0a4dcf6c4aec6665": "0a4dcf6c4aec6665b8d951cca6c89e6240f6514c37e6c1741365361aac577687",
+      "23::a4d079b08dd79b68": "a4d079b08dd79b68fd2ae7c5b155392462bfceaaa9153ff93ab1d3a4edd4a2ea",
+      "24::2b54c2b690952d35": "2b54c2b690952d3510599ff4d5ffd5c00eb98dbff55d9fa493379b38272a56d8",
+      "25::990617239fbba946": "990617239fbba946e5305dcb4bf4ca9535a008ee4227527af06c564b99cd76ed",
+      "26::53f363e20e94e6ef": "53f363e20e94e6ef2149514eaa2ac37f702096de00576df280d9eb4fe93362ea",
+      "27::ee1de2d067305246": "ee1de2d0673052468d96c8b68e84643d03af799e5eadf42bf3aa1a1fbddbb29a",
+      "28::8bae35ba33b634a1": "8bae35ba33b634a11c0aa6788c6e189fd9e801ffb6870865bc6cc782722fee92",
+      "29::51b655e7e612e9e3": "51b655e7e612e9e3bec4eb08e6e9c921eac7ee68fd69825769e52fe7a7705045",
+      "3::35a49ff43a51f47c": "35a49ff43a51f47c5c3084af897bd4a55debe4bc544f4bd57dec8b3049f5365e",
+      "30::583c0f447ebb106f": "583c0f447ebb106f94fd3ff606a6c3055d87b75876ade9726c3471e5443dda6a",
+      "31::95e3b4bd16e02d1d": "95e3b4bd16e02d1d09566ec8e80ca930c2cab8275d560e2dbde820353b9b935f",
+      "32::de0cdb176e2928df": "de0cdb176e2928dfe05745df030ba8b34a9fed63584761c7c5489ae3238b6457",
+      "33::bda1d22f39222679": "bda1d22f39222679d0b2820c9be242c5ee545070fede1dd3302483a6393e85ba",
+      "34::ee902a4db16c9c9b": "ee902a4db16c9c9baca1194ee4e22c80750988513f4c295cf2f519044c5b06c2",
+      "35::3e6cef901ebbc8ba": "3e6cef901ebbc8ba4115937d1a9256a75151ec825e76bd11798d6c79993510e6",
+      "36::8a61b50e4ec6a383": "8a61b50e4ec6a383c787d9ce9a053a2baa6f5b556ceef3f8af84c902e6193ae6",
+      "37::9249ebe57efeded1": "9249ebe57efeded110e6c7479dc2327ab0b99032fc1e56d2d8cf296e94739cde",
+      "38::84dd6a272dd9cb40": "84dd6a272dd9cb40ce99ff646f917b172c951b665227bd04b377fcf24948746f",
+      "39::187127394e3d172e": "187127394e3d172e3381f23dbd6c03dff715600366294c4d6342350c9038231f",
+      "4::7a651f6b153773e4": "7a651f6b153773e42d5ce1bf4f620fdfb23aed65a0f1c78bafca71518f94c26a",
+      "40::8bf771da190fcfa5": "8bf771da190fcfa5f89f3e34327334a33bee822442910cdd222ec5c58baaafe8",
+      "41::9d370f17a82d260d": "9d370f17a82d260d8c3023837dd25ab509a5da8b20e55ccad45866b80ba6ef59",
+      "42::bc14b7bf1eef742e": "bc14b7bf1eef742eeb0eb169547562f040c250aa449b20fe734f183f868f7b85",
+      "43::3927fce4e60c5b54": "3927fce4e60c5b54f1fe30caf25a811b8f7f48a55ebcb0c165c0890ea6902b32",
+      "44::4dee06355eb8ab90": "4dee06355eb8ab90e672ec95d015767d0903e112ee9ae28d2ab831a5a33abf97",
+      "45::a51a493a7d7e4c5c": "a51a493a7d7e4c5c002d2a41c284608b94889307f0f4c84dc2c0ab84680f7353",
+      "5::54cce15ea326f4c5": "54cce15ea326f4c5c88d9d9b480b3c20780a2e42b7f463311233b6037021368e",
+      "6::84137ed670bce3e8": "84137ed670bce3e86dc8f1641e55e3894b1add18a0103abdeda425a6f2972969",
+      "7::c412311594391e26": "c412311594391e264e71a905c2d8d0828efdf5d9d84ec40510c47c264fec8261",
+      "8::1b951770b2c88374": "1b951770b2c8837446f2a9d69afb32ea8f90a04dd0c13104e623feccf0c4ecb6",
+      "9::6f206fe3725427e2": "6f206fe3725427e24568fbdb242fbd13d750c107c1b53917877d50a78646e418"
+    },
+    "specialties": {
+      "20000000-0000-4000-8000-000000000001": "b37a0267494b4a5684237d7097e2ab91c77dc65c84cbfeeab14fa581e48d55f7",
+      "20000000-0000-4000-8000-000000000002": "fd16e2e0e07ae1b940386be754510d0caf8c27c1394536f5f1db53631f9e1ea9",
+      "20000000-0000-4000-8000-000000000003": "48ce0eb8e40e685a97c1bb2f22c9327e507f7e00afd7c7234b278099f96b0462",
+      "20000000-0000-4000-8000-000000000004": "d2d97ab32529b9b65bed8537798f2202ec0ca98da81b2ae37f790e65055ab028",
+      "4de9f453-12ed-4a74-930e-0b7a13163c3c": "ab806de72ec3c7665a8d17247f70f785f9f1379a1957a90b973897fa201dacd5",
+      "a06a4601-5696-4b75-90c0-4fa81f20cc38": "1f2ea8b29eae3954687dbb66b0df4a5dddb032c16301c85428b66cf905f325d4",
+      "a591ca92-adcd-4ac9-b0b6-b155d43d785d": "5fb503d802b2ba09f2c7e36533d1ae959ee5bd79475476fe92f4efa52aecf4bb"
+    },
+    "treatments": {
+      "13011857-0079-467c-8caf-e3e4cbbb56c1": "d0d87e7c96f656bb4c02f17008019e555f89a9e7f54c30d5ff69f6defb1f7ae8",
+      "30000000-0000-4000-8000-000000000001": "1d197cc8910379425e89b2ca2a981a5996e5d7adfbc587fd050fda47c3a9b35d",
+      "30000000-0000-4000-8000-000000000005": "97c921fabc9224c5f5ec8e4eb7a4e621fdfb5a0b6a153bede4beeb16e4df5422",
+      "30000000-0000-4000-8000-000000000006": "c3cea862bfb01670512616047f4d173f6ddbd1dc2fb186f81b94ab60bc366fd9",
+      "3316938d-8eed-4dec-bd57-46e531d1c6ba": "900bce8010a4d8c29ccf8c75293a9be0753937a7b13ce4cd9a7ba1d1145d7bcf",
+      "586fe136-c38f-44dc-a25d-c869848c3834": "481aa01b0be40a0d35ad29ebcf4ee58968f0fa708c3b776bac28510d43ef2c60",
+      "60409fe3-fadc-486f-b220-6823ef8f4ecc": "9f55a9f59aacf4a6af1e67c95f4105c7de4a9517102d23c4a83a90a99c2eb0dd",
+      "686a113e-fdd0-4fdc-b549-ec1e7af01552": "63a8bbc2a1a3898ded5663f2128b40f0c6d78781048700fafa8984a4d7445b5a",
+      "6929cc34-625b-4169-aed1-49155e2aff55": "53e0f196ee2488d768cee74793cd47138377f854c605b2d410929504fb4b84f8",
+      "82a73dc5-80c4-41b7-87be-dab39e7907c2": "74c9e1972dda7e1417d54224c8123961954ec66b3d1d65c29f2179555a81439c",
+      "86723ce1-f0ef-4240-bd5b-2d679b025f9e": "ab922d92c8b4daf7d65aa18d7ae8f50bd5a0f79e693c89407c29a4b59ceef3db",
+      "8b85ed10-0441-4c3c-b410-e7b6a5a70772": "ce84ec0291edadf50e170365d9e2fc1e5d33e566edd44a68b4de4855083262e4",
+      "a1f1196c-ff98-4a7b-86d6-355d3273944b": "312f8bb71c04563d42a5b07f6280851b8da7df7f7bae68e5f67b78fb57275e3e",
+      "b09f422d-70e8-4077-8354-74f3d04a0de1": "e08b75081f9a911c11761be406681bce52458f6e84a49f370f1ca86bfe6cc06d",
+      "b1db9d2f-43ac-4430-80a8-14bc4f1d547f": "6a1ae360273ea62967fbdb3137e1d8d340387103b0ee2ead9947a992e6fad2fb",
+      "c4d06638-14d4-4e5e-b061-7f41af16493e": "6bc3d0ebf8b3b10f0ba8e34e60e6a464a8da4a33c759177856bd00ec381d2229",
+      "f105c05b-102a-41ba-9c59-d2e41a99ba53": "bf03e4af16e997bb14116c6bec2ed837efd12ca6dc9ec14e7de2ffb78b9b99a1",
+      "f16ed5e7-dc28-46bb-a0c1-66bce118dc60": "208f73c74ed5615c073c65c4a1562a1aca7359290cc9d8b43121fc9cb0375225",
+      "f82ca641-5f58-4bcf-b528-28e031b883eb": "538031ebc9c102821b6fd352dbba091cc5684371138df6a4a898ed3c6942eb48"
+    },
+    "treatment_categories": {
+      "10000000-0000-4000-8000-000000000001": "73d8e7c1a1346c25f22ea90d45963743ff8ddf79250b7dcb73153c2c2a3d5049",
+      "10000000-0000-4000-8000-000000000002": "273b98a806d7042ac9ab75c0998620da4d943c84e28af1d8d92e455a6c479a21",
+      "10000000-0000-4000-8000-000000000003": "0f6d43818502175189a55120ec7852a5940bc406825ab6bea666c1f95db90759"
+    },
+    "treatment_combos": {
+      "0733767c-3781-43a3-a4ae-211cfb789f73": "da4d3f362ccb8ea563952dbf61c12a5a98136d4736fb6e79111cbfd5866150e0",
+      "15c8e560-7c9b-4032-921f-21661909fb9d": "b431aa04317b218cde6b3f279f8a3bd73a58e4d6c8c39752d708b9a1fdd9a6c5",
+      "37eb9120-69f8-4468-94c3-22c39020c2bd": "56dcadeedffcde7de6da68e607761d336e842b7b1c217672d3a7f095c89cb122",
+      "7cbdf019-c16e-41bb-89e5-d0a80dd0ef13": "263d8fd9300a42007ae9db4e40dab7817357b03f5dc4546997e09e86901eaf1c",
+      "82ba4fe4-6a03-4361-a9c1-53945f50700c": "d70aee5fbc701685dd03e4b123548b0b857ce334a9a406fec405894e727dc8a4",
+      "a1a20dda-90a6-426d-af86-ccf1aecda49f": "e2cb1c9f2d6d77fc4ce47cee2472336d314243f990085d8dbd30cb2c5950ab3f",
+      "a314d147-e3e8-4f38-8754-f1640d38f02a": "b2d1baeacd8d82030ed15794cbe2ed6ff4f7e3ebe92bfc70c192ce688ddb598a",
+      "a485a5ff-ae67-4df7-a805-fa74daf02ad6": "bf1a27bc6742ec72a62df6903e011090ad333802abc350ac557131ff4e4eefbe",
+      "a4a861d8-1dd9-41a9-87ab-96bb0e79166d": "087e7f883694ba67cc3b2a2480a99645b5d3fbcb702871d997f0d04c2a71b2a1",
+      "a8f68c28-17cc-42d1-a43c-a8d5d5077e45": "b34c3f2b20f35428a0d670cb00f497e396ea3e7505f6a9ff03b15c66e1fc64f7",
+      "b919441e-47e2-40d0-b2a0-732dd3cdc32e": "fd0eb30ff4bf89077a05ba37656b961c57f06e6e858a8310ca724e11df5b4b89",
+      "caee024d-a6e2-413d-bd6c-4b30bb4f2005": "ba23d31636926433a0a4ca47d938f14520d2389482b940591fd41df49991eced",
+      "deade7e7-c242-46d9-b54d-19c54b170da8": "365f39bce95ac5c7c4a49d8b709f4e96dcdad597cc0e0627dfe4741961e8336f",
+      "f6cf07ec-76bd-4d02-9b8b-8d2b49b3f500": "d84f0fbf03b14c3a504309d46ee6833600a9af20aa057cd4e7a09b639f48bfd6"
+    },
+    "treatment_combo_allowed_extras": {},
+    "treatment_combo_extras": {
+      "083c7a3d-bb7f-4941-aa17-70f8593badf9": "ce54499ff1a60bd08c41bc6abebe08f18294277936dc83b633160d463728cfad",
+      "0a26c73d-ce17-41d8-afe3-a1bcd6d860b2": "563f2aee72bc9edb70aa763b1e309d4a1a8760bb419fbb40ed8c6ad3353c1823",
+      "1546bdef-1a82-48a1-8d55-4ff887539e19": "4f792c7e02d588ccf5428c8bfb14c65410d71ca2434f9908696ce6f94ac69e4d",
+      "1c8d10e1-0450-42c0-9abf-afa0e1715c8b": "e11e55ead3d0d55eb045c9484af79eea77d270fdee9dd4213ab104c5ac53c3c6",
+      "3028cb18-3169-499f-8534-db928c71544f": "2534b83eb65ddb81c69deb45f4ae17287bdbbd136bfb78569289cae7c3024fc4",
+      "348c4a49-e276-4e09-9194-358f302cf816": "1ef3de0cc3d0716367dbf48127f87b58dc0a0016ae7a71cb436b95ae2c4cc36d",
+      "38373d83-2e91-42ae-a83b-6e8c02869ad7": "41fb3cb21d6ef967fce8df397c2987949969f85c34446469676f359430c4eead",
+      "3a321445-1a1d-4468-8dfc-b22162fff935": "802e5f100af36db83219e9c9f33696f3b0b147ba40b07fbed3e4216466a221d6",
+      "594c1507-a8a7-42f8-9d10-f6cf14886ae9": "4aae3a76fcdaaa1a0f4c0fc4749ea8274449fa5ccc74b6d9254f097577106ca0",
+      "7027ef56-3145-4581-828f-3e582a190b17": "fb98c14748e62843d3158f9fe92a8509f8410db997b124342dfa7137fe8b07f9",
+      "7280a66c-402c-4866-b3fa-f0b5e981ebef": "53cb9ca4b631db78dab21f0e8294f6fcf5ae544f4ba0420fe08583dec49268f0",
+      "7cfa63f6-bf75-4823-87a1-57a6cc1c0890": "e1bacfa77d3c6d1e829d3fd39afd7a16e9f7eefc1ebf12ba1d198dfedeb82663",
+      "7e524d80-48ca-4042-9d34-008dcd02aec1": "e551df5ef195902ac1ba7315d1350c5b7dc1ebcf6ea80857158458e2bf136a0f",
+      "94433c64-322f-42f1-a915-a49098895369": "6fd1aef21f286a181c633194fbb8d8f74171a4dd7507ef1455ba31efeb558e7d",
+      "9e151e0d-7ea3-4c01-b4cc-074a91a95232": "10ca7ee62b1732574bfbe2b0b8ec6dc146689304e1da1819db785515914a6854",
+      "a3be56ac-a7ac-4153-92e3-6236f5f28319": "1d408cf45c14a7aa83af6fd67473eb009381894ff320f84a75d5e9a2da3970b0",
+      "bcab6441-d693-4916-81d3-c06b5d02bb85": "6b9096c22742ae92b657a3a28196571f41ef2d6476a6a3e7ad6d217baaf82ef0",
+      "d01f2918-11bc-4d19-8978-2780bbde35c5": "7e40af4841abb56c44ff33a65aad89ead19833c4700322bad9134503c7ec053d",
+      "d0f6fb4d-9df4-4b26-84d6-158e688957ce": "e6ab4d2d723ead10241a10e73d134870649404dac03e4119c72249c783cd751a",
+      "ef8bf40d-e81c-49a5-8ad6-080aedfadeae": "f042b831e8d037cc18114de15d3b4039e56a665aaf7f0831c06c70792c3fb606"
+    },
+    "treatment_combo_zones": {
+      "0733767c-3781-43a3-a4ae-211cfb789f73::63db7a14-d6f8-46a1-8e57-ba3bd7d5712f": "3f24e6150a61be92cc631b3402597d6799f3fb84a5598af5d96740f7b9ac462d",
+      "0733767c-3781-43a3-a4ae-211cfb789f73::cd538350-a637-497f-854e-12408a49ef57": "7326becebc8166917735942b63843568c1ba8b465e323d945d7ad533b9c3cf5f",
+      "0733767c-3781-43a3-a4ae-211cfb789f73::e9355773-7ba4-4423-bc11-8433248c23c6": "bea9181ad61dbd0807ce0a52bfd7326ec169f8fc35dd9b0f8a2c7f268970c8e4",
+      "15c8e560-7c9b-4032-921f-21661909fb9d::5ca3117b-0987-4f7e-8303-a4fd43869635": "027cd0267cc88075301933094500de6dbf9f1c76a7ff20d20142d46407c11051",
+      "37eb9120-69f8-4468-94c3-22c39020c2bd::21aed588-17c9-481d-ba12-8ef5d38405fc": "935a0ff4aa895d1a6e082df14c4ea71ff0ee15c17bc690a34c0bc84cae8be940",
+      "37eb9120-69f8-4468-94c3-22c39020c2bd::e3b4c07e-6e5a-4cbe-839d-683638fba0ef": "d7d431f72754f94a26e337410fbe77fc2d460cf21db154a768a9bb77f5d43ee4",
+      "7cbdf019-c16e-41bb-89e5-d0a80dd0ef13::215a59e8-da56-4739-b87c-4fe179466c7d": "69ddbc5ea2cd7471944d46bc4d6457e28ae769317f6fe8023633593aa1d4d542",
+      "7cbdf019-c16e-41bb-89e5-d0a80dd0ef13::5ca3117b-0987-4f7e-8303-a4fd43869635": "484b467e96a18808a06e60607a856063bf388c6ee4c58f6c2523b287f15572a6",
+      "7cbdf019-c16e-41bb-89e5-d0a80dd0ef13::5d4fde01-e57f-4a89-be25-394ad21a64e0": "7c7aabe80e827fbd1fd861a25f8451ba7ae6183c6985bb714b0c46d208b1099b",
+      "7cbdf019-c16e-41bb-89e5-d0a80dd0ef13::63db7a14-d6f8-46a1-8e57-ba3bd7d5712f": "f1ca5f9ca149999d25b6847191e23ba85ad95504efb6639fb24243d5db086826",
+      "7cbdf019-c16e-41bb-89e5-d0a80dd0ef13::e254e641-2f7e-4c43-ab1a-a7f881fd9f4d": "a7af82f34b3dfbb716acba2372e12befe4e9b51d3b738276cd870da4c45fef35",
+      "82ba4fe4-6a03-4361-a9c1-53945f50700c::215a59e8-da56-4739-b87c-4fe179466c7d": "8325111de29026dbcba56e050930003daa975c45a727d16e85dc3b18cbdd5da1",
+      "82ba4fe4-6a03-4361-a9c1-53945f50700c::5d4fde01-e57f-4a89-be25-394ad21a64e0": "7dd249315234efcd80a4739f15aa1c5d07198f414e3ef3e6d037db59e223ace6",
+      "82ba4fe4-6a03-4361-a9c1-53945f50700c::63db7a14-d6f8-46a1-8e57-ba3bd7d5712f": "475263793b6dc5938366d61a07f84291b850f4b21d09ebb9b1cdefe33bf27bf4",
+      "82ba4fe4-6a03-4361-a9c1-53945f50700c::e254e641-2f7e-4c43-ab1a-a7f881fd9f4d": "3129d807cda5308a021ff138ebb47fc961fde149d69943446682d8ec765e95a0",
+      "a1a20dda-90a6-426d-af86-ccf1aecda49f::215a59e8-da56-4739-b87c-4fe179466c7d": "b5729d33844456a74932a2b42641d5f0ec9baa2593aeac3d90011eee50872597",
+      "a1a20dda-90a6-426d-af86-ccf1aecda49f::63db7a14-d6f8-46a1-8e57-ba3bd7d5712f": "82edb13d7700bb2dbcd607b4cc3724632c5fdc47572727d2dc23743a40452eeb",
+      "a1a20dda-90a6-426d-af86-ccf1aecda49f::e254e641-2f7e-4c43-ab1a-a7f881fd9f4d": "6fb1c7e14505d3dbd038b6372346fc99ef33e85d71ce11cb12e28154fac5f6be",
+      "a1a20dda-90a6-426d-af86-ccf1aecda49f::e5cb3e1d-9d12-417f-a0da-b4f25e41029a": "8b73a07c7a999b7a41ecfbb1c5d3507bdafb5088cb4a52cb06ac124cf99edbf5",
+      "a314d147-e3e8-4f38-8754-f1640d38f02a::21b19e9e-e382-4208-9478-2a7773a848d4": "804c6658c9df71bd8442ed19cef8f363ca9358dfd5f7b087eadf093de837fa24",
+      "a314d147-e3e8-4f38-8754-f1640d38f02a::b62c2456-482f-4377-b6dc-9a0f7f6cf83d": "e0613ddc15577f072b8b6f6be2d545e8258899c3c82b19d2eda163a981a24552",
+      "a485a5ff-ae67-4df7-a805-fa74daf02ad6::215a59e8-da56-4739-b87c-4fe179466c7d": "33937fb2820a4addbc808e87d0fca00af238b60028822668094ba87191e0d1d1",
+      "a485a5ff-ae67-4df7-a805-fa74daf02ad6::63db7a14-d6f8-46a1-8e57-ba3bd7d5712f": "0f940c8e560db07437654b7fdbbc078ad30b9a1282d8759430d6afcf98f96231",
+      "a485a5ff-ae67-4df7-a805-fa74daf02ad6::e254e641-2f7e-4c43-ab1a-a7f881fd9f4d": "2ea73a21fd5ec9a064f8a40a8b0ea10f840ba5aa929dc9061a8d009ff52a801a",
+      "a4a861d8-1dd9-41a9-87ab-96bb0e79166d::21aed588-17c9-481d-ba12-8ef5d38405fc": "ee85fcd320d6f971815f14c79efa81f3c876097fd4508672ad99337ce098c802",
+      "a4a861d8-1dd9-41a9-87ab-96bb0e79166d::9b940ab3-0e4b-4e36-bf05-98020eea2c58": "a977b556f7cd510a12aed77108f4ee6cfc51a4246404f8819ee3764c9e2c27f1",
+      "a4a861d8-1dd9-41a9-87ab-96bb0e79166d::b72ae176-dc48-4854-8f76-a92b64741ae7": "7ffb7d01ce1fa3c365579705127b0a1977db326085b81419240e3dbcd37dc5b8",
+      "a4a861d8-1dd9-41a9-87ab-96bb0e79166d::e1b68069-e84e-471e-94c2-32ba04d36ef7": "a0b2fabbc39f44d569ec3e06475aa0336729eac8e0d9149c3c8b1590696eca31",
+      "a4a861d8-1dd9-41a9-87ab-96bb0e79166d::e3b4c07e-6e5a-4cbe-839d-683638fba0ef": "840b482184ee06ebfc05683e1f5772f65c2d9e3f7b3837baf1dc62ab822969eb",
+      "a8f68c28-17cc-42d1-a43c-a8d5d5077e45::21aed588-17c9-481d-ba12-8ef5d38405fc": "9b56c9bca57c65b94a0d9cbc7987bf2a82311de6aec4ed93830cafd2a18d22b4",
+      "a8f68c28-17cc-42d1-a43c-a8d5d5077e45::9b940ab3-0e4b-4e36-bf05-98020eea2c58": "a02f322ed3dec41d9605e01ec3f4274f97d3c64d574455603b6dacc67ce7e418",
+      "a8f68c28-17cc-42d1-a43c-a8d5d5077e45::b72ae176-dc48-4854-8f76-a92b64741ae7": "365a95722e039f779f4e2a939557277b5a549bd74db6aac8ca4845156e0ff125",
+      "a8f68c28-17cc-42d1-a43c-a8d5d5077e45::e3b4c07e-6e5a-4cbe-839d-683638fba0ef": "fc345d5e4b9286b01084c9158603bfb95cdd6be2a15a432f5516fc95719e4701",
+      "b919441e-47e2-40d0-b2a0-732dd3cdc32e::21aed588-17c9-481d-ba12-8ef5d38405fc": "33e9c06b9f70b4217d103356cc5c411f8a0e7571fef4d8bc5e1b116d80eac1fb",
+      "b919441e-47e2-40d0-b2a0-732dd3cdc32e::b72ae176-dc48-4854-8f76-a92b64741ae7": "ad16cba30868471ee65aab7ce9352a3a8cc521ba385141011c1996b077f014e3",
+      "b919441e-47e2-40d0-b2a0-732dd3cdc32e::e3b4c07e-6e5a-4cbe-839d-683638fba0ef": "bff2b4416070f77bea2989ec2972679b399563041642f48fe1a5d5ea685c9ef5",
+      "caee024d-a6e2-413d-bd6c-4b30bb4f2005::63db7a14-d6f8-46a1-8e57-ba3bd7d5712f": "612e0bcc92ab208716140853692208ebd884552738012d42a6e1996397d6808c",
+      "caee024d-a6e2-413d-bd6c-4b30bb4f2005::e254e641-2f7e-4c43-ab1a-a7f881fd9f4d": "6520a41d548505bda76f043218c97d98d5f1f432fa5847aa5665cc40317d02c4",
+      "deade7e7-c242-46d9-b54d-19c54b170da8::215a59e8-da56-4739-b87c-4fe179466c7d": "0c427513083fbe1f16628cdb5974d2df39056d8129c12802151e12b5933f0da1",
+      "deade7e7-c242-46d9-b54d-19c54b170da8::4254836a-a560-4baa-914e-daacff3a1fb2": "d83960367f9389bc5fea73b6ad987e282a41cff2e6970f19d7224b9e2cd3009e",
+      "deade7e7-c242-46d9-b54d-19c54b170da8::5ca3117b-0987-4f7e-8303-a4fd43869635": "79b912d8fe899b790515d8b22a40365cbba77bd0a47758515a1e34718ece4949",
+      "deade7e7-c242-46d9-b54d-19c54b170da8::5d4fde01-e57f-4a89-be25-394ad21a64e0": "78da5c3065bdbf1b568946fffbf7432dd924ff967f5b449206c3528d14953eca",
+      "deade7e7-c242-46d9-b54d-19c54b170da8::63db7a14-d6f8-46a1-8e57-ba3bd7d5712f": "0bb81d3b9c9256e7de31291ef58a7fb9a8005efb003ea31aaf5bc2647fc7d10d",
+      "deade7e7-c242-46d9-b54d-19c54b170da8::e254e641-2f7e-4c43-ab1a-a7f881fd9f4d": "ffc74280ed7ed90e2ff14de29bdfd42015acb519a1140a03c6aaffe831df18e3",
+      "f6cf07ec-76bd-4d02-9b8b-8d2b49b3f500::215a59e8-da56-4739-b87c-4fe179466c7d": "2af0bcd9938832bfa7bdf27d1e80ba91d2cfaac6ded4ae81c57344a07ab56bdd",
+      "f6cf07ec-76bd-4d02-9b8b-8d2b49b3f500::5d4fde01-e57f-4a89-be25-394ad21a64e0": "91d42ea339e86b24b58c55334dc318c22c8ae1e032285035ec822338f3c3d701",
+      "f6cf07ec-76bd-4d02-9b8b-8d2b49b3f500::63db7a14-d6f8-46a1-8e57-ba3bd7d5712f": "97ff6c78cf02dd33917c55ba1767ecc1b0dda8bf9936431d3209efa64a4477bb"
+    }
+  },
+  "depilation": {
+    "treatment": {
+      "id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+      "name": "Depilación Láser",
+      "slug": "depilacion",
+      "is_combo": false,
+      "image_alt": "Depilación Láser",
+      "is_active": true,
+      "created_at": "2026-10-03T00:19:42.998521+00:00",
+      "image_path": "treatments/a1f1196c-ff98-4a7b-86d6-355d3273944b/5b85b047-5ddd-4bcf-bdd8-eacd853ef065.webp",
+      "updated_at": "2026-10-26T16:02:19.962072+00:00",
+      "category_id": "10000000-0000-4000-8000-000000000001",
+      "description": "Tratamiento de depilación láser realizado con tecnología Soprano ice titanium, que actúa sobre el folículo piloso para reducir progresivamente el crecimiento del vello. Permite trabajar distintas zonas del cuerpo, buscando una piel más suave y resultados progresivos, adaptados a las características de cada persona.",
+      "preparation": "Asistir con la zona rasurada según las indicaciones del centro. Evitar la exposición solar y el bronceado antes de la sesión, y acudir con la piel limpia, sin cremas, aceites ni desodorantes en la zona a tratar, según corresponda.",
+      "price_cents": 0,
+      "expectations": [
+        "Disminución gradual de la cantidad y el grosor del vello.",
+        "Menor frecuencia de depilación",
+        "Resultados progresivos"
+      ],
+      "specialty_id": "a06a4601-5696-4b75-90c0-4fa81f20cc38",
+      "catalog_group": "depilation",
+      "display_order": 1,
+      "image_focal_x": 0.5,
+      "image_focal_y": 0.5,
+      "buffer_minutes": 5,
+      "selection_mode": "combo_with_extras",
+      "characteristics": [
+        "Reducción progresiva del crecimiento del vello.",
+        "Piel más suave",
+        "Tratamiento personalizado según la zona y el tipo de piel"
+      ],
+      "monthly_weekday": 4,
+      "professional_id": "f3a29216-96e8-4d57-bbc2-cb3029ad22c2",
+      "duration_minutes": 60,
+      "contraindications": "Consultar previamente si estás tomando medicación, utilizás productos fotosensibilizantes, presentás irritación, heridas o lesiones en la zona, tenés la piel bronceada recientemente o estás realizando otro tratamiento dermatológico. También es importante informar si estás embarazada o tenés alguna condición médica relevante para evaluar la conveniencia del tratamiento.",
+      "service_frequency": "monthly",
+      "short_description": "Tratamiento de depilación láser con tecnología Soprano ice titanium, que reduce progresivamente el crecimiento del vello para lograr una piel más suave y duradera.",
+      "start_interval_minutes": 30,
+      "monthly_occurrence_ordinals": [
+        3
+      ],
+      "requires_professional_assignment": true
+    },
+    "category": {
+      "id": "10000000-0000-4000-8000-000000000001",
+      "name": "Estética",
+      "slug": "estetica",
+      "icon_name": "UserFocus",
+      "is_active": true,
+      "created_at": "2026-08-16T14:48:30.061568+00:00",
+      "updated_at": "2026-10-23T21:06:57.339119+00:00",
+      "display_order": 1,
+      "short_description": "Tratamientos faciales, depilación definitiva, cejas y pestañas."
+    },
+    "specialty": {
+      "id": "a06a4601-5696-4b75-90c0-4fa81f20cc38",
+      "name": "Estetica Corporal",
+      "slug": "estetica-corporal",
+      "is_active": true,
+      "created_at": "2026-08-31T23:08:35.696079+00:00",
+      "updated_at": "2026-08-31T23:08:35.696079+00:00",
+      "description": "",
+      "display_order": 7
+    },
+    "zones": [
+      {
+        "id": "0ed13aa8-bc16-4e09-b84c-eda9bf1804ab",
+        "name": "Medio brazos Hombres",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:08:42.117882+00:00",
+        "updated_at": "2026-10-23T20:46:46.866789+00:00",
+        "display_order": 0,
+        "duration_minutes": 10,
+        "reference_price_cents": 2400000
+      },
+      {
+        "id": "0f71e9e9-d2d4-45e8-8255-f79eabfc91c7",
+        "name": "dedos de los pies",
+        "audience": "shared",
+        "is_active": true,
+        "created_at": "2026-10-21T22:33:35.162219+00:00",
+        "updated_at": "2026-10-22T22:13:41.805193+00:00",
+        "display_order": 0,
+        "duration_minutes": 5,
+        "reference_price_cents": 1200000
+      },
+      {
+        "id": "1e48f9dc-8055-469b-988e-6714bafebd8f",
+        "name": "Medio brazos",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-03T19:54:56.742455+00:00",
+        "updated_at": "2026-10-21T21:24:21.395019+00:00",
+        "display_order": 0,
+        "duration_minutes": 10,
+        "reference_price_cents": 2000000
+      },
+      {
+        "id": "215a59e8-da56-4739-b87c-4fe179466c7d",
+        "name": "Axilas",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-03T16:34:30.743008+00:00",
+        "updated_at": "2026-10-21T21:24:57.724439+00:00",
+        "display_order": 1,
+        "duration_minutes": 10,
+        "reference_price_cents": 1800000
+      },
+      {
+        "id": "21aed588-17c9-481d-ba12-8ef5d38405fc",
+        "name": "Abdomen",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:47:44.161707+00:00",
+        "updated_at": "2026-10-21T21:11:11.998718+00:00",
+        "display_order": 0,
+        "duration_minutes": 10,
+        "reference_price_cents": 2000000
+      },
+      {
+        "id": "21b19e9e-e382-4208-9478-2a7773a848d4",
+        "name": "Axilas Hombres",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:13:24.173651+00:00",
+        "updated_at": "2026-10-21T21:15:19.317995+00:00",
+        "display_order": 0,
+        "duration_minutes": 10,
+        "reference_price_cents": 2000000
+      },
+      {
+        "id": "4132c421-2e34-46c5-9348-910636a109f5",
+        "name": "Media espalda Hombres",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:12:16.293391+00:00",
+        "updated_at": "2026-10-21T21:20:38.578807+00:00",
+        "display_order": 0,
+        "duration_minutes": 10,
+        "reference_price_cents": 2500000
+      },
+      {
+        "id": "4254836a-a560-4baa-914e-daacff3a1fb2",
+        "name": "Brazos completos",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-03T19:53:42.400716+00:00",
+        "updated_at": "2026-10-21T21:25:57.05099+00:00",
+        "display_order": 0,
+        "duration_minutes": 15,
+        "reference_price_cents": 2500000
+      },
+      {
+        "id": "5ca3117b-0987-4f7e-8303-a4fd43869635",
+        "name": "Bozo o mentón",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-03T19:47:10.281522+00:00",
+        "updated_at": "2026-10-23T20:48:10.980054+00:00",
+        "display_order": 1,
+        "duration_minutes": 5,
+        "reference_price_cents": 1200000
+      },
+      {
+        "id": "5d4fde01-e57f-4a89-be25-394ad21a64e0",
+        "name": "Piernas completas",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-03T19:57:14.945767+00:00",
+        "updated_at": "2026-10-21T21:24:39.455187+00:00",
+        "display_order": 0,
+        "duration_minutes": 15,
+        "reference_price_cents": 3000000
+      },
+      {
+        "id": "63db7a14-d6f8-46a1-8e57-ba3bd7d5712f",
+        "name": "Cavado",
+        "audience": "shared",
+        "is_active": true,
+        "created_at": "2026-10-03T20:02:11.741181+00:00",
+        "updated_at": "2026-10-21T21:25:46.836784+00:00",
+        "display_order": 1,
+        "duration_minutes": 10,
+        "reference_price_cents": 2000000
+      },
+      {
+        "id": "9b940ab3-0e4b-4e36-bf05-98020eea2c58",
+        "name": "Hombros",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:12:51.117532+00:00",
+        "updated_at": "2026-10-21T21:20:24.737731+00:00",
+        "display_order": 0,
+        "duration_minutes": 10,
+        "reference_price_cents": 1500000
+      },
+      {
+        "id": "b62c2456-482f-4377-b6dc-9a0f7f6cf83d",
+        "name": "Piernas completas Hombres",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:05:04.717921+00:00",
+        "updated_at": "2026-10-23T20:47:06.300338+00:00",
+        "display_order": 0,
+        "duration_minutes": 15,
+        "reference_price_cents": 3500000
+      },
+      {
+        "id": "b72ae176-dc48-4854-8f76-a92b64741ae7",
+        "name": "Espalda completa",
+        "audience": "shared",
+        "is_active": true,
+        "created_at": "2026-10-03T19:52:50.511942+00:00",
+        "updated_at": "2026-10-21T21:18:12.10625+00:00",
+        "display_order": 0,
+        "duration_minutes": 10,
+        "reference_price_cents": 3000000
+      },
+      {
+        "id": "cd538350-a637-497f-854e-12408a49ef57",
+        "name": "Tira de cola Hombres",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:06:45.847874+00:00",
+        "updated_at": "2026-10-21T21:25:06.203702+00:00",
+        "display_order": 0,
+        "duration_minutes": 10,
+        "reference_price_cents": 1200000
+      },
+      {
+        "id": "e1b68069-e84e-471e-94c2-32ba04d36ef7",
+        "name": "Brazos completos Hombres",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:07:32.694491+00:00",
+        "updated_at": "2026-10-21T21:18:00.487506+00:00",
+        "display_order": 2,
+        "duration_minutes": 15,
+        "reference_price_cents": 3000000
+      },
+      {
+        "id": "e254e641-2f7e-4c43-ab1a-a7f881fd9f4d",
+        "name": "Tira de cola",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-03T20:03:34.826675+00:00",
+        "updated_at": "2026-10-22T22:14:01.007281+00:00",
+        "display_order": 0,
+        "duration_minutes": 5,
+        "reference_price_cents": 1200000
+      },
+      {
+        "id": "e3b4c07e-6e5a-4cbe-839d-683638fba0ef",
+        "name": "Pecho",
+        "audience": "shared",
+        "is_active": true,
+        "created_at": "2026-10-18T23:50:14.396156+00:00",
+        "updated_at": "2026-10-21T21:24:32.946272+00:00",
+        "display_order": 0,
+        "duration_minutes": 10,
+        "reference_price_cents": 2000000
+      },
+      {
+        "id": "e5cb3e1d-9d12-417f-a0da-b4f25e41029a",
+        "name": "Media piernas",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-03T20:00:50.856688+00:00",
+        "updated_at": "2026-10-23T20:47:40.874459+00:00",
+        "display_order": 0,
+        "duration_minutes": 10,
+        "reference_price_cents": 2300000
+      },
+      {
+        "id": "e9355773-7ba4-4423-bc11-8433248c23c6",
+        "name": "Glúteos",
+        "audience": "shared",
+        "is_active": true,
+        "created_at": "2026-10-03T20:08:48.381437+00:00",
+        "updated_at": "2026-10-21T21:18:20.383518+00:00",
+        "display_order": 0,
+        "duration_minutes": 10,
+        "reference_price_cents": 2000000
+      },
+      {
+        "id": "feb28135-531d-44a2-8f4c-9ba5dcfec0bd",
+        "name": "Media espalda",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-03T19:50:34.498637+00:00",
+        "updated_at": "2026-10-21T21:20:31.391146+00:00",
+        "display_order": 0,
+        "duration_minutes": 10,
+        "reference_price_cents": 2000000
+      }
+    ],
+    "combos": [
+      {
+        "id": "0733767c-3781-43a3-a4ae-211cfb789f73",
+        "mode": "single_session",
+        "name": "Combo Hombres 2",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:43:00.79202+00:00",
+        "updated_at": "2026-10-27T19:37:15.539202+00:00",
+        "description": "",
+        "pricing_mode": "fixed_price",
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "session_count": 1,
+        "validity_days": null,
+        "tier_min_items": null,
+        "discount_percent": null,
+        "fixed_price_cents": 4500000,
+        "allow_public_extras": false,
+        "tier_discount_percent": null,
+        "appointment_duration_minutes": 20
+      },
+      {
+        "id": "15c8e560-7c9b-4032-921f-21661909fb9d",
+        "mode": "single_session",
+        "name": "Combo Mujeres 8: rostro completo",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-18T23:03:14.858748+00:00",
+        "updated_at": "2026-10-26T21:15:37.364346+00:00",
+        "description": "Rostro completo (bozo, mentón y patillas)",
+        "pricing_mode": "fixed_price",
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "session_count": 1,
+        "validity_days": null,
+        "tier_min_items": null,
+        "discount_percent": null,
+        "fixed_price_cents": 2500000,
+        "allow_public_extras": false,
+        "tier_discount_percent": null,
+        "appointment_duration_minutes": 10
+      },
+      {
+        "id": "37eb9120-69f8-4468-94c3-22c39020c2bd",
+        "mode": "single_session",
+        "name": "Combo Hombres 4",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:52:54.258433+00:00",
+        "updated_at": "2026-10-27T19:37:59.227975+00:00",
+        "description": "",
+        "pricing_mode": "fixed_price",
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "session_count": 1,
+        "validity_days": null,
+        "tier_min_items": null,
+        "discount_percent": null,
+        "fixed_price_cents": 3500000,
+        "allow_public_extras": false,
+        "tier_discount_percent": null,
+        "appointment_duration_minutes": 15
+      },
+      {
+        "id": "7cbdf019-c16e-41bb-89e5-d0a80dd0ef13",
+        "mode": "single_session",
+        "name": "Combo Mujeres 2",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-03T20:29:25.131147+00:00",
+        "updated_at": "2026-10-27T19:32:31.820455+00:00",
+        "description": "",
+        "pricing_mode": "fixed_price",
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "session_count": 1,
+        "validity_days": null,
+        "tier_min_items": null,
+        "discount_percent": null,
+        "fixed_price_cents": 4800000,
+        "allow_public_extras": false,
+        "tier_discount_percent": null,
+        "appointment_duration_minutes": 25
+      },
+      {
+        "id": "82ba4fe4-6a03-4361-a9c1-53945f50700c",
+        "mode": "single_session",
+        "name": "Combo Mujeres 1",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-03T20:26:31.455145+00:00",
+        "updated_at": "2026-10-27T19:30:59.272644+00:00",
+        "description": "",
+        "pricing_mode": "fixed_price",
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "session_count": 1,
+        "validity_days": null,
+        "tier_min_items": null,
+        "discount_percent": null,
+        "fixed_price_cents": 4500000,
+        "allow_public_extras": false,
+        "tier_discount_percent": null,
+        "appointment_duration_minutes": 20
+      },
+      {
+        "id": "a1a20dda-90a6-426d-af86-ccf1aecda49f",
+        "mode": "single_session",
+        "name": "Combo Mujeres 5",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-18T22:56:38.942529+00:00",
+        "updated_at": "2026-10-27T19:34:31.603862+00:00",
+        "description": "",
+        "pricing_mode": "fixed_price",
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "session_count": 1,
+        "validity_days": null,
+        "tier_min_items": null,
+        "discount_percent": null,
+        "fixed_price_cents": 4200000,
+        "allow_public_extras": false,
+        "tier_discount_percent": null,
+        "appointment_duration_minutes": 20
+      },
+      {
+        "id": "a314d147-e3e8-4f38-8754-f1640d38f02a",
+        "mode": "single_session",
+        "name": "Combo Hombres 5",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:58:03.975284+00:00",
+        "updated_at": "2026-10-27T19:39:05.84476+00:00",
+        "description": "",
+        "pricing_mode": "fixed_price",
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "session_count": 1,
+        "validity_days": null,
+        "tier_min_items": null,
+        "discount_percent": null,
+        "fixed_price_cents": 4500000,
+        "allow_public_extras": false,
+        "tier_discount_percent": null,
+        "appointment_duration_minutes": 15
+      },
+      {
+        "id": "a485a5ff-ae67-4df7-a805-fa74daf02ad6",
+        "mode": "single_session",
+        "name": "Combo Mujeres 3",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-03T20:32:33.799173+00:00",
+        "updated_at": "2026-10-27T19:34:00.018314+00:00",
+        "description": "",
+        "pricing_mode": "fixed_price",
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "session_count": 1,
+        "validity_days": null,
+        "tier_min_items": null,
+        "discount_percent": null,
+        "fixed_price_cents": 3300000,
+        "allow_public_extras": false,
+        "tier_discount_percent": null,
+        "appointment_duration_minutes": 15
+      },
+      {
+        "id": "a4a861d8-1dd9-41a9-87ab-96bb0e79166d",
+        "mode": "single_session",
+        "name": "Combo Hombres 6",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:59:50.308421+00:00",
+        "updated_at": "2026-10-27T19:38:56.793223+00:00",
+        "description": "Pecho, abdomen, espalda, hombros y brazos completos",
+        "pricing_mode": "fixed_price",
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "session_count": 1,
+        "validity_days": null,
+        "tier_min_items": null,
+        "discount_percent": null,
+        "fixed_price_cents": 5800000,
+        "allow_public_extras": false,
+        "tier_discount_percent": null,
+        "appointment_duration_minutes": 30
+      },
+      {
+        "id": "a8f68c28-17cc-42d1-a43c-a8d5d5077e45",
+        "mode": "single_session",
+        "name": "Combo Hombres 3",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:45:31.755425+00:00",
+        "updated_at": "2026-10-27T19:37:48.187937+00:00",
+        "description": "Pecho, Abdomen, espalda y hombros.",
+        "pricing_mode": "fixed_price",
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "session_count": 1,
+        "validity_days": null,
+        "tier_min_items": null,
+        "discount_percent": null,
+        "fixed_price_cents": 5000000,
+        "allow_public_extras": false,
+        "tier_discount_percent": null,
+        "appointment_duration_minutes": 25
+      },
+      {
+        "id": "b919441e-47e2-40d0-b2a0-732dd3cdc32e",
+        "mode": "single_session",
+        "name": "Combo Hombres 1",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:41:21.203315+00:00",
+        "updated_at": "2026-10-27T19:37:01.495475+00:00",
+        "description": "Pecho, Abdomen y espalda",
+        "pricing_mode": "fixed_price",
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "session_count": 1,
+        "validity_days": null,
+        "tier_min_items": null,
+        "discount_percent": null,
+        "fixed_price_cents": 4500000,
+        "allow_public_extras": false,
+        "tier_discount_percent": null,
+        "appointment_duration_minutes": 20
+      },
+      {
+        "id": "caee024d-a6e2-413d-bd6c-4b30bb4f2005",
+        "mode": "single_session",
+        "name": "Combo Mujeres 4",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-03T20:34:18.00234+00:00",
+        "updated_at": "2026-10-27T19:34:12.58584+00:00",
+        "description": "",
+        "pricing_mode": "fixed_price",
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "session_count": 1,
+        "validity_days": null,
+        "tier_min_items": null,
+        "discount_percent": null,
+        "fixed_price_cents": 2500000,
+        "allow_public_extras": false,
+        "tier_discount_percent": null,
+        "appointment_duration_minutes": 10
+      },
+      {
+        "id": "deade7e7-c242-46d9-b54d-19c54b170da8",
+        "mode": "single_session",
+        "name": "Combo Mujeres 7",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-18T23:00:52.792291+00:00",
+        "updated_at": "2026-10-27T19:35:12.578802+00:00",
+        "description": "",
+        "pricing_mode": "fixed_price",
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "session_count": 1,
+        "validity_days": null,
+        "tier_min_items": null,
+        "discount_percent": null,
+        "fixed_price_cents": 5800000,
+        "allow_public_extras": false,
+        "tier_discount_percent": null,
+        "appointment_duration_minutes": 30
+      },
+      {
+        "id": "f6cf07ec-76bd-4d02-9b8b-8d2b49b3f500",
+        "mode": "single_session",
+        "name": "Combo Mujeres 6",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-18T22:58:42.181829+00:00",
+        "updated_at": "2026-10-27T19:34:52.616252+00:00",
+        "description": "",
+        "pricing_mode": "fixed_price",
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "session_count": 1,
+        "validity_days": null,
+        "tier_min_items": null,
+        "discount_percent": null,
+        "fixed_price_cents": 4200000,
+        "allow_public_extras": false,
+        "tier_discount_percent": null,
+        "appointment_duration_minutes": 15
+      }
+    ],
+    "comboRelations": [
+      {
+        "comboId": "0733767c-3781-43a3-a4ae-211cfb789f73",
+        "zoneIds": [
+          "63db7a14-d6f8-46a1-8e57-ba3bd7d5712f",
+          "e9355773-7ba4-4423-bc11-8433248c23c6",
+          "cd538350-a637-497f-854e-12408a49ef57"
+        ]
+      },
+      {
+        "comboId": "15c8e560-7c9b-4032-921f-21661909fb9d",
+        "zoneIds": [
+          "5ca3117b-0987-4f7e-8303-a4fd43869635"
+        ]
+      },
+      {
+        "comboId": "37eb9120-69f8-4468-94c3-22c39020c2bd",
+        "zoneIds": [
+          "21aed588-17c9-481d-ba12-8ef5d38405fc",
+          "e3b4c07e-6e5a-4cbe-839d-683638fba0ef"
+        ]
+      },
+      {
+        "comboId": "7cbdf019-c16e-41bb-89e5-d0a80dd0ef13",
+        "zoneIds": [
+          "215a59e8-da56-4739-b87c-4fe179466c7d",
+          "5ca3117b-0987-4f7e-8303-a4fd43869635",
+          "63db7a14-d6f8-46a1-8e57-ba3bd7d5712f",
+          "5d4fde01-e57f-4a89-be25-394ad21a64e0",
+          "e254e641-2f7e-4c43-ab1a-a7f881fd9f4d"
+        ]
+      },
+      {
+        "comboId": "82ba4fe4-6a03-4361-a9c1-53945f50700c",
+        "zoneIds": [
+          "215a59e8-da56-4739-b87c-4fe179466c7d",
+          "63db7a14-d6f8-46a1-8e57-ba3bd7d5712f",
+          "5d4fde01-e57f-4a89-be25-394ad21a64e0",
+          "e254e641-2f7e-4c43-ab1a-a7f881fd9f4d"
+        ]
+      },
+      {
+        "comboId": "a1a20dda-90a6-426d-af86-ccf1aecda49f",
+        "zoneIds": [
+          "215a59e8-da56-4739-b87c-4fe179466c7d",
+          "63db7a14-d6f8-46a1-8e57-ba3bd7d5712f",
+          "e5cb3e1d-9d12-417f-a0da-b4f25e41029a",
+          "e254e641-2f7e-4c43-ab1a-a7f881fd9f4d"
+        ]
+      },
+      {
+        "comboId": "a314d147-e3e8-4f38-8754-f1640d38f02a",
+        "zoneIds": [
+          "21b19e9e-e382-4208-9478-2a7773a848d4",
+          "b62c2456-482f-4377-b6dc-9a0f7f6cf83d"
+        ]
+      },
+      {
+        "comboId": "a485a5ff-ae67-4df7-a805-fa74daf02ad6",
+        "zoneIds": [
+          "215a59e8-da56-4739-b87c-4fe179466c7d",
+          "63db7a14-d6f8-46a1-8e57-ba3bd7d5712f",
+          "e254e641-2f7e-4c43-ab1a-a7f881fd9f4d"
+        ]
+      },
+      {
+        "comboId": "a4a861d8-1dd9-41a9-87ab-96bb0e79166d",
+        "zoneIds": [
+          "21aed588-17c9-481d-ba12-8ef5d38405fc",
+          "e1b68069-e84e-471e-94c2-32ba04d36ef7",
+          "b72ae176-dc48-4854-8f76-a92b64741ae7",
+          "9b940ab3-0e4b-4e36-bf05-98020eea2c58",
+          "e3b4c07e-6e5a-4cbe-839d-683638fba0ef"
+        ]
+      },
+      {
+        "comboId": "a8f68c28-17cc-42d1-a43c-a8d5d5077e45",
+        "zoneIds": [
+          "21aed588-17c9-481d-ba12-8ef5d38405fc",
+          "b72ae176-dc48-4854-8f76-a92b64741ae7",
+          "9b940ab3-0e4b-4e36-bf05-98020eea2c58",
+          "e3b4c07e-6e5a-4cbe-839d-683638fba0ef"
+        ]
+      },
+      {
+        "comboId": "b919441e-47e2-40d0-b2a0-732dd3cdc32e",
+        "zoneIds": [
+          "21aed588-17c9-481d-ba12-8ef5d38405fc",
+          "b72ae176-dc48-4854-8f76-a92b64741ae7",
+          "e3b4c07e-6e5a-4cbe-839d-683638fba0ef"
+        ]
+      },
+      {
+        "comboId": "caee024d-a6e2-413d-bd6c-4b30bb4f2005",
+        "zoneIds": [
+          "63db7a14-d6f8-46a1-8e57-ba3bd7d5712f",
+          "e254e641-2f7e-4c43-ab1a-a7f881fd9f4d"
+        ]
+      },
+      {
+        "comboId": "deade7e7-c242-46d9-b54d-19c54b170da8",
+        "zoneIds": [
+          "215a59e8-da56-4739-b87c-4fe179466c7d",
+          "5ca3117b-0987-4f7e-8303-a4fd43869635",
+          "4254836a-a560-4baa-914e-daacff3a1fb2",
+          "63db7a14-d6f8-46a1-8e57-ba3bd7d5712f",
+          "5d4fde01-e57f-4a89-be25-394ad21a64e0",
+          "e254e641-2f7e-4c43-ab1a-a7f881fd9f4d"
+        ]
+      },
+      {
+        "comboId": "f6cf07ec-76bd-4d02-9b8b-8d2b49b3f500",
+        "zoneIds": [
+          "215a59e8-da56-4739-b87c-4fe179466c7d",
+          "63db7a14-d6f8-46a1-8e57-ba3bd7d5712f",
+          "5d4fde01-e57f-4a89-be25-394ad21a64e0"
+        ]
+      }
+    ],
+    "extras": [
+      {
+        "id": "083c7a3d-bb7f-4941-aa17-70f8593badf9",
+        "name": "Tira de cola Hombres",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:18:40.767567+00:00",
+        "updated_at": "2026-10-21T22:31:31.500058+00:00",
+        "description": "",
+        "price_cents": 500000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 5
+      },
+      {
+        "id": "0a26c73d-ce17-41d8-afe3-a1bcd6d860b2",
+        "name": "Brazos completos",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-03T20:19:09.899271+00:00",
+        "updated_at": "2026-10-21T22:24:12.387336+00:00",
+        "description": "",
+        "price_cents": 700000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 5
+      },
+      {
+        "id": "1546bdef-1a82-48a1-8d55-4ff887539e19",
+        "name": "Brazos completos Hombres",
+        "audience": "shared",
+        "is_active": true,
+        "created_at": "2026-10-18T23:14:42.600129+00:00",
+        "updated_at": "2026-10-21T22:24:24.231166+00:00",
+        "description": "",
+        "price_cents": 900000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 10
+      },
+      {
+        "id": "1c8d10e1-0450-42c0-9abf-afa0e1715c8b",
+        "name": "Piernas completas",
+        "audience": "women",
+        "is_active": false,
+        "created_at": "2026-10-03T20:21:38.625518+00:00",
+        "updated_at": "2026-10-21T22:30:35.508871+00:00",
+        "description": "",
+        "price_cents": 1500000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 5
+      },
+      {
+        "id": "3028cb18-3169-499f-8534-db928c71544f",
+        "name": "Tira de cola",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-03T20:24:09.107918+00:00",
+        "updated_at": "2026-10-21T22:31:10.262699+00:00",
+        "description": "",
+        "price_cents": 500000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 5
+      },
+      {
+        "id": "348c4a49-e276-4e09-9194-358f302cf816",
+        "name": "Hombros",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:17:08.879181+00:00",
+        "updated_at": "2026-10-21T22:26:09.14711+00:00",
+        "description": "",
+        "price_cents": 700000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 5
+      },
+      {
+        "id": "38373d83-2e91-42ae-a83b-6e8c02869ad7",
+        "name": "Media espalda Hombres",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:15:36.034064+00:00",
+        "updated_at": "2026-10-21T22:26:40.047486+00:00",
+        "description": "",
+        "price_cents": 700000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 5
+      },
+      {
+        "id": "3a321445-1a1d-4468-8dfc-b22162fff935",
+        "name": "Axila",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-03T16:33:53.106664+00:00",
+        "updated_at": "2026-10-20T20:57:57.748102+00:00",
+        "description": "",
+        "price_cents": 1800000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 1,
+        "duration_minutes": 5
+      },
+      {
+        "id": "594c1507-a8a7-42f8-9d10-f6cf14886ae9",
+        "name": "Bozo o mentón",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-03T20:12:09.319748+00:00",
+        "updated_at": "2026-10-23T20:49:09.196004+00:00",
+        "description": "",
+        "price_cents": 500000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 5
+      },
+      {
+        "id": "7027ef56-3145-4581-828f-3e582a190b17",
+        "name": "Pecho",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:48:25.47409+00:00",
+        "updated_at": "2026-10-21T22:29:52.984476+00:00",
+        "description": "",
+        "price_cents": 700000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 5
+      },
+      {
+        "id": "7280a66c-402c-4866-b3fa-f0b5e981ebef",
+        "name": "Espalda completa",
+        "audience": "shared",
+        "is_active": true,
+        "created_at": "2026-10-03T20:17:26.074783+00:00",
+        "updated_at": "2026-10-21T22:25:42.380458+00:00",
+        "description": "",
+        "price_cents": 700000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 5
+      },
+      {
+        "id": "7cfa63f6-bf75-4823-87a1-57a6cc1c0890",
+        "name": "Glúteos",
+        "audience": "shared",
+        "is_active": true,
+        "created_at": "2026-10-03T20:25:25.610983+00:00",
+        "updated_at": "2026-10-21T22:25:57.564195+00:00",
+        "description": "",
+        "price_cents": 500000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 5
+      },
+      {
+        "id": "7e524d80-48ca-4042-9d34-008dcd02aec1",
+        "name": "Media espalda",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-03T20:16:02.684225+00:00",
+        "updated_at": "2026-10-21T22:26:19.87699+00:00",
+        "description": "",
+        "price_cents": 700000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 5
+      },
+      {
+        "id": "94433c64-322f-42f1-a915-a49098895369",
+        "name": "Piernas completas Hombres",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:16:27.774501+00:00",
+        "updated_at": "2026-10-21T22:30:49.608383+00:00",
+        "description": "",
+        "price_cents": 1600000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 10
+      },
+      {
+        "id": "9e151e0d-7ea3-4c01-b4cc-074a91a95232",
+        "name": "Medio brazos",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-18T23:20:36.956885+00:00",
+        "updated_at": "2026-10-21T22:29:09.782302+00:00",
+        "description": "",
+        "price_cents": 500000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 5
+      },
+      {
+        "id": "a3be56ac-a7ac-4153-92e3-6236f5f28319",
+        "name": "Media piernas",
+        "audience": "women",
+        "is_active": true,
+        "created_at": "2026-10-03T20:23:00.198546+00:00",
+        "updated_at": "2026-10-21T22:28:53.237934+00:00",
+        "description": "",
+        "price_cents": 700000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 5
+      },
+      {
+        "id": "bcab6441-d693-4916-81d3-c06b5d02bb85",
+        "name": "Cavado",
+        "audience": "shared",
+        "is_active": true,
+        "created_at": "2026-10-03T20:23:39.301301+00:00",
+        "updated_at": "2026-10-21T22:25:31.031318+00:00",
+        "description": "",
+        "price_cents": 500000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 5
+      },
+      {
+        "id": "d01f2918-11bc-4d19-8978-2780bbde35c5",
+        "name": "Medio brazos Hombres",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-03T20:20:10.80466+00:00",
+        "updated_at": "2026-10-21T22:29:21.781257+00:00",
+        "description": "",
+        "price_cents": 700000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 5
+      },
+      {
+        "id": "d0f6fb4d-9df4-4b26-84d6-158e688957ce",
+        "name": "Abdomen",
+        "audience": "men",
+        "is_active": true,
+        "created_at": "2026-10-18T23:48:47.359395+00:00",
+        "updated_at": "2026-10-21T22:22:58.760416+00:00",
+        "description": "",
+        "price_cents": 700000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 5
+      },
+      {
+        "id": "ef8bf40d-e81c-49a5-8ad6-080aedfadeae",
+        "name": "Axilas Hombres",
+        "audience": "shared",
+        "is_active": true,
+        "created_at": "2026-10-18T23:22:03.59355+00:00",
+        "updated_at": "2026-10-21T22:23:21.424241+00:00",
+        "description": "",
+        "price_cents": 700000,
+        "treatment_id": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "display_order": 0,
+        "duration_minutes": 5
+      }
+    ],
+    "allowedExtras": [],
+    "bookings": [
+      {
+        "id": "12fe2199-c0e6-490a-ad5e-5bb2df1bcec5",
+        "status": "expired",
+        "startsAt": "2026-10-22T23:30:00+00:00",
+        "endsAt": "2026-10-22T23:40:00+00:00",
+        "treatmentId": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "comboId": null,
+        "zoneIds": [
+          "0f71e9e9-d2d4-45e8-8255-f79eabfc91c7"
+        ],
+        "hasOrderSnapshot": true,
+        "snapshotKeys": [
+          "context",
+          "order",
+          "version"
+        ],
+        "basePriceSnapshotCents": 600000,
+        "appliedPriceSnapshotCents": 600000,
+        "durationSnapshotMinutes": 5,
+        "comboDiscountSnapshot": {
+          "discountCents": 0,
+          "discountPercent": 0
+        }
+      },
+      {
+        "id": "550ace65-e664-483c-a746-c32af1524517",
+        "status": "expired",
+        "startsAt": "2026-10-22T23:00:00+00:00",
+        "endsAt": "2026-10-22T23:25:00+00:00",
+        "treatmentId": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "comboId": "a1a20dda-90a6-426d-af86-ccf1aecda49f",
+        "zoneIds": [
+          "0f71e9e9-d2d4-45e8-8255-f79eabfc91c7",
+          "215a59e8-da56-4739-b87c-4fe179466c7d",
+          "63db7a14-d6f8-46a1-8e57-ba3bd7d5712f",
+          "e254e641-2f7e-4c43-ab1a-a7f881fd9f4d",
+          "e5cb3e1d-9d12-417f-a0da-b4f25e41029a"
+        ],
+        "hasOrderSnapshot": true,
+        "snapshotKeys": [
+          "context",
+          "order",
+          "version"
+        ],
+        "basePriceSnapshotCents": 4700000,
+        "appliedPriceSnapshotCents": 4700000,
+        "durationSnapshotMinutes": 20,
+        "comboDiscountSnapshot": {
+          "discountCents": 0,
+          "discountPercent": 0
+        }
+      }
+    ],
+    "settings": {
+      "depilationCombosEnabled": true,
+      "depilationDiscountPercent": 5,
+      "maximumAdvanceDays": 45,
+      "minimumNoticeMinutes": 180,
+      "pendingExpiryMinutes": 120
+    },
+    "policies": {
+      "depositText": "Con tu pre-reserva te redirigimos a nuestro WhatsApp y te indicaremos los datos de transferencia para confirmar tu reserva. Para reservar el turno se pide una seña del 50% del valor del tratamiento a realizar. La seña puede abonarse dentro de las 24 hs, en efectivo en el local o por transferencia. El turno será agendado una vez enviado el comprobante de seña.\r\nAlias: pielcanela.estetica\r\nMercado Pago: Agustina Spertino",
+      "cancellationPolicy": "La seña vale por una reprogramación si se avisa antes de las 48 hs previas al turno. La seña no se reintegra por cancelación. En caso de no poder asistir, la seña se puede transferir a otra persona avisando previamente.-",
+      "noShowPolicy": "La seña no se reintegra por ausencia al turno ni por llegada tarde.",
+      "packagePolicy": null
+    }
+  },
+  "bookingInventory": {
+    "count": 5,
+    "earliestStartsAt": "2026-10-20T21:15:00+00:00",
+    "latestStartsAt": "2026-10-29T20:00:00+00:00",
+    "statuses": {
+      "expired": 5
+    },
+    "records": [
+      {
+        "id": "12fe2199-c0e6-490a-ad5e-5bb2df1bcec5",
+        "status": "expired",
+        "startsAt": "2026-10-22T23:30:00+00:00",
+        "endsAt": "2026-10-22T23:40:00+00:00",
+        "treatmentId": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "comboId": null,
+        "zoneIds": [
+          "0f71e9e9-d2d4-45e8-8255-f79eabfc91c7"
+        ],
+        "hasOrderSnapshot": true,
+        "snapshotKeys": [
+          "context",
+          "order",
+          "version"
+        ],
+        "basePriceSnapshotCents": 600000,
+        "appliedPriceSnapshotCents": 600000,
+        "durationSnapshotMinutes": 5,
+        "comboDiscountSnapshot": {
+          "discountCents": 0,
+          "discountPercent": 0
+        }
+      },
+      {
+        "id": "4f9c66f5-b6a7-4db1-946b-de10edfa712d",
+        "status": "expired",
+        "startsAt": "2026-10-20T21:15:00+00:00",
+        "endsAt": "2026-10-20T22:55:00+00:00",
+        "treatmentId": "f105c05b-102a-41ba-9c59-d2e41a99ba53",
+        "comboId": null,
+        "zoneIds": [],
+        "hasOrderSnapshot": false,
+        "snapshotKeys": [],
+        "basePriceSnapshotCents": 7500000,
+        "appliedPriceSnapshotCents": 7500000,
+        "durationSnapshotMinutes": 90,
+        "comboDiscountSnapshot": {}
+      },
+      {
+        "id": "550ace65-e664-483c-a746-c32af1524517",
+        "status": "expired",
+        "startsAt": "2026-10-22T23:00:00+00:00",
+        "endsAt": "2026-10-22T23:25:00+00:00",
+        "treatmentId": "a1f1196c-ff98-4a7b-86d6-355d3273944b",
+        "comboId": "a1a20dda-90a6-426d-af86-ccf1aecda49f",
+        "zoneIds": [
+          "0f71e9e9-d2d4-45e8-8255-f79eabfc91c7",
+          "215a59e8-da56-4739-b87c-4fe179466c7d",
+          "63db7a14-d6f8-46a1-8e57-ba3bd7d5712f",
+          "e254e641-2f7e-4c43-ab1a-a7f881fd9f4d",
+          "e5cb3e1d-9d12-417f-a0da-b4f25e41029a"
+        ],
+        "hasOrderSnapshot": true,
+        "snapshotKeys": [
+          "context",
+          "order",
+          "version"
+        ],
+        "basePriceSnapshotCents": 4700000,
+        "appliedPriceSnapshotCents": 4700000,
+        "durationSnapshotMinutes": 20,
+        "comboDiscountSnapshot": {
+          "discountCents": 0,
+          "discountPercent": 0
+        }
+      },
+      {
+        "id": "c86c1d3c-5b1b-490b-8e8d-3fdef513deb6",
+        "status": "expired",
+        "startsAt": "2026-10-27T20:00:00+00:00",
+        "endsAt": "2026-10-27T21:20:00+00:00",
+        "treatmentId": "86723ce1-f0ef-4240-bd5b-2d679b025f9e",
+        "comboId": null,
+        "zoneIds": [],
+        "hasOrderSnapshot": false,
+        "snapshotKeys": [],
+        "basePriceSnapshotCents": 6000000,
+        "appliedPriceSnapshotCents": 6000000,
+        "durationSnapshotMinutes": 70,
+        "comboDiscountSnapshot": {}
+      },
+      {
+        "id": "dbeaefc5-3ba4-4172-83cc-382b3c62509b",
+        "status": "expired",
+        "startsAt": "2026-10-29T20:00:00+00:00",
+        "endsAt": "2026-10-29T21:20:00+00:00",
+        "treatmentId": "6929cc34-625b-4169-aed1-49155e2aff55",
+        "comboId": null,
+        "zoneIds": [],
+        "hasOrderSnapshot": false,
+        "snapshotKeys": [],
+        "basePriceSnapshotCents": 6500000,
+        "appliedPriceSnapshotCents": 6500000,
+        "durationSnapshotMinutes": 70,
+        "comboDiscountSnapshot": {}
+      }
+    ]
+  },
+  "referenceIntegrity": {
+    "brokenReferences": []
+  }
+}

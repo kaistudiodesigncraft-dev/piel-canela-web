@@ -1,0 +1,16 @@
+Sprint 0 baseline verification
+Captured at: 2026-10-28T01:32:57-03:00
+Command: node --no-warnings scripts/verify-baseline.ts --snapshot backups/sprint-0/2026-10-28_013257
+
+Baseline: docs/sprint-0/baseline.json
+Tables checked: 31
+Differences: 0
+Blocking differences: 0
+Process exit code: 0
+
+Backup verification:
+- source rows: 2310
+- decoded rows: 2310
+- row-count mismatches: 0
+- broken references: 0
+

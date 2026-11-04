@@ -1,0 +1,7 @@
+Baseline v2: docs/sprint-1/baseline-v2.json
+Snapshot: backups/sprint-1/production-readonly-2026-10-29
+Datos: 31 tablas; esquema: 5 grupos.
+Diferencias: 0; bloqueantes: 0
+
+Comando:
+node --experimental-strip-types scripts/verify-baseline-v2.ts --snapshot backups/sprint-1/production-readonly-2026-10-29 --baseline docs/sprint-1/baseline-v2.json

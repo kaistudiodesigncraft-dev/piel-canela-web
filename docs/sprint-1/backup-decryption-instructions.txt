@@ -1,0 +1,18 @@
+PIEL CANELA — RESTAURAR COPIA CIFRADA
+
+Requisito: Node.js 20 o superior.
+
+1. Guardar en la misma carpeta:
+   - piel-canela-production-2026-11-03.pcbak
+   - backup-crypto.mjs
+
+2. Abrir una terminal en esa carpeta y ejecutar:
+
+   node backup-crypto.mjs decrypt piel-canela-production-2026-11-03.pcbak piel-canela-production-2026-11-03.zip CONTRASENA
+
+3. Reemplazar CONTRASENA por la clave entregada por separado.
+
+4. Extraer el ZIP resultante. La autenticidad se valida mediante AES-256-GCM:
+   una contraseña incorrecta o un archivo alterado hacen fallar el descifrado.
+
+No guardar la contraseña en esta misma carpeta ni dentro del archivo cifrado.
