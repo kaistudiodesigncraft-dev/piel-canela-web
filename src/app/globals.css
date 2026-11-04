@@ -5682,6 +5682,219 @@ svg {
   }
 }
 
+/* Universal booking configuration — admin only. */
+.universal-booking-config {
+  display: grid;
+  gap: 1.5rem;
+  padding-block: 1.5rem 4rem;
+}
+
+.universal-booking-config__form,
+.universal-booking-config__catalog,
+.booking-config-simulator,
+.universal-booking-config__locked {
+  border: 1px solid var(--color-border);
+  border-radius: 1.25rem;
+  background: var(--color-surface);
+}
+
+.universal-booking-config__form,
+.universal-booking-config__catalog,
+.booking-config-simulator {
+  padding: clamp(1rem, 2.5vw, 2rem);
+}
+
+.universal-booking-config__locked {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.universal-booking-config__locked > svg {
+  flex: 0 0 auto;
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--color-petrol);
+}
+
+.universal-booking-config__locked > div {
+  display: grid;
+  min-width: 0;
+  gap: .75rem;
+}
+
+.booking-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem;
+}
+
+.booking-mode-option {
+  display: flex;
+  align-items: flex-start;
+  min-height: 5.5rem;
+  gap: .75rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: .9rem;
+  background: var(--color-surface);
+  cursor: pointer;
+}
+
+.booking-mode-option:hover {
+  background: var(--color-surface-soft);
+}
+
+.booking-mode-option.is-selected {
+  border-color: var(--color-petrol);
+  box-shadow: 0 0 0 .15rem color-mix(in srgb, var(--color-celeste) 45%, transparent);
+}
+
+.booking-mode-option.is-pending {
+  cursor: not-allowed;
+  opacity: .66;
+}
+
+.booking-mode-option > input {
+  flex: 0 0 auto;
+  margin-top: .2rem;
+}
+
+.booking-mode-option > span {
+  display: grid;
+  min-width: 0;
+  gap: .25rem;
+}
+
+.booking-mode-option small,
+.booking-mode-option em {
+  color: var(--color-text-muted);
+  font-style: normal;
+}
+
+.booking-mode-option em {
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--color-petrol-ink);
+}
+
+.admin-activation-panel {
+  display: grid;
+  gap: .75rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: var(--color-surface-soft);
+}
+
+.universal-booking-config__catalog {
+  display: grid;
+  gap: 1rem;
+}
+
+.universal-booking-config__catalog .section-heading {
+  align-items: flex-start;
+  margin: 0;
+}
+
+.universal-booking-config__catalog .section-heading > svg {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--color-petrol);
+}
+
+.booking-catalog-form {
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  background: var(--color-surface);
+}
+
+.admin-editable-item {
+  overflow: clip;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  background: var(--color-surface);
+}
+
+.admin-editable-item > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 3.5rem;
+  gap: 1rem;
+  padding: .85rem 1rem;
+  cursor: pointer;
+}
+
+.admin-editable-item > summary:hover {
+  background: var(--color-surface-soft);
+}
+
+.admin-editable-item > summary:focus-visible {
+  outline: .2rem solid var(--color-celeste);
+  outline-offset: -.2rem;
+}
+
+.admin-editable-item > summary > span:first-child {
+  display: grid;
+  min-width: 0;
+  gap: .15rem;
+}
+
+.admin-editable-item > summary small {
+  color: var(--color-text-muted);
+}
+
+.admin-editable-item > .booking-catalog-form {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  border-radius: 0;
+}
+
+.booking-config-simulator {
+  display: grid;
+  gap: 1rem;
+  background: var(--color-surface-soft);
+}
+
+.booking-config-simulator__summary {
+  display: grid;
+  gap: .55rem;
+  padding: 1rem;
+  border-radius: .9rem;
+  background: var(--color-surface);
+}
+
+.booking-config-simulator__summary > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.booking-config-simulator__summary .is-total {
+  padding-top: .75rem;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-petrol-ink);
+  font-size: 1.1rem;
+}
+
+@media (max-width: 47.99rem) {
+  .booking-mode-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .universal-booking-config__locked {
+    flex-direction: column;
+  }
+
+  .admin-editable-item > summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 /* Closed depilation combos extend Materia Clara without introducing a store UI. */
 .combo-selector {
   padding: clamp(2rem, 5vw, 4.5rem) clamp(1rem, 4vw, 4rem);

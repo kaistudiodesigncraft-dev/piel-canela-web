@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Check, Eye, ImageIcon, LoaderCircle, UploadCloud } from "lucide-react";
+import { AlertCircle, Check, Eye, ImageIcon, LoaderCircle, Settings2, UploadCloud } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { preserveSubmittedForm } from "@/lib/admin/preserve-form";
@@ -403,6 +403,7 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
         </div>
         {isDirty ? <p className="admin-unsaved-note" role="status">Tenés cambios sin guardar.</p> : null}
         {!isNew && treatment ? <Link className="button button--quiet" href={`/admin/catalogo/${treatment.id}/preview`}><Eye aria-hidden="true" strokeWidth={1.75} />Abrir vista previa</Link> : null}
+        {!isNew && treatment ? <Link className="button button--quiet" href={`/admin/catalogo/${treatment.id}/configuracion-reserva`}><Settings2 aria-hidden="true" strokeWidth={1.75} />Configurar forma de reserva</Link> : null}
         <Link className="button button--quiet" href="/admin/catalogo">Volver al catálogo</Link>
         {!isNew && treatment ? <CatalogRemovalDialog entity="treatment" id={treatment.id} name={treatment.name}
           updatedAt={treatment.updated_at} usageAvailable={treatment.deletion_usage_available !== false}
