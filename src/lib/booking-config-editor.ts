@@ -2,6 +2,7 @@ import {
   BOOKING_CONFIG_VERSION,
   BookingConfigSchema,
   type BookingConfig,
+  type ServicePackageRules,
 } from "./booking-config";
 
 export type BookingMode = BookingConfig["mode"];
@@ -27,6 +28,7 @@ export function createDefaultBookingConfig(input: {
   priceCents: number;
   durationMinutes: number;
   previous?: BookingConfig | null;
+  packageDefaults?: ServicePackageRules;
 }): BookingConfig {
   const common = {
     version: BOOKING_CONFIG_VERSION,
@@ -104,6 +106,7 @@ export function createDefaultBookingConfig(input: {
         allowAddons: false,
         priceRule: { type: "package_price" },
         durationRule: { type: "per_session", durationMinutes: Math.max(1, input.durationMinutes) },
+        packageDefaults: input.previous?.packageDefaults ?? input.packageDefaults,
       });
   }
 }

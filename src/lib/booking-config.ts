@@ -4,6 +4,21 @@ import type { TreatmentSelectionMode } from "@/domain/treatment";
 const integerCents = z.number().int().nonnegative();
 const positiveMinutes = z.number().int().positive();
 
+export const ServicePackageRulesSchema = z.object({
+  sessionsCount: z.number().int().min(2).max(100),
+  validityDays: z.number().int().min(1).max(3650),
+  validityStartsFrom: z.enum(["purchase", "first_session"]),
+  minDaysBetweenSessions: z.number().int().min(0).max(365).nullable(),
+  releaseNoticeHours: z.number().int().min(0).max(8760),
+  maxReschedulesPerSession: z.number().int().min(0).max(50),
+  absenceConsumesSession: z.boolean(),
+  lateReleaseConsumesSession: z.boolean(),
+  depositPercent: z.number().min(0).max(100).nullable(),
+  conditionsText: z.string().trim().max(2_000).nullable(),
+});
+
+export type ServicePackageRules = z.infer<typeof ServicePackageRulesSchema>;
+
 export const BOOKING_CONFIG_VERSION = 1 as const;
 
 export const BookingConfigSchema = z.object({
@@ -37,6 +52,7 @@ export const BookingConfigSchema = z.object({
     z.object({ type: z.literal("combo_plus_addons") }),
     z.object({ type: z.literal("per_session"), durationMinutes: positiveMinutes }),
   ]),
+  packageDefaults: ServicePackageRulesSchema.optional(),
   conditionsText: z.string().trim().max(2_000).nullable().optional(),
 }).superRefine((config, context) => {
   if (config.maxSelections !== null && config.maxSelections < config.minSelections) {
@@ -90,6 +106,7 @@ export const BookingConfigSchema = z.object({
       if (config.selectionMode !== "single" || config.minSelections !== 0 || config.maxSelections !== 0) invalid("selectionMode", "Un paquete permite elegir un paquete y ninguna opción suelta.");
       if (config.priceRule.type !== "package_price") invalid("priceRule", "Un paquete usa su precio propio.");
       if (config.durationRule.type !== "per_session") invalid("durationRule", "Un paquete define la duración de cada sesión.");
+      if (!config.packageDefaults) invalid("packageDefaults", "Un paquete necesita reglas operativas predeterminadas.");
       break;
   }
 });
