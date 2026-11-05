@@ -7,7 +7,11 @@ import {
   saveBookingConfiguration,
   saveBookingOption,
 } from "@/app/admin/catalogo/[id]/configuracion-reserva/actions";
-import type { BookingConfig } from "@/lib/booking-config";
+import {
+  ServicePackageRulesSchema,
+  type BookingConfig,
+  type ServicePackageRules,
+} from "@/lib/booking-config";
 import {
   bookingModeDescriptions,
   bookingModeLabels,
@@ -47,19 +51,110 @@ function ActionFeedback({ state }: { state: BookingConfigActionState }) {
   );
 }
 
+function PackageRulesFields({
+  prefix,
+  rules,
+  onChange,
+}: {
+  prefix: string;
+  rules: ServicePackageRules;
+  onChange: (rules: ServicePackageRules) => void;
+}) {
+  return <fieldset className="package-rules-fields">
+    <legend>Reglas del paquete</legend>
+    <p className="admin-fieldset-intro">Se congelan al registrar la compra. Cambiarlas después no altera paquetes vendidos.</p>
+    <div className="admin-form-grid admin-form-grid--3">
+      <label htmlFor={`${prefix}-sessions-count`}>Cantidad de sesiones<input id={`${prefix}-sessions-count`} type="number" min="2" max="100" value={rules.sessionsCount} onChange={(event) => onChange({ ...rules, sessionsCount: Number(event.target.value) })} /></label>
+      <label htmlFor={`${prefix}-validity-days`}>Vigencia en días<input id={`${prefix}-validity-days`} type="number" min="1" max="3650" value={rules.validityDays} onChange={(event) => onChange({ ...rules, validityDays: Number(event.target.value) })} /></label>
+      <label htmlFor={`${prefix}-validity-start`}>La vigencia comienza<select id={`${prefix}-validity-start`} value={rules.validityStartsFrom} onChange={(event) => onChange({ ...rules, validityStartsFrom: event.target.value as ServicePackageRules["validityStartsFrom"] })}><option value="purchase">Al registrar la compra</option><option value="first_session">En la primera sesión</option></select></label>
+      <label htmlFor={`${prefix}-minimum-days`}>Días mínimos entre sesiones<input id={`${prefix}-minimum-days`} type="number" min="0" max="365" value={rules.minDaysBetweenSessions ?? ""} placeholder="Sin mínimo" onChange={(event) => onChange({ ...rules, minDaysBetweenSessions: event.target.value === "" ? null : Number(event.target.value) })} /></label>
+      <label htmlFor={`${prefix}-notice-hours`}>Aviso para liberar sin perder<input id={`${prefix}-notice-hours`} type="number" min="0" max="8760" value={rules.releaseNoticeHours} onChange={(event) => onChange({ ...rules, releaseNoticeHours: Number(event.target.value) })} /><small>Horas previas al turno.</small></label>
+      <label htmlFor={`${prefix}-reschedules`}>Reprogramaciones por sesión<input id={`${prefix}-reschedules`} type="number" min="0" max="50" value={rules.maxReschedulesPerSession} onChange={(event) => onChange({ ...rules, maxReschedulesPerSession: Number(event.target.value) })} /></label>
+      <label htmlFor={`${prefix}-deposit`}>Seña porcentual opcional<input id={`${prefix}-deposit`} type="number" min="0" max="100" step="0.01" value={rules.depositPercent ?? ""} placeholder="Usar seña general" onChange={(event) => onChange({ ...rules, depositPercent: event.target.value === "" ? null : Number(event.target.value) })} /></label>
+    </div>
+    <div className="admin-form-grid">
+      <label className="admin-check"><input type="checkbox" checked={rules.absenceConsumesSession} onChange={(event) => onChange({ ...rules, absenceConsumesSession: event.target.checked })} /><span><strong>La ausencia consume sesión</strong><small>El panel sugerirá marcarla como perdida.</small></span></label>
+      <label className="admin-check"><input type="checkbox" checked={rules.lateReleaseConsumesSession} onChange={(event) => onChange({ ...rules, lateReleaseConsumesSession: event.target.checked })} /><span><strong>Liberar tarde consume sesión</strong><small>La decisión final siempre la confirma recepción.</small></span></label>
+    </div>
+    <label htmlFor={`${prefix}-conditions`}>Aclaraciones opcionales<textarea id={`${prefix}-conditions`} rows={3} maxLength={2000} value={rules.conditionsText ?? ""} onChange={(event) => onChange({ ...rules, conditionsText: event.target.value || null })} /></label>
+  </fieldset>;
+}
+
+interface PackageSetupDraft {
+  sessionsCount: string;
+  validityDays: string;
+  validityStartsFrom: "" | "purchase" | "first_session";
+  minDaysBetweenSessions: string;
+  releaseNoticeHours: string;
+  maxReschedulesPerSession: string;
+  absenceConsumesSession: "" | "true" | "false";
+  lateReleaseConsumesSession: "" | "true" | "false";
+  depositPercent: string;
+}
+
+const emptyPackageSetup: PackageSetupDraft = {
+  sessionsCount: "",
+  validityDays: "",
+  validityStartsFrom: "",
+  minDaysBetweenSessions: "",
+  releaseNoticeHours: "",
+  maxReschedulesPerSession: "",
+  absenceConsumesSession: "",
+  lateReleaseConsumesSession: "",
+  depositPercent: "",
+};
+
 function BookingConfigurationForm({ treatment }: { treatment: BookingConfigTreatmentRow }) {
   const [state, action] = useActionState(saveBookingConfiguration, initialBookingConfigActionState);
   const [config, setConfig] = useState<BookingConfig>(treatment.booking_config);
   const [enabled, setEnabled] = useState(treatment.config_enabled);
+  const [packageSetup, setPackageSetup] = useState<PackageSetupDraft>(emptyPackageSetup);
+  const [showPackageSetup, setShowPackageSetup] = useState(false);
+  const [packageSetupError, setPackageSetupError] = useState<string | null>(null);
 
   function changeMode(mode: BookingMode) {
+    if (mode === "package" && !config.packageDefaults) {
+      setShowPackageSetup(true);
+      setPackageSetupError(null);
+      return;
+    }
     setConfig(createDefaultBookingConfig({
       mode,
       priceCents: treatment.price_cents,
       durationMinutes: treatment.duration_minutes,
       previous: config,
+      packageDefaults: config.packageDefaults,
     }));
     if (mode === "package") setEnabled(false);
+  }
+
+  function applyPackageSetup() {
+    const parsed = ServicePackageRulesSchema.safeParse({
+      sessionsCount: Number(packageSetup.sessionsCount),
+      validityDays: Number(packageSetup.validityDays),
+      validityStartsFrom: packageSetup.validityStartsFrom,
+      minDaysBetweenSessions: packageSetup.minDaysBetweenSessions === "" ? null : Number(packageSetup.minDaysBetweenSessions),
+      releaseNoticeHours: Number(packageSetup.releaseNoticeHours),
+      maxReschedulesPerSession: Number(packageSetup.maxReschedulesPerSession),
+      absenceConsumesSession: packageSetup.absenceConsumesSession === "true",
+      lateReleaseConsumesSession: packageSetup.lateReleaseConsumesSession === "true",
+      depositPercent: packageSetup.depositPercent === "" ? null : Number(packageSetup.depositPercent),
+      conditionsText: null,
+    });
+    if (!parsed.success || !packageSetup.absenceConsumesSession || !packageSetup.lateReleaseConsumesSession) {
+      setPackageSetupError("Completá todas las reglas antes de preparar el paquete.");
+      return;
+    }
+    setConfig(createDefaultBookingConfig({
+      mode: "package",
+      priceCents: treatment.price_cents,
+      durationMinutes: treatment.duration_minutes,
+      previous: config,
+      packageDefaults: parsed.data,
+    }));
+    setEnabled(false);
+    setShowPackageSetup(false);
+    setPackageSetupError(null);
   }
 
   function setSelectionMode(selectionMode: "single" | "multiple") {
@@ -84,7 +179,7 @@ function BookingConfigurationForm({ treatment }: { treatment: BookingConfigTreat
         <p className="admin-fieldset-intro">Elegí cómo se arma el servicio. La agenda y los profesionales continúan en la ficha principal.</p>
         <div className="booking-mode-grid" role="radiogroup" aria-label="Modalidad de reserva">
           {(Object.keys(bookingModeLabels) as BookingMode[]).map((mode) => {
-            const packagePending = mode === "package";
+            const packagePending = mode === "package" && !config.packageDefaults;
             return (
               <label key={mode} className={`booking-mode-option${config.mode === mode ? " is-selected" : ""}${packagePending ? " is-pending" : ""}`}>
                 <input
@@ -92,15 +187,32 @@ function BookingConfigurationForm({ treatment }: { treatment: BookingConfigTreat
                   name="mode"
                   value={mode}
                   checked={config.mode === mode}
-                  disabled={packagePending && config.mode !== "package"}
                   onChange={() => changeMode(mode)}
                 />
-                <span><strong>{bookingModeLabels[mode]}</strong><small>{bookingModeDescriptions[mode]}</small>{packagePending ? <em>Release de paquetes</em> : null}</span>
+                <span><strong>{bookingModeLabels[mode]}</strong><small>{bookingModeDescriptions[mode]}</small>{packagePending ? <em>Requiere completar sus reglas</em> : null}</span>
               </label>
             );
           })}
         </div>
       </fieldset>
+
+      {showPackageSetup ? <fieldset className="package-rules-fields">
+        <legend>Preparar modalidad paquete</legend>
+        <p className="admin-fieldset-intro">No completamos valores por vos. Definí las reglas iniciales; después podrás ajustarlas antes de guardar.</p>
+        <div className="admin-form-grid admin-form-grid--3">
+          <label>Sesiones<input type="number" min="2" max="100" value={packageSetup.sessionsCount} onChange={(event) => setPackageSetup({ ...packageSetup, sessionsCount: event.target.value })} /></label>
+          <label>Vigencia en días<input type="number" min="1" max="3650" value={packageSetup.validityDays} onChange={(event) => setPackageSetup({ ...packageSetup, validityDays: event.target.value })} /></label>
+          <label>Inicio de vigencia<select value={packageSetup.validityStartsFrom} onChange={(event) => setPackageSetup({ ...packageSetup, validityStartsFrom: event.target.value as PackageSetupDraft["validityStartsFrom"] })}><option value="">Elegir</option><option value="purchase">Desde la compra</option><option value="first_session">Desde la primera sesión</option></select></label>
+          <label>Días mínimos entre sesiones<input type="number" min="0" max="365" value={packageSetup.minDaysBetweenSessions} placeholder="Opcional" onChange={(event) => setPackageSetup({ ...packageSetup, minDaysBetweenSessions: event.target.value })} /></label>
+          <label>Aviso previo en horas<input type="number" min="0" max="8760" value={packageSetup.releaseNoticeHours} onChange={(event) => setPackageSetup({ ...packageSetup, releaseNoticeHours: event.target.value })} /></label>
+          <label>Reprogramaciones por sesión<input type="number" min="0" max="50" value={packageSetup.maxReschedulesPerSession} onChange={(event) => setPackageSetup({ ...packageSetup, maxReschedulesPerSession: event.target.value })} /></label>
+          <label>Ausencia<select value={packageSetup.absenceConsumesSession} onChange={(event) => setPackageSetup({ ...packageSetup, absenceConsumesSession: event.target.value as PackageSetupDraft["absenceConsumesSession"] })}><option value="">Elegir</option><option value="true">Consume sesión</option><option value="false">No consume</option></select></label>
+          <label>Liberación fuera de plazo<select value={packageSetup.lateReleaseConsumesSession} onChange={(event) => setPackageSetup({ ...packageSetup, lateReleaseConsumesSession: event.target.value as PackageSetupDraft["lateReleaseConsumesSession"] })}><option value="">Elegir</option><option value="true">Consume sesión</option><option value="false">No consume</option></select></label>
+          <label>Seña porcentual<input type="number" min="0" max="100" step="0.01" value={packageSetup.depositPercent} placeholder="Usar seña general" onChange={(event) => setPackageSetup({ ...packageSetup, depositPercent: event.target.value })} /></label>
+        </div>
+        {packageSetupError ? <p className="form-message form-message--error" role="alert">{packageSetupError}</p> : null}
+        <div className="admin-form-footer"><button type="button" className="button button--quiet" onClick={() => setShowPackageSetup(false)}>Cancelar</button><button type="button" className="button" onClick={applyPackageSetup}>Aplicar reglas</button></div>
+      </fieldset> : null}
 
       {config.mode !== "simple" && config.mode !== "package" ? (
         <fieldset>
@@ -157,13 +269,15 @@ function BookingConfigurationForm({ treatment }: { treatment: BookingConfigTreat
         <p className="admin-field-note">El descuento, si existe, se aplica únicamente a las opciones sueltas o adicionales. Nunca modifica el precio propio del combo.</p>
       </fieldset> : null}
 
+      {config.mode === "package" && config.packageDefaults ? <PackageRulesFields prefix="treatment-package" rules={config.packageDefaults} onChange={(packageDefaults) => setConfig({ ...config, packageDefaults })} /> : null}
+
       <fieldset>
         <legend>Condiciones</legend>
         <label>Aclaraciones opcionales<textarea rows={4} maxLength={2000} value={config.conditionsText ?? ""} onChange={(event) => setConfig({ ...config, conditionsText: event.target.value || null })} /><small>Solo agrega información. No reemplaza las reglas calculadas por el sistema.</small></label>
       </fieldset>
 
       <div className="admin-activation-panel">
-        <label className="admin-check"><input name="configEnabled" type="checkbox" checked={enabled} disabled={config.mode === "package"} onChange={(event) => setEnabled(event.target.checked)} /><span><strong>Habilitar este circuito configurable</strong><small>Solo habilitalo cuando las opciones o propuestas estén completas y verificadas.</small></span></label>
+        <label className="admin-check"><input name="configEnabled" type="checkbox" checked={enabled} disabled={config.mode === "package"} onChange={(event) => setEnabled(event.target.checked)} /><span><strong>Habilitar este circuito configurable</strong><small>{config.mode === "package" ? "Se habilitará después de validar el circuito completo en H10." : "Solo habilitalo cuando las opciones o propuestas estén completas y verificadas."}</small></span></label>
         {treatment.total_booking_count > 0 ? <label className="admin-impact-check"><input name="confirmImpact" type="checkbox" /><span><strong>{treatment.total_booking_count} reservas registradas.</strong> Confirmo que revisé el impacto. Las reservas existentes no se modificarán.</span></label> : null}
       </div>
       <ActionFeedback state={state} />
@@ -193,11 +307,12 @@ function BookingOptionForm({ treatmentId, option }: { treatmentId: string; optio
   </form>;
 }
 
-function BookingCombinationForm({ treatmentId, combination, options, mode }: {
+function BookingCombinationForm({ treatmentId, combination, options, mode, packageDefaults }: {
   treatmentId: string;
   combination?: BookingConfigCombinationRow;
   options: BookingConfigOptionRow[];
   mode: BookingMode;
+  packageDefaults?: ServicePackageRules;
 }) {
   const [state, action] = useActionState(saveBookingCombination, initialBookingConfigActionState);
   const [included, setIncluded] = useState(combination?.included_option_ids ?? []);
@@ -205,9 +320,13 @@ function BookingCombinationForm({ treatmentId, combination, options, mode }: {
   const prefix = combination ? `combination-${combination.id}` : "new-combination";
   const allowAddons = mode === "combos_with_addons";
   const kind = mode === "package" ? "package" : "combo";
+  const [packageRules, setPackageRules] = useState<ServicePackageRules | null>(
+    kind === "package" ? combination?.package_rules ?? packageDefaults ?? null : null,
+  );
   return <form action={action} className="admin-form booking-catalog-form">
     <input type="hidden" name="treatmentId" value={treatmentId} />
     <input type="hidden" name="kind" value={kind} />
+    {packageRules ? <><input type="hidden" name="packageRulesJson" value={JSON.stringify(packageRules)} /><input type="hidden" name="sessionCount" value={packageRules.sessionsCount} /></> : null}
     {combination ? <><input type="hidden" name="combinationId" value={combination.id} /><input type="hidden" name="expectedUpdatedAt" value={combination.updated_at} /></> : null}
     <div className="admin-form-grid admin-form-grid--3">
       <label htmlFor={`${prefix}-name`}>Nombre<input id={`${prefix}-name`} name="name" defaultValue={combination?.name ?? ""} required maxLength={120} /></label>
@@ -215,15 +334,16 @@ function BookingCombinationForm({ treatmentId, combination, options, mode }: {
       <label htmlFor={`${prefix}-duration`}>Duración por turno<input id={`${prefix}-duration`} name="durationMinutes" type="number" min="1" max="1440" defaultValue={combination?.duration_minutes ?? 30} required /></label>
     </div>
     <label htmlFor={`${prefix}-description`}>Descripción opcional<textarea id={`${prefix}-description`} name="description" rows={2} maxLength={500} defaultValue={combination?.description ?? ""} /></label>
-    <fieldset className="depilation-zone-picker"><legend>Opciones incluidas</legend>{options.length === 0 ? <p className="admin-field-note">Creá al menos una opción antes de armar una propuesta.</p> : options.map((option) => <label className="admin-check" key={option.id}><input name="includedOptionIds" value={option.id} type="checkbox" checked={included.includes(option.id)} disabled={addons.includes(option.id)} onChange={(event) => setIncluded((current) => event.target.checked ? [...current, option.id] : current.filter((id) => id !== option.id))} /><span><strong>{option.name}</strong><small>{formatPrice(option.price_cents)} · {formatDuration(option.duration_minutes)}{option.is_active ? "" : " · Borrador"}</small></span></label>)}</fieldset>
+    {kind !== "package" ? <fieldset className="depilation-zone-picker"><legend>Opciones incluidas</legend>{options.length === 0 ? <p className="admin-field-note">Creá al menos una opción antes de armar una propuesta.</p> : options.map((option) => <label className="admin-check" key={option.id}><input name="includedOptionIds" value={option.id} type="checkbox" checked={included.includes(option.id)} disabled={addons.includes(option.id)} onChange={(event) => setIncluded((current) => event.target.checked ? [...current, option.id] : current.filter((id) => id !== option.id))} /><span><strong>{option.name}</strong><small>{formatPrice(option.price_cents)} · {formatDuration(option.duration_minutes)}{option.is_active ? "" : " · Borrador"}</small></span></label>)}</fieldset> : null}
     {allowAddons ? <fieldset className="depilation-zone-picker"><legend>Adicionales permitidos</legend>{options.map((option) => <label className="admin-check" key={option.id}><input name="addonOptionIds" value={option.id} type="checkbox" checked={addons.includes(option.id)} disabled={included.includes(option.id)} onChange={(event) => setAddons((current) => event.target.checked ? [...current, option.id] : current.filter((id) => id !== option.id))} /><span><strong>{option.name}</strong><small>{included.includes(option.id) ? "Ya está incluida" : "Puede sumarse como adicional"}</small></span></label>)}</fieldset> : null}
     <div className="admin-form-grid admin-form-grid--3">
-      <label htmlFor={`${prefix}-sessions`}>Sesiones<input id={`${prefix}-sessions`} name="sessionCount" type="number" min="1" max="100" defaultValue={combination?.session_count ?? 1} readOnly={kind !== "package"} /></label>
+      {kind !== "package" ? <label htmlFor={`${prefix}-sessions`}>Sesiones<input id={`${prefix}-sessions`} name="sessionCount" type="number" value="1" readOnly /></label> : null}
       <label htmlFor={`${prefix}-order`}>Orden<input id={`${prefix}-order`} name="displayOrder" type="number" min="0" max="9999" defaultValue={combination?.display_order ?? 0} required /></label>
       <label className="admin-check"><input name="isActive" type="checkbox" defaultChecked={combination?.is_active ?? false} /><span><strong>Disponible</strong><small>Debe usar opciones activas.</small></span></label>
     </div>
+    {packageRules ? <PackageRulesFields prefix={`${prefix}-rules`} rules={packageRules} onChange={setPackageRules} /> : null}
     <ActionFeedback state={state} />
-    <div className="admin-form-footer"><p>No se eliminan propuestas: podés pausarlas conservando su historial.</p><AdminSubmitButton pendingLabel="Guardando…" disabled={options.length === 0}>{combination ? "Guardar propuesta" : "Crear propuesta"}</AdminSubmitButton></div>
+    <div className="admin-form-footer"><p>No se eliminan propuestas: podés pausarlas conservando su historial.</p><AdminSubmitButton pendingLabel="Guardando…" disabled={kind === "package" ? !packageRules : options.length === 0}>{combination ? "Guardar propuesta" : "Crear propuesta"}</AdminSubmitButton></div>
   </form>;
 }
 
@@ -287,7 +407,7 @@ export function UniversalBookingConfigAdmin({ treatment, options, combinations }
 
   const mode = treatment.booking_config.mode;
   const catalogVisible = mode !== "simple" && mode !== "package";
-  const combinationsVisible = mode === "closed_combos" || mode === "combos_with_addons" || (mode === "options" && treatment.booking_config.allowCombos);
+  const combinationsVisible = mode === "package" || mode === "closed_combos" || mode === "combos_with_addons" || (mode === "options" && treatment.booking_config.allowCombos);
   return <div className="universal-booking-config">
     {!treatment.configuration_valid ? <p className="form-message form-message--error" role="alert"><strong>La configuración guardada no es válida.</strong> Corregila antes de habilitar el circuito.</p> : null}
     <BookingConfigurationForm treatment={treatment} />
@@ -297,9 +417,9 @@ export function UniversalBookingConfigAdmin({ treatment, options, combinations }
       {options.map((option) => <details key={option.id} className="admin-editable-item"><summary><span><strong>{option.name}</strong><small>{formatPrice(option.price_cents)} · {formatDuration(option.duration_minutes)}</small></span><span className={`status-badge status-${option.is_active ? "confirmed" : "expired"}`}>{option.is_active ? "Disponible" : "Borrador"}</span></summary><BookingOptionForm treatmentId={treatment.id} option={option} /></details>)}
     </section> : null}
     {combinationsVisible ? <section className="universal-booking-config__catalog" aria-labelledby="booking-combinations-title">
-      <div className="section-heading"><div><p className="eyebrow">Propuestas</p><h2 id="booking-combinations-title">Combos configurados</h2><p>El precio y la duración propios quedan congelados en cada reserva.</p></div><Check aria-hidden="true" /></div>
-      <BookingCombinationForm treatmentId={treatment.id} options={options} mode={mode} />
-      {combinations.map((combination) => <details key={combination.id} className="admin-editable-item"><summary><span><strong>{combination.name}</strong><small>{formatPrice(combination.price_cents)} · {formatDuration(combination.duration_minutes)}</small></span><span className={`status-badge status-${combination.is_active ? "confirmed" : "expired"}`}>{combination.is_active ? "Disponible" : "Borrador"}</span></summary><BookingCombinationForm treatmentId={treatment.id} combination={combination} options={options} mode={mode} /></details>)}
+      <div className="section-heading"><div><p className="eyebrow">Propuestas</p><h2 id="booking-combinations-title">{mode === "package" ? "Paquetes configurados" : "Combos configurados"}</h2><p>El precio, la duración y las reglas quedan congelados al registrar una compra.</p></div><Check aria-hidden="true" /></div>
+      <BookingCombinationForm treatmentId={treatment.id} options={options} mode={mode} packageDefaults={treatment.booking_config.packageDefaults} />
+      {combinations.map((combination) => <details key={combination.id} className="admin-editable-item"><summary><span><strong>{combination.name}</strong><small>{formatPrice(combination.price_cents)} · {formatDuration(combination.duration_minutes)}{combination.kind === "package" ? ` · ${combination.session_count} sesiones` : ""}</small></span><span className={`status-badge status-${combination.is_active ? "confirmed" : "expired"}`}>{combination.is_active ? "Disponible" : "Borrador"}</span></summary><BookingCombinationForm treatmentId={treatment.id} combination={combination} options={options} mode={mode} packageDefaults={treatment.booking_config.packageDefaults} /></details>)}
     </section> : null}
     <BookingConfigSimulator treatmentId={treatment.id} config={treatment.booking_config} options={options} combinations={combinations} />
   </div>;

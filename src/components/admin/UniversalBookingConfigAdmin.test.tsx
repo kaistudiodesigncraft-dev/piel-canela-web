@@ -48,10 +48,14 @@ describe("UniversalBookingConfigAdmin", () => {
     expect(screen.getByRole("link", { name: "Abrir configuración histórica" })).toHaveAttribute("href", `/admin/catalogo/${baseTreatment.id}/combos`);
   });
 
-  it("shows the neutral modalities and keeps packages unavailable during release one", () => {
+  it("requires explicit package rules before changing to package mode", async () => {
+    const user = userEvent.setup();
     render(<UniversalBookingConfigAdmin treatment={baseTreatment} options={[]} combinations={[]} />);
     expect(screen.getByRole("radio", { name: /Opciones sueltas/i })).toBeChecked();
-    expect(screen.getByRole("radio", { name: /Paquete de sesiones/i })).toBeDisabled();
+    await user.click(screen.getByRole("radio", { name: /Paquete de sesiones/i }));
+    expect(screen.getByRole("group", { name: "Preparar modalidad paquete" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Opciones sueltas/i })).toBeChecked();
+    expect(screen.getByText(/No completamos valores por vos/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Guardar configuración" })).toBeEnabled();
   });
 

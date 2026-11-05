@@ -3,7 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { BookingConfigSchema } from "@/lib/booking-config";
+import { BookingConfigSchema, ServicePackageRulesSchema } from "@/lib/booking-config";
 import { isLegacyConfigReadOnly } from "@/lib/booking-config-editor";
 import type { BookingConfigActionState } from "@/lib/admin/booking-config-action-state";
 import { pesosToCents } from "@/lib/admin/operations";
@@ -41,8 +41,9 @@ const combinationSchema = z.object({
   sessionCount: z.coerce.number().int().min(1).max(100),
   displayOrder: z.coerce.number().int().min(0).max(9999),
   isActive: z.boolean(),
-  includedOptionIds: z.array(z.string().uuid()).min(1),
+  includedOptionIds: z.array(z.string().uuid()),
   addonOptionIds: z.array(z.string().uuid()),
+  packageRulesJson: z.string().max(10_000).optional(),
 });
 
 function fieldErrors(error: z.ZodError) {
@@ -226,12 +227,77 @@ export async function saveBookingCombination(
     isActive: formData.get("isActive") === "on",
     includedOptionIds: formData.getAll("includedOptionIds"),
     addonOptionIds: formData.getAll("addonOptionIds"),
+    packageRulesJson: formData.get("packageRulesJson")?.toString() || undefined,
   });
   if (!parsed.success) return { status: "invalid", message: "Revisá la propuesta.", fieldErrors: fieldErrors(parsed.error) };
   if (parsed.data.isActive && parsed.data.pricePesos <= 0) {
     return { status: "invalid", message: "La propuesta activa necesita precio.", fieldErrors: { pricePesos: ["Ingresá un precio mayor que cero."] } };
   }
   if (parsed.data.combinationId && !parsed.data.expectedUpdatedAt) return { status: "failed", message: "Recargá la página antes de editar esta propuesta." };
+
+  const guardResult = await loadTreatmentGuard(supabase, parsed.data.treatmentId);
+  if (guardResult.error) return failed("No pudimos verificar el tratamiento.", guardResult.error.code);
+  if (!guardResult.data) return { status: "failed", message: "El tratamiento ya no existe." };
+  if (isLegacyConfigReadOnly({ configEnabled: guardResult.data.config_enabled, legacySelectionMode: guardResult.data.selection_mode })) {
+    return { status: "invalid", message: "Este tratamiento conserva su catálogo histórico." };
+  }
+  const treatmentConfig = BookingConfigSchema.safeParse(guardResult.data.booking_config);
+  if (!treatmentConfig.success) return { status: "invalid", message: "Guardá primero una configuración válida del tratamiento." };
+
+  if (parsed.data.kind === "package") {
+    if (treatmentConfig.data.mode !== "package") {
+      return { status: "invalid", message: "La propuesta no coincide con la modalidad del tratamiento.", fieldErrors: { kind: ["Elegí primero Paquete de sesiones."] } };
+    }
+    if (parsed.data.includedOptionIds.length > 0 || parsed.data.addonOptionIds.length > 0) {
+      return { status: "invalid", message: "Un paquete universal no usa opciones sueltas.", fieldErrors: { includedOptionIds: ["Quitá las opciones del paquete."] } };
+    }
+    let rawRules: unknown;
+    try {
+      rawRules = JSON.parse(parsed.data.packageRulesJson ?? "null");
+    } catch {
+      return { status: "invalid", message: "Las reglas del paquete no tienen un formato válido." };
+    }
+    const packageRules = ServicePackageRulesSchema.safeParse(rawRules);
+    if (!packageRules.success) {
+      return { status: "invalid", message: "Revisá las reglas del paquete.", fieldErrors: fieldErrors(packageRules.error) };
+    }
+    if (packageRules.data.sessionsCount !== parsed.data.sessionCount) {
+      return { status: "invalid", message: "La cantidad de sesiones no coincide.", fieldErrors: { sessionCount: ["Usá la misma cantidad definida en las reglas."] } };
+    }
+    const values = {
+      treatment_id: parsed.data.treatmentId,
+      name: parsed.data.name,
+      description: parsed.data.description,
+      kind: "package" as const,
+      price_cents: pesosToCents(parsed.data.pricePesos),
+      duration_minutes: parsed.data.durationMinutes,
+      session_count: parsed.data.sessionCount,
+      display_order: parsed.data.displayOrder,
+      is_active: parsed.data.isActive,
+      package_rules: packageRules.data,
+      package_rules_version: 1,
+    };
+    const result = parsed.data.combinationId
+      ? await supabase.from("treatment_option_combos").update(values)
+        .eq("id", parsed.data.combinationId)
+        .eq("treatment_id", parsed.data.treatmentId)
+        .eq("kind", "package")
+        .eq("updated_at", parsed.data.expectedUpdatedAt ?? "")
+        .select("id").maybeSingle()
+      : await supabase.from("treatment_option_combos")
+        .insert({ id: randomUUID(), ...values }).select("id").single();
+    if (result.error) {
+      if (result.error.code === "23505") return { status: "invalid", message: "Ya existe un paquete con ese nombre.", fieldErrors: { name: ["Usá un nombre diferente."] } };
+      return failed("No pudimos guardar el paquete.", result.error.code);
+    }
+    if (!result.data) return { status: "failed", message: "El paquete cambió en otra sesión. Recargá antes de volver a guardar." };
+    revalidateEditor(parsed.data.treatmentId);
+    return { status: "saved", message: parsed.data.isActive ? "Paquete guardado y disponible." : "Paquete guardado como borrador." };
+  }
+
+  if (parsed.data.includedOptionIds.length === 0) {
+    return { status: "invalid", message: "La propuesta necesita al menos una opción.", fieldErrors: { includedOptionIds: ["Elegí una opción incluida."] } };
+  }
 
   const result = await supabase.rpc("save_treatment_option_combo_v1", {
     requested_combo_id: parsed.data.combinationId ?? null,

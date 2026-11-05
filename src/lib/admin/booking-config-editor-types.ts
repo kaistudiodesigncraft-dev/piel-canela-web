@@ -1,4 +1,4 @@
-import type { BookingConfig } from "@/lib/booking-config";
+import type { BookingConfig, ServicePackageRules } from "@/lib/booking-config";
 
 export interface BookingConfigTreatmentRow {
   id: string;
@@ -39,6 +39,7 @@ export interface BookingConfigCombinationRow {
   display_order: number;
   is_active: boolean;
   updated_at: string;
+  package_rules: ServicePackageRules | null;
   included_option_ids: string[];
   addon_option_ids: string[];
 }

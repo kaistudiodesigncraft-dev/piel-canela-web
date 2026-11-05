@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
-import { basename, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 
 type Row = Record<string, unknown>;
 interface Chunk { source_count: number; offset: number; rows: Row[] }

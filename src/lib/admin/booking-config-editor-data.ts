@@ -27,7 +27,7 @@ export async function loadBookingConfigEditor(
       .order("display_order")
       .order("name"),
     supabase.from("treatment_option_combos")
-      .select("id,treatment_id,name,description,kind,price_cents,duration_minutes,session_count,display_order,is_active,updated_at")
+      .select("id,treatment_id,name,description,kind,price_cents,duration_minutes,session_count,display_order,is_active,updated_at,package_rules")
       .eq("treatment_id", treatmentId)
       .order("display_order")
       .order("name"),
@@ -64,14 +64,20 @@ export async function loadBookingConfigEditor(
       total_booking_count: bookingsResult.count ?? 0,
     } as BookingConfigTreatmentRow,
     options: (optionsResult.data ?? []) as BookingConfigOptionRow[],
-    combinations: (combinationsResult.data ?? []).map((combination) => ({
-      ...combination,
-      included_option_ids: items
-        .filter((item) => item.combo_id === combination.id && item.role === "included")
-        .map((item) => item.option_id),
-      addon_option_ids: items
-        .filter((item) => item.combo_id === combination.id && item.role === "addon")
-        .map((item) => item.option_id),
-    })) as BookingConfigCombinationRow[],
+    combinations: (combinationsResult.data ?? []).map((combination) => {
+      const packageRules = combination.kind === "package"
+        ? BookingConfigSchema.shape.packageDefaults.safeParse(combination.package_rules)
+        : null;
+      return {
+        ...combination,
+        package_rules: packageRules?.success ? packageRules.data ?? null : null,
+        included_option_ids: items
+          .filter((item) => item.combo_id === combination.id && item.role === "included")
+          .map((item) => item.option_id),
+        addon_option_ids: items
+          .filter((item) => item.combo_id === combination.id && item.role === "addon")
+          .map((item) => item.option_id),
+      };
+    }) as BookingConfigCombinationRow[],
   };
 }
