@@ -11,7 +11,8 @@ values('32000000-0000-0000-0000-000000000001','Delete test specialty','delete-te
 insert into public.professionals(id,specialty_id,full_name,public_name,is_active,display_order)
 values
 ('42000000-0000-0000-0000-000000000001','32000000-0000-0000-0000-000000000001','Archived duplicate','Archived duplicate',true,998),
-('42000000-0000-0000-0000-000000000002','32000000-0000-0000-0000-000000000001','Active professional','Active professional',true,999);
+('42000000-0000-0000-0000-000000000002','32000000-0000-0000-0000-000000000001','Active professional','Active professional',true,999),
+('42000000-0000-0000-0000-000000000003','32000000-0000-0000-0000-000000000001','Unlinked professional','Unlinked professional',true,1000);
 insert into public.treatments(
   id,category_id,specialty_id,professional_id,name,slug,short_description,description,
   price_cents,duration_minutes,buffer_minutes,start_interval_minutes,is_active,display_order
@@ -34,7 +35,7 @@ select set_config('request.jwt.claims','{"sub":"12000000-0000-0000-0000-00000000
 set local role authenticated;
 
 do $$
-declare archived_count bigint; active_count bigint; blocked boolean := false;
+declare archived_count bigint; active_count bigint; archived_blocked boolean := false; active_blocked boolean := false;
 begin
   select treatment_count into archived_count
   from public.get_professional_usage_counts()
@@ -42,22 +43,27 @@ begin
   select treatment_count into active_count
   from public.get_professional_usage_counts()
   where professional_id='42000000-0000-0000-0000-000000000002';
-  if archived_count <> 0 or active_count <> 1 then
-    raise exception 'usage counts include archived assignments';
-  end if;
-
-  perform public.delete_professional_if_unlinked(
-    '42000000-0000-0000-0000-000000000001',repeat('d',32));
-  if exists(select 1 from public.professionals where id='42000000-0000-0000-0000-000000000001')
-    or exists(select 1 from public.treatment_professionals where professional_id='42000000-0000-0000-0000-000000000001') then
-    raise exception 'unlinked duplicate was not removed';
+  if archived_count <> 1 or active_count <> 1 then
+    raise exception 'usage counts must preserve every assignment, including archived ones';
   end if;
 
   begin
     perform public.delete_professional_if_unlinked(
+      '42000000-0000-0000-0000-000000000001',repeat('d',32));
+  exception when foreign_key_violation then archived_blocked := true; end;
+  if not archived_blocked then raise exception 'archived assignment deletion was accepted'; end if;
+
+  begin
+    perform public.delete_professional_if_unlinked(
       '42000000-0000-0000-0000-000000000002',repeat('d',32));
-  exception when foreign_key_violation then blocked := true; end;
-  if not blocked then raise exception 'active professional deletion was accepted'; end if;
+  exception when foreign_key_violation then active_blocked := true; end;
+  if not active_blocked then raise exception 'active professional deletion was accepted'; end if;
+
+  perform public.delete_professional_if_unlinked(
+    '42000000-0000-0000-0000-000000000003',repeat('d',32));
+  if exists(select 1 from public.professionals where id='42000000-0000-0000-0000-000000000003') then
+    raise exception 'truly unlinked professional was not removed';
+  end if;
 end $$;
 
 rollback;

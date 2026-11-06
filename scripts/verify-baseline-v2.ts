@@ -290,7 +290,10 @@ function compareSchemaWatch(referenceDirectory: string, currentDirectory: string
       const currentRow = after.get(identity);
       if (!currentRow) {
         result.push({ scope: "schema", group, classification: "eliminado", detail: identity, blocking: true });
-      } else if (canonical(row as JsonValue) !== canonical(currentRow as JsonValue)) {
+      } else if (
+        canonical(normalizeSchemaValue(group, row as JsonValue))
+        !== canonical(normalizeSchemaValue(group, currentRow as JsonValue))
+      ) {
         result.push({ scope: "schema", group, classification: "modificado", detail: identity, blocking: true });
       }
     }
@@ -335,7 +338,10 @@ function compareContractAndActivity(
       const currentRow = after.get(identity);
       if (!currentRow) {
         result.push({ category: "deriva-contrato", scope: "schema", group, classification: "eliminado", detail: identity, observedAt: null, blocking: true });
-      } else if (canonical(row as JsonValue) !== canonical(currentRow as JsonValue)) {
+      } else if (
+        canonical(normalizeSchemaValue(group, row as JsonValue))
+        !== canonical(normalizeSchemaValue(group, currentRow as JsonValue))
+      ) {
         result.push({ category: "deriva-contrato", scope: "schema", group, classification: "modificado", detail: identity, observedAt: null, blocking: true });
       }
     }
