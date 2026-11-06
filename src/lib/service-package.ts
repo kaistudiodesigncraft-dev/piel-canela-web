@@ -6,6 +6,28 @@ import {
 export type ServicePackageSessionState = "reserved" | "completed" | "released" | "lost";
 export type ServicePackageEvent = "attended" | "released" | "absence";
 
+export function describeServicePackageRules(rulesInput: ServicePackageRules): string[] {
+  const rules = ServicePackageRulesSchema.parse(rulesInput);
+  const lines = [
+    `${rules.sessionsCount} sesiones con una vigencia de ${rules.validityDays} días desde ${rules.validityStartsFrom === "purchase" ? "la compra" : "la primera sesión"}.`,
+  ];
+  if (rules.minDaysBetweenSessions !== null) {
+    lines.push(`Debe haber al menos ${rules.minDaysBetweenSessions} días entre sesiones.`);
+  }
+  lines.push(`Cada sesión admite hasta ${rules.maxReschedulesPerSession} ${rules.maxReschedulesPerSession === 1 ? "reprogramación" : "reprogramaciones"} y requiere ${rules.releaseNoticeHours} horas de aviso para liberarla a tiempo.`);
+  lines.push(rules.absenceConsumesSession
+    ? "Una ausencia consume la sesión."
+    : "Una ausencia no consume la sesión.");
+  lines.push(rules.lateReleaseConsumesSession
+    ? "Una liberación fuera de término consume la sesión."
+    : "Una liberación fuera de término no consume la sesión.");
+  lines.push(rules.depositPercent === null
+    ? "Se aplica la seña general vigente."
+    : `La seña es del ${rules.depositPercent} %.`);
+  if (rules.conditionsText) lines.push(rules.conditionsText);
+  return lines;
+}
+
 export function calculateServicePackageBalance(input: {
   totalSessions: number;
   sessions: ReadonlyArray<{ status: ServicePackageSessionState }>;

@@ -54,4 +54,58 @@ describe("ConfigurableBookingSelector", () => {
     expect(screen.queryByRole("link", { name: "Elegir fecha y horario" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Vista previa · sin reservar" })).toBeDisabled();
   });
+
+  it("shows a package with its generated rules and books only the first session", async () => {
+    const user = userEvent.setup();
+    const packageTreatment: Treatment = {
+      ...treatment,
+      bookingConfig: {
+        version: 1,
+        mode: "package",
+        optionsLabel: { singular: "paquete", plural: "paquetes" },
+        selectionMode: "single",
+        minSelections: 0,
+        maxSelections: 0,
+        allowLooseOptions: false,
+        allowCombos: true,
+        allowAddons: false,
+        priceRule: { type: "package_price" },
+        durationRule: { type: "per_session", durationMinutes: 45 },
+        packageDefaults: {
+          sessionsCount: 4,
+          validityDays: 120,
+          validityStartsFrom: "purchase",
+          minDaysBetweenSessions: 14,
+          releaseNoticeHours: 48,
+          maxReschedulesPerSession: 1,
+          absenceConsumesSession: true,
+          lateReleaseConsumesSession: true,
+          depositPercent: 50,
+          conditionsText: null,
+        },
+      },
+      bookingOptions: [],
+      bookingCombinations: [{
+        id: "package-a", name: "Plan cuidado", kind: "package", priceCents: 900000,
+        durationMinutes: 45, includedOptionIds: [], allowedAddonOptionIds: [],
+        sessionCount: 4, displayOrder: 1, isActive: true,
+        packageRules: {
+          sessionsCount: 4, validityDays: 120, validityStartsFrom: "purchase",
+          minDaysBetweenSessions: 14, releaseNoticeHours: 48,
+          maxReschedulesPerSession: 1, absenceConsumesSession: true,
+          lateReleaseConsumesSession: true, depositPercent: 50, conditionsText: null,
+        },
+      }],
+    };
+    render(<ConfigurableBookingSelector treatment={packageTreatment} />);
+    expect(screen.queryByText("Propuesta A")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: /Plan cuidado/i }));
+    expect(screen.getByText("4 sesiones con una vigencia de 120 días desde la compra.")).toBeInTheDocument();
+    expect(screen.getByText("La seña es del 50 %.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Elegir fecha y horario" })).toHaveAttribute(
+      "href",
+      `/reservar?treatmentId=${packageTreatment.id}&bookingOrder=1&combinationId=package-a`,
+    );
+    expect(screen.getByText(/La pre-reserva agenda la primera sesión/)).toBeInTheDocument();
+  });
 });

@@ -12,7 +12,7 @@ import type {
   TreatmentCategory,
   DepilationZone,
 } from "@/domain/treatment";
-import { BookingConfigSchema } from "@/lib/booking-config";
+import { BookingConfigSchema, ServicePackageRulesSchema } from "@/lib/booking-config";
 import type { CatalogCombination, CatalogOption } from "@/lib/option-catalog";
 import { shouldAttachLegacyZoneOrder } from "@/lib/public-booking-strategy";
 import { createSupabasePublicServerClient } from "./public-server";
@@ -202,6 +202,7 @@ interface GenericCombinationRow {
   price_cents: number;
   duration_minutes: number;
   session_count: number;
+  package_rules: unknown | null;
   display_order: number;
   is_active: boolean;
 }
@@ -325,7 +326,7 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
       .order("name"),
     supabase
       .from("treatment_option_combos")
-      .select("id,treatment_id,name,kind,price_cents,duration_minutes,session_count,display_order,is_active")
+      .select("id,treatment_id,name,kind,price_cents,duration_minutes,session_count,display_order,is_active,package_rules")
       .order("display_order")
       .order("name"),
     supabase
@@ -486,6 +487,9 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
   const genericItems = (genericCombinationItemsResult.data ?? []) as GenericCombinationItemRow[];
   const genericCombinationsByTreatment = new Map<string, CatalogCombination[]>();
   for (const row of (genericCombinationsResult.data ?? []) as GenericCombinationRow[]) {
+    const packageRules = row.kind === "package"
+      ? ServicePackageRulesSchema.safeParse(row.package_rules)
+      : null;
     const combination: CatalogCombination = {
       id: row.id,
       name: row.name,
@@ -499,6 +503,7 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
         .filter((item) => item.combo_id === row.id && item.role === "addon")
         .map((item) => item.option_id),
       sessionCount: row.session_count,
+      packageRules: packageRules?.success ? packageRules.data : undefined,
       displayOrder: row.display_order,
       isActive: row.is_active,
     };

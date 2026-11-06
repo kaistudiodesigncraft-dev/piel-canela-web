@@ -1,4 +1,5 @@
 import type { DepilationZone, TreatmentCombo } from "@/domain/treatment";
+import type { ServicePackageRules } from "@/lib/booking-config";
 
 export type CatalogItemKind = "combo" | "package";
 
@@ -20,6 +21,7 @@ export interface CatalogCombination {
   includedOptionIds: readonly string[];
   allowedAddonOptionIds: readonly string[] | null;
   sessionCount: number;
+  packageRules?: ServicePackageRules;
   displayOrder: number;
   isActive: boolean;
 }
@@ -52,6 +54,7 @@ export interface GenericCombinationRow {
   included_option_ids: readonly string[];
   allowed_addon_option_ids: readonly string[] | null;
   session_count: number;
+  package_rules?: ServicePackageRules | null;
   display_order: number;
   is_active: boolean;
 }
@@ -157,6 +160,7 @@ export class GenericCatalog extends InMemoryOptionCatalog {
             ? null
             : [...combination.allowed_addon_option_ids],
           sessionCount: combination.session_count,
+          packageRules: combination.package_rules ?? undefined,
           displayOrder: combination.display_order,
           isActive: combination.is_active,
         })),

@@ -9,6 +9,7 @@ import { calculateOrder } from "@/lib/booking-engine";
 import { GenericCatalog } from "@/lib/option-catalog";
 import { formatDuration, formatPrice } from "@/lib/format";
 import { buildConfiguredBookingHref } from "@/lib/treatments";
+import { describeServicePackageRules } from "@/lib/service-package";
 
 function createCatalog(treatment: Treatment) {
   return new GenericCatalog(
@@ -32,6 +33,7 @@ function createCatalog(treatment: Treatment) {
       included_option_ids: combination.includedOptionIds,
       allowed_addon_option_ids: combination.allowedAddonOptionIds,
       session_count: combination.sessionCount,
+      package_rules: combination.packageRules ?? null,
       display_order: combination.displayOrder,
       is_active: combination.isActive,
     })),
@@ -45,7 +47,10 @@ export function ConfigurableBookingSelector({ treatment, preview = false }: {
   const searchParams = useSearchParams();
   const config = treatment.bookingConfig;
   const catalog = useMemo(() => createCatalog(treatment), [treatment]);
-  const combinations = catalog.listCombinations().filter((item) => item.isActive && item.kind === "combo");
+  const expectedCombinationKind = config?.mode === "package" ? "package" : "combo";
+  const combinations = catalog.listCombinations().filter((item) =>
+    item.isActive && item.kind === expectedCombinationKind
+  );
   const options = catalog.listOptions().filter((item) => item.isActive);
   const [combinationId, setCombinationId] = useState<string | null>(() => {
     const requested = searchParams.get("combinationId");
@@ -70,6 +75,9 @@ export function ConfigurableBookingSelector({ treatment, preview = false }: {
     return allowed === null || allowed?.includes(option.id);
   }) : [];
   const reachedMaximum = config.maxSelections !== null && optionIds.length >= config.maxSelections;
+  const selectedPackageRules = config.mode === "package"
+    ? selectedCombination?.packageRules ?? config.packageDefaults
+    : undefined;
 
   let order = null;
   let selectionMessage = "";
@@ -110,9 +118,9 @@ export function ConfigurableBookingSelector({ treatment, preview = false }: {
 
   return <section id="opciones" className="combo-selector depilation-order configurable-booking-selector" aria-labelledby={`configured-${treatment.id}`}>
     <div className="combo-selector__heading"><div>
-      <p className="eyebrow">Armá tu reserva</p>
-      <h2 id={`configured-${treatment.id}`}>Elegí {config.optionsLabel.plural}</h2>
-      <p>Seleccioná una propuesta preparada o elegí únicamente lo que necesitás. El resumen se actualiza antes de abrir el calendario.</p>
+      <p className="eyebrow">{config.mode === "package" ? "Plan de sesiones" : "Armá tu reserva"}</p>
+      <h2 id={`configured-${treatment.id}`}>{config.mode === "package" ? "Elegí tu paquete" : `Elegí ${config.optionsLabel.plural}`}</h2>
+      <p>{config.mode === "package" ? "Compará las propuestas y pre-reservá la primera sesión. Las reglas quedan visibles antes de abrir el calendario." : "Seleccioná una propuesta preparada o elegí únicamente lo que necesitás. El resumen se actualiza antes de abrir el calendario."}</p>
     </div></div>
     <div className="combo-selector__layout">
       <div className="combo-selector__options">
@@ -133,7 +141,7 @@ export function ConfigurableBookingSelector({ treatment, preview = false }: {
               <span className="combo-option__body">
                 <strong>{combination.name}</strong>
                 {includedNames.length ? <small>{includedNames.join(" · ")}</small> : null}
-                <span className="combo-option__facts numeric"><span>{formatDuration(combination.durationMinutes)}</span><strong>{formatPrice(combination.priceCents)}</strong></span>
+                <span className="combo-option__facts numeric"><span>{formatDuration(combination.durationMinutes)} por sesión</span>{combination.kind === "package" ? <span>{combination.sessionCount} sesiones</span> : null}<strong>{formatPrice(combination.priceCents)}</strong></span>
               </span>
             </label>;
           })}
@@ -169,6 +177,7 @@ export function ConfigurableBookingSelector({ treatment, preview = false }: {
             <ul>{order.items.map((item) => <li key={`${item.kind}-${item.id}`}>{item.name} · {formatPrice(item.priceCents)}</li>)}</ul>
             <dl className="numeric">
               <div><dt><Clock3 aria-hidden="true" />Duración</dt><dd>{formatDuration(order.durationMinutes)}</dd></div>
+              {config.mode === "package" && selectedCombination ? <div><dt>Sesiones</dt><dd>{selectedCombination.sessionCount}</dd></div> : null}
               <div><dt>Subtotal</dt><dd>{formatPrice(order.subtotalCents)}</dd></div>
               {order.discountCents > 0 ? <div><dt>Descuento ({order.discountPercent} %)</dt><dd>−{formatPrice(order.discountCents)}</dd></div> : null}
               <div><dt>Total</dt><dd>{formatPrice(order.totalCents)}</dd></div>
@@ -178,13 +187,14 @@ export function ConfigurableBookingSelector({ treatment, preview = false }: {
             ? <p className="combo-selection-summary__note">Desde {config.priceRule.minOptions} {config.optionsLabel.plural} se aplica un {config.priceRule.discountPercent} % de descuento sobre esas opciones.</p>
             : null}
           {config.conditionsText ? <p className="combo-selection-summary__note">{config.conditionsText}</p> : null}
+          {selectedPackageRules ? <ul className="combo-selection-summary__conditions">{describeServicePackageRules(selectedPackageRules).map((line) => <li key={line}>{line}</li>)}</ul> : null}
         </div>
         {order && !preview ? <Link className="button button--primary" href={buildConfiguredBookingHref({
           treatmentId: treatment.id,
           combinationId,
           optionIds,
         })}>Elegir fecha y horario</Link> : <button type="button" className="button button--primary" disabled>{preview ? "Vista previa · sin reservar" : "Completá tu elección"}</button>}
-        <p className="combo-selection-summary__note">La pre-reserva queda pendiente hasta que recepción confirme la seña.</p>
+        <p className="combo-selection-summary__note">{config.mode === "package" ? "La pre-reserva agenda la primera sesión. El paquete se activa cuando recepción confirma el pago." : "La pre-reserva queda pendiente hasta que recepción confirme la seña."}</p>
       </aside>
     </div>
   </section>;

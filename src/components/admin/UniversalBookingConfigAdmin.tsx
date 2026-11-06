@@ -277,7 +277,7 @@ function BookingConfigurationForm({ treatment }: { treatment: BookingConfigTreat
       </fieldset>
 
       <div className="admin-activation-panel">
-        <label className="admin-check"><input name="configEnabled" type="checkbox" checked={enabled} disabled={config.mode === "package"} onChange={(event) => setEnabled(event.target.checked)} /><span><strong>Habilitar este circuito configurable</strong><small>{config.mode === "package" ? "Se habilitará después de validar el circuito completo en H10." : "Solo habilitalo cuando las opciones o propuestas estén completas y verificadas."}</small></span></label>
+        <label className="admin-check"><input name="configEnabled" type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} /><span><strong>Habilitar este circuito configurable</strong><small>Solo habilitalo cuando las opciones o propuestas estén completas y verificadas.</small></span></label>
         {treatment.total_booking_count > 0 ? <label className="admin-impact-check"><input name="confirmImpact" type="checkbox" /><span><strong>{treatment.total_booking_count} reservas registradas.</strong> Confirmo que revisé el impacto. Las reservas existentes no se modificarán.</span></label> : null}
       </div>
       <ActionFeedback state={state} />

@@ -15,12 +15,17 @@ import type {
 export function hasPublicTreatmentPrice(treatment: Treatment): boolean {
   if (treatment.configEnabled) {
     const config = treatment.bookingConfig;
-    if (!config || config.mode === "package") return false;
+    if (!config) return false;
     if (config.mode === "simple") {
       return config.priceRule.type === "fixed" && config.priceRule.priceCents > 0;
     }
     const hasOption = treatment.bookingOptions?.some((option) => option.isActive && option.priceCents > 0) ?? false;
     const hasCombination = treatment.bookingCombinations?.some((combination) => combination.isActive && combination.priceCents > 0) ?? false;
+    if (config.mode === "package") {
+      return treatment.bookingCombinations?.some((combination) =>
+        combination.kind === "package" && combination.isActive && combination.priceCents > 0
+      ) ?? false;
+    }
     if (config.mode === "options") return hasOption || (config.allowCombos && hasCombination);
     if (config.mode === "closed_combos") return hasCombination;
     return hasCombination || (config.allowLooseOptions && hasOption);
@@ -181,6 +186,7 @@ function configuredCatalog(treatment: Treatment) {
       included_option_ids: combination.includedOptionIds,
       allowed_addon_option_ids: combination.allowedAddonOptionIds,
       session_count: combination.sessionCount,
+      package_rules: combination.packageRules ?? null,
       display_order: combination.displayOrder,
       is_active: combination.isActive,
     })),

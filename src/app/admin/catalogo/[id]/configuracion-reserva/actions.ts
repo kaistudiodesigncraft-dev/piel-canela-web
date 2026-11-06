@@ -94,10 +94,6 @@ export async function saveBookingConfiguration(
   }
   const config = BookingConfigSchema.safeParse(configJson);
   if (!config.success) return { status: "invalid", message: "Hay reglas incompatibles.", fieldErrors: fieldErrors(config.error) };
-  if (config.data.mode === "package" && parsed.data.configEnabled) {
-    return { status: "invalid", message: "Los paquetes todavía están en preparación.", fieldErrors: { mode: ["Podés preparar esta modalidad, pero se habilitará en el release de paquetes."] } };
-  }
-
   const currentResult = await loadTreatmentGuard(supabase, parsed.data.treatmentId);
   if (currentResult.error) return failed("No pudimos consultar la versión actual.", currentResult.error.code);
   const current = currentResult.data;
@@ -127,7 +123,9 @@ export async function saveBookingConfiguration(
       supabase.from("treatment_options").select("id", { count: "exact", head: true })
         .eq("treatment_id", parsed.data.treatmentId).eq("is_active", true).gt("price_cents", 0),
       supabase.from("treatment_option_combos").select("id", { count: "exact", head: true })
-        .eq("treatment_id", parsed.data.treatmentId).eq("is_active", true).gt("price_cents", 0),
+        .eq("treatment_id", parsed.data.treatmentId)
+        .eq("kind", config.data.mode === "package" ? "package" : "combo")
+        .eq("is_active", true).gt("price_cents", 0),
     ]);
     const lookupError = optionResult.error ?? combinationResult.error;
     if (lookupError) return failed("No pudimos comprobar si la configuración está lista.", lookupError.code);
@@ -136,7 +134,8 @@ export async function saveBookingConfiguration(
     const ready = config.data.mode === "simple"
       || (config.data.mode === "options" && activeOptions > 0)
       || (config.data.mode === "closed_combos" && activeCombinations > 0)
-      || (config.data.mode === "combos_with_addons" && (activeCombinations > 0 || (config.data.allowLooseOptions && activeOptions > 0)));
+      || (config.data.mode === "combos_with_addons" && (activeCombinations > 0 || (config.data.allowLooseOptions && activeOptions > 0)))
+      || (config.data.mode === "package" && activeCombinations > 0);
     if (!ready) {
       return { status: "invalid", message: "La configuración todavía no está lista.", fieldErrors: { configEnabled: ["Publicá al menos una opción o combo compatible antes de activarla."] } };
     }

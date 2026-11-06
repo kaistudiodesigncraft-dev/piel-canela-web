@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ServicePackageRules } from "./booking-config";
-import { calculateServicePackageBalance, suggestServicePackageOutcome } from "./service-package";
+import { calculateServicePackageBalance, describeServicePackageRules, suggestServicePackageOutcome } from "./service-package";
 
 describe("service package rules", () => {
   const appointmentStartsAt = new Date("2026-12-10T15:00:00.000Z");
@@ -91,5 +91,22 @@ describe("service package rules", () => {
       appointmentStartsAt,
       eventAt: appointmentStartsAt,
     })).toBe("released");
+  });
+
+  it("generates public conditions from the same rules used by the engine", () => {
+    expect(describeServicePackageRules({
+      ...packageRules,
+      minDaysBetweenSessions: 14,
+      depositPercent: 50,
+      conditionsText: "Aclaración propia del paquete.",
+    })).toEqual([
+      "6 sesiones con una vigencia de 180 días desde la compra.",
+      "Debe haber al menos 14 días entre sesiones.",
+      "Cada sesión admite hasta 1 reprogramación y requiere 48 horas de aviso para liberarla a tiempo.",
+      "Una ausencia consume la sesión.",
+      "Una liberación fuera de término consume la sesión.",
+      "La seña es del 50 %.",
+      "Aclaración propia del paquete.",
+    ]);
   });
 });

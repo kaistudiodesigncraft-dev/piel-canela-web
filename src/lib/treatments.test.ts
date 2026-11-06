@@ -30,6 +30,44 @@ describe("treatment domain helpers", () => {
     expect(result.every((treatment) => treatment.isActive)).toBe(true);
   });
 
+  it("keeps a configured package visible only when it has a priced active package", () => {
+    const base = treatments[0]!;
+    const configuredPackage = {
+      ...base,
+      isActive: true,
+      configEnabled: true,
+      bookingConfig: {
+        version: 1 as const,
+        mode: "package" as const,
+        optionsLabel: { singular: "paquete", plural: "paquetes" },
+        selectionMode: "single" as const,
+        minSelections: 0,
+        maxSelections: 0,
+        allowLooseOptions: false,
+        allowCombos: true,
+        allowAddons: false,
+        priceRule: { type: "package_price" as const },
+        durationRule: { type: "per_session" as const, durationMinutes: 45 },
+        packageDefaults: {
+          sessionsCount: 4, validityDays: 120, validityStartsFrom: "purchase" as const,
+          minDaysBetweenSessions: null, releaseNoticeHours: 48,
+          maxReschedulesPerSession: 1, absenceConsumesSession: true,
+          lateReleaseConsumesSession: true, depositPercent: null, conditionsText: null,
+        },
+      },
+      bookingCombinations: [],
+    };
+    expect(getActiveTreatments([configuredPackage])).toHaveLength(0);
+    expect(getActiveTreatments([{
+      ...configuredPackage,
+      bookingCombinations: [{
+        id: "package-visible", name: "Plan", kind: "package" as const,
+        priceCents: 900000, durationMinutes: 45, includedOptionIds: [],
+        allowedAddonOptionIds: [], sessionCount: 4, displayOrder: 1, isActive: true,
+      }],
+    }])).toHaveLength(1);
+  });
+
   it("keeps the category in the shareable catalog URL", () => {
     expect(buildCatalogHref("bienestar", "relajacion-profunda", "special-pausa-profunda"))
       .toBe("/tratamientos?category=bienestar&treatment=relajacion-profunda&monthlySpecial=special-pausa-profunda#catalogo");
