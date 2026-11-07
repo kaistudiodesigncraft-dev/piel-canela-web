@@ -38,9 +38,10 @@ describe("booking config editor defaults", () => {
     })).toThrow();
   });
 
-  it("locks every non-simple legacy treatment without identifying it by slug or ID", () => {
-    expect(isLegacyConfigReadOnly({ configEnabled: false, legacySelectionMode: "combo_with_extras" })).toBe(true);
-    expect(isLegacyConfigReadOnly({ configEnabled: false, legacySelectionMode: "simple" })).toBe(false);
-    expect(isLegacyConfigReadOnly({ configEnabled: true, legacySelectionMode: "combo_with_extras" })).toBe(false);
+  it("locks only the explicitly classified historical depilation circuit", () => {
+    expect(isLegacyConfigReadOnly({ configEnabled: false, legacySelectionMode: "combo_with_extras", catalogGroup: "depilation" })).toBe(true);
+    expect(isLegacyConfigReadOnly({ configEnabled: false, legacySelectionMode: "combo_with_extras", catalogGroup: "default" })).toBe(false);
+    expect(isLegacyConfigReadOnly({ configEnabled: false, legacySelectionMode: "simple", catalogGroup: "depilation" })).toBe(false);
+    expect(isLegacyConfigReadOnly({ configEnabled: true, legacySelectionMode: "combo_with_extras", catalogGroup: "depilation" })).toBe(false);
   });
 });

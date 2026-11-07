@@ -4,6 +4,7 @@ import {
   type BookingConfig,
   type ServicePackageRules,
 } from "./booking-config";
+import type { CatalogGroup } from "./catalog-order";
 
 export type BookingMode = BookingConfig["mode"];
 
@@ -114,6 +115,9 @@ export function createDefaultBookingConfig(input: {
 export function isLegacyConfigReadOnly(input: {
   configEnabled: boolean;
   legacySelectionMode: "simple" | "closed_combo" | "combo_with_extras";
+  catalogGroup: CatalogGroup;
 }) {
-  return !input.configEnabled && input.legacySelectionMode !== "simple";
+  return !input.configEnabled
+    && input.legacySelectionMode !== "simple"
+    && input.catalogGroup === "depilation";
 }

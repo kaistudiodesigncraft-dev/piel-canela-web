@@ -133,6 +133,7 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
   const [monthlyWeekday, setMonthlyWeekday] = useState(treatment?.monthly_weekday ?? 4);
   const [monthlyOrdinals, setMonthlyOrdinals] = useState<number[]>(treatment?.monthly_occurrence_ordinals?.length ? treatment.monthly_occurrence_ordinals : [1]);
   const [selectionMode, setSelectionMode] = useState<"simple" | "closed_combo" | "combo_with_extras">(treatment?.selection_mode ?? "simple");
+  const isLegacyDepilation = treatment?.catalog_group === "depilation";
   const [focalX, setFocalX] = useState(focalPointToPercentage(treatment?.image_focal_x ?? 0.5));
   const [focalY, setFocalY] = useState(focalPointToPercentage(treatment?.image_focal_y ?? 0.5));
   const [imagePath, setImagePath] = useState(treatment?.image_path ?? "");
@@ -277,7 +278,10 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
           <a href="#treatment-information">Información</a><a href="#treatment-scheduling">Agenda y precio</a><a href="#treatment-image">Imagen</a><a href="#treatment-publication">Publicación</a>
         </nav>
 
-        {!isNew && treatment && treatment.selection_mode !== "simple" ? <div className="admin-field-note admin-field-note--prominent"><strong>Precios de depilación</strong><p>Las zonas, combos y extras ya cargados se editan en su configuración. El precio de cada combo fijo y el de cada extra se actualizan por separado.</p><Link className="button button--quiet" href={`/admin/catalogo/${treatmentId}/combos`}>Ver y editar zonas, combos y extras</Link></div> : null}
+        {!isNew && treatment && treatment.selection_mode !== "simple" ? isLegacyDepilation
+          ? <div className="admin-field-note admin-field-note--prominent"><strong>Configuración histórica de depilación</strong><p>Las zonas y combos existentes conservan su circuito actual.</p><Link className="button button--quiet" href={`/admin/catalogo/${treatmentId}/combos`}>Ver y editar zonas y combos</Link></div>
+          : <div className="admin-field-note admin-field-note--prominent"><strong>Configuración de opciones y combos</strong><p>Definí nombres, precios, duración y modalidad sin modificar la ficha ni la agenda.</p><Link className="button button--quiet" href={`/admin/catalogo/${treatmentId}/configuracion-reserva`}>Configurar forma de reserva</Link></div>
+          : null}
 
         <fieldset id="treatment-information">
           <legend>Información pública</legend>
@@ -310,8 +314,8 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
               <small>{selectionMode !== "simple" ? "La persona deberá elegir un combo publicado antes de reservar." : "La duración y el precio de esta ficha se aplican directamente."}</small>
               <FieldError id={`${formId}-selectionMode-error`} messages={fieldError("selectionMode")} />
             </label>
-            {!isNew && selectionMode !== "simple" && treatment?.selection_mode !== "simple" ? <Link className="button button--quiet" href={`/admin/catalogo/${treatmentId}/combos`}>Configurar zonas, combos y extras</Link> : null}
-            {selectionMode !== "simple" && (isNew || treatment?.selection_mode === "simple") ? <p className="admin-field-note">Guardá primero el tratamiento con esta forma de reserva para poder configurar sus zonas, combos y extras.</p> : null}
+            {!isNew && selectionMode !== "simple" && treatment?.selection_mode !== "simple" ? <Link className="button button--quiet" href={isLegacyDepilation ? `/admin/catalogo/${treatmentId}/combos` : `/admin/catalogo/${treatmentId}/configuracion-reserva`}>{isLegacyDepilation ? "Configurar zonas y combos" : "Configurar opciones y combos"}</Link> : null}
+            {selectionMode !== "simple" && (isNew || treatment?.selection_mode === "simple") ? <p className="admin-field-note">Guardá primero el tratamiento con esta forma de reserva para poder configurar sus opciones y propuestas.</p> : null}
           </div>
           <div className={`admin-form-grid ${selectionMode === "simple" ? "admin-form-grid--3" : ""}`}>
             <label htmlFor={`${formId}-specialtyId`}>Especialidad<select id={`${formId}-specialtyId`} name="specialtyId" value={selectedSpecialty} onChange={(event) => {
@@ -334,7 +338,7 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
             })}
             <FieldError id={`${formId}-professionalIds-error`} messages={fieldError("professionalIds")} />
           </fieldset>
-          {selectionMode !== "simple" ? <div className="admin-field-note admin-field-note--prominent"><strong>Precio y duración se definen en cada combo.</strong><span>La duración real será la suma de sus zonas más un único margen de preparación. La frecuencia continúa siendo común a este tratamiento.</span><input type="hidden" name="durationMinutes" value={durationMinutes} /></div> : null}
+          {selectionMode !== "simple" ? <div className="admin-field-note admin-field-note--prominent"><strong>Precio y duración se definen en cada propuesta.</strong><span>{isLegacyDepilation ? "La duración real será la suma de sus zonas más un único margen de preparación." : "Usá la configuración de reserva para definir opciones, combos y reglas de cálculo."} La frecuencia continúa siendo común a este tratamiento.</span><input type="hidden" name="durationMinutes" value={durationMinutes} /></div> : null}
           <div className={`admin-form-grid ${selectionMode === "simple" ? "admin-form-grid--3" : ""}`}>
             {selectionMode === "simple" ? <label htmlFor={`${formId}-durationMinutes`}>Duración<input id={`${formId}-durationMinutes`} name="durationMinutes" type="number" min="5" max="480" step="5" value={durationMinutes} onChange={(event) => setDurationMinutes(Number(event.target.value))} required /></label> : null}
             <label htmlFor={`${formId}-bufferMinutes`}>Preparación entre turnos<input id={`${formId}-bufferMinutes`} name="bufferMinutes" type="number" min="0" max="180" step="5" value={bufferMinutes} onChange={(event) => setBufferMinutes(Number(event.target.value))} required /></label>

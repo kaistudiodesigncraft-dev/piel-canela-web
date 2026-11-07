@@ -15,6 +15,7 @@ const baseTreatment = {
   name: "Tratamiento configurable",
   slug: "tratamiento-configurable",
   selection_mode: "simple" as const,
+  catalog_group: "default" as const,
   booking_config: createDefaultBookingConfig({ mode: "options", priceCents: 100_000, durationMinutes: 30 }),
   config_enabled: false,
   price_cents: 100_000,
@@ -38,14 +39,24 @@ const option = {
 };
 
 describe("UniversalBookingConfigAdmin", () => {
-  it("protects every historical non-simple circuit without relying on a treatment ID", () => {
+  it("protects the historical depilation circuit without relying on a treatment ID", () => {
     render(<UniversalBookingConfigAdmin
-      treatment={{ ...baseTreatment, selection_mode: "combo_with_extras", config_enabled: false }}
+      treatment={{ ...baseTreatment, selection_mode: "combo_with_extras", catalog_group: "depilation", config_enabled: false }}
       options={[]}
       combinations={[]}
     />);
     expect(screen.getByRole("heading", { name: "Circuito histórico protegido" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Abrir configuración histórica" })).toHaveAttribute("href", `/admin/catalogo/${baseTreatment.id}/combos`);
+  });
+
+  it("lets a new non-depilation treatment adopt the universal catalog", () => {
+    render(<UniversalBookingConfigAdmin
+      treatment={{ ...baseTreatment, selection_mode: "combo_with_extras", catalog_group: "default", config_enabled: false }}
+      options={[]}
+      combinations={[]}
+    />);
+    expect(screen.queryByRole("heading", { name: "Circuito histórico protegido" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Guardar configuración" })).toBeEnabled();
   });
 
   it("requires explicit package rules before changing to package mode", async () => {

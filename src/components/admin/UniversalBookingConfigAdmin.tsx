@@ -402,7 +402,7 @@ export function UniversalBookingConfigAdmin({ treatment, options, combinations }
   options: BookingConfigOptionRow[];
   combinations: BookingConfigCombinationRow[];
 }) {
-  const locked = isLegacyConfigReadOnly({ configEnabled: treatment.config_enabled, legacySelectionMode: treatment.selection_mode });
+  const locked = isLegacyConfigReadOnly({ configEnabled: treatment.config_enabled, legacySelectionMode: treatment.selection_mode, catalogGroup: treatment.catalog_group });
   if (locked) return <section className="admin-form universal-booking-config__locked"><LockKeyhole aria-hidden="true" /><div><h2>Circuito histórico protegido</h2><p>Este tratamiento conserva sus zonas, combos, reglas y reservas actuales. No se convierte automáticamente ni se copian sus datos al catálogo nuevo.</p><a className="button button--quiet" href={`/admin/catalogo/${treatment.id}/combos`}>Abrir configuración histórica</a></div></section>;
 
   const mode = treatment.booking_config.mode;

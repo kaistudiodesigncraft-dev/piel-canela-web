@@ -18,7 +18,7 @@ export async function loadBookingConfigEditor(
 } | null> {
   const [treatmentResult, optionsResult, combinationsResult, itemsResult, bookingsResult] = await Promise.all([
     supabase.from("treatments")
-      .select("id,name,slug,selection_mode,booking_config,config_enabled,price_cents,duration_minutes,is_active,updated_at")
+      .select("id,name,slug,selection_mode,catalog_group,booking_config,config_enabled,price_cents,duration_minutes,is_active,updated_at")
       .eq("id", treatmentId)
       .maybeSingle(),
     supabase.from("treatment_options")

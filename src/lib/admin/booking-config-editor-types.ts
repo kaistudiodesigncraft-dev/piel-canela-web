@@ -1,10 +1,12 @@
 import type { BookingConfig, ServicePackageRules } from "@/lib/booking-config";
+import type { CatalogGroup } from "@/lib/catalog-order";
 
 export interface BookingConfigTreatmentRow {
   id: string;
   name: string;
   slug: string;
   selection_mode: "simple" | "closed_combo" | "combo_with_extras";
+  catalog_group: CatalogGroup;
   booking_config: BookingConfig;
   config_enabled: boolean;
   price_cents: number;

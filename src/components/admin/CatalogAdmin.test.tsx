@@ -47,11 +47,19 @@ describe("CatalogAdmin", () => {
     expect(screen.queryByText(/reservas futuras/)).not.toBeInTheDocument();
   });
 
-  it("describes configurable treatments using their combo pricing and duration", () => {
+  it("describes universal treatments without presenting them as depilation", () => {
     render(<CatalogAdmin categories={categories} specialties={specialties} professionals={[]} treatments={[treatment({ selection_mode: "combo_with_extras", price_cents: 0, duration_minutes: 60, buffer_minutes: 15, has_active_combo: true })]} feedback={{}} />);
 
+    expect(screen.getByText("Según opciones + 15 min")).toBeInTheDocument();
+    expect(screen.getByText("Precio según propuesta")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Configurar reserva de Relajación profunda/ })).toHaveAttribute("href", "/admin/catalogo/40000000-0000-4000-8000-000000000001/configuracion-reserva");
+    expect(screen.queryByText("$ 0")).not.toBeInTheDocument();
+  });
+
+  it("keeps the explicit depilation group on its historical configuration", () => {
+    render(<CatalogAdmin categories={categories} specialties={specialties} professionals={[]} treatments={[treatment({ selection_mode: "combo_with_extras", catalog_group: "depilation", price_cents: 0, has_active_combo: true })]} feedback={{}} />);
     expect(screen.getByText("Según zonas + 15 min")).toBeInTheDocument();
     expect(screen.getByText("Precio según combo")).toBeInTheDocument();
-    expect(screen.queryByText("$ 0")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Zonas y combos de Relajación profunda/ })).toHaveAttribute("href", "/admin/catalogo/40000000-0000-4000-8000-000000000001/combos");
   });
 });

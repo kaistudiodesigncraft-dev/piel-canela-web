@@ -575,6 +575,7 @@ export const getPublicCatalogSnapshot = cache(async function getPublicCatalogSna
     for (const treatment of treatments as Treatment[]) if (shouldAttachLegacyZoneOrder({
       configEnabled: treatment.configEnabled === true,
       selectionMode: treatment.selectionMode,
+      catalogGroup: treatment.catalogGroup ?? "default",
     })) {
       treatment.zoneOrder = { zones, discountPercent: Number(discountResult.data?.depilation_discount_percent ?? 0),
         ready: !zonesResult.error && !discountResult.error };

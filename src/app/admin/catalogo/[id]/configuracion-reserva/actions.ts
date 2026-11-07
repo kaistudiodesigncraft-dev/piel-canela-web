@@ -67,7 +67,7 @@ async function loadTreatmentGuard(
   treatmentId: string,
 ) {
   return supabase.from("treatments")
-    .select("id,selection_mode,booking_config,config_enabled,updated_at")
+    .select("id,selection_mode,catalog_group,booking_config,config_enabled,updated_at")
     .eq("id", treatmentId)
     .maybeSingle();
 }
@@ -98,7 +98,7 @@ export async function saveBookingConfiguration(
   if (currentResult.error) return failed("No pudimos consultar la versión actual.", currentResult.error.code);
   const current = currentResult.data;
   if (!current) return { status: "failed", message: "El tratamiento ya no existe." };
-  if (isLegacyConfigReadOnly({ configEnabled: current.config_enabled, legacySelectionMode: current.selection_mode })) {
+  if (isLegacyConfigReadOnly({ configEnabled: current.config_enabled, legacySelectionMode: current.selection_mode, catalogGroup: current.catalog_group })) {
     return { status: "invalid", message: "Este tratamiento conserva su circuito histórico.", fieldErrors: { mode: ["No se convierte desde este editor."] } };
   }
 
@@ -178,7 +178,7 @@ export async function saveBookingOption(
   const guardResult = await loadTreatmentGuard(supabase, parsed.data.treatmentId);
   if (guardResult.error) return failed("No pudimos verificar el tratamiento.", guardResult.error.code);
   if (!guardResult.data?.booking_config) return { status: "invalid", message: "Guardá primero la modalidad del tratamiento." };
-  if (isLegacyConfigReadOnly({ configEnabled: guardResult.data.config_enabled, legacySelectionMode: guardResult.data.selection_mode })) {
+  if (isLegacyConfigReadOnly({ configEnabled: guardResult.data.config_enabled, legacySelectionMode: guardResult.data.selection_mode, catalogGroup: guardResult.data.catalog_group })) {
     return { status: "invalid", message: "Este tratamiento conserva su catálogo histórico." };
   }
 
@@ -237,7 +237,7 @@ export async function saveBookingCombination(
   const guardResult = await loadTreatmentGuard(supabase, parsed.data.treatmentId);
   if (guardResult.error) return failed("No pudimos verificar el tratamiento.", guardResult.error.code);
   if (!guardResult.data) return { status: "failed", message: "El tratamiento ya no existe." };
-  if (isLegacyConfigReadOnly({ configEnabled: guardResult.data.config_enabled, legacySelectionMode: guardResult.data.selection_mode })) {
+  if (isLegacyConfigReadOnly({ configEnabled: guardResult.data.config_enabled, legacySelectionMode: guardResult.data.selection_mode, catalogGroup: guardResult.data.catalog_group })) {
     return { status: "invalid", message: "Este tratamiento conserva su catálogo histórico." };
   }
   const treatmentConfig = BookingConfigSchema.safeParse(guardResult.data.booking_config);
