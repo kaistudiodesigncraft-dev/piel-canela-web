@@ -19,7 +19,7 @@ describe("Piel Canela brand contract", () => {
   });
 
   it("detects accidental replacement or modification of approved assets", () => {
-    const manifest = JSON.parse(readFileSync(resolve(process.cwd(), "design/brand-assets.manifest.json"), "utf8")) as BrandAssetManifest;
+    const manifest = JSON.parse(readFileSync(resolve(process.cwd(), "public/brand/brand-assets.manifest.json"), "utf8")) as BrandAssetManifest;
     expect(manifest.assets.length).toBeGreaterThanOrEqual(15);
     for (const asset of manifest.assets) {
       const bytes = readFileSync(resolve(process.cwd(), asset.path));

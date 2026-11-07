@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { DepilationZone, TreatmentCombo } from "@/domain/treatment";
@@ -31,6 +31,9 @@ const roots = [
   "backups/sprint-1/production-readonly-2026-11-03_014847",
 ];
 const treatmentId = "a1f1196c-ff98-4a7b-86d6-355d3273944b";
+const hasProtectedBackups = roots.every((root) =>
+  existsSync(resolve(root, "data", "depilation_zones.json")),
+);
 
 function rows<T>(root: string, table: string): T[] {
   return JSON.parse(readFileSync(resolve(root, "data", `${table}.json`), "utf8")) as T[];
@@ -74,7 +77,10 @@ function dataset(root: string): LegacyEquivalenceDataset {
   return { treatmentId, discountPercent: Number(settings?.depilation_discount_percent ?? 0), zones, combos, bookingSnapshots };
 }
 
-describe("legacy Depilation equivalence", () => {
+// Los respaldos contienen información sensible y están excluidos de Git. La
+// equivalencia se ejecuta completa en las estaciones autorizadas que poseen la
+// copia verificada; CI conserva el resto de la suite sin publicar esos datos.
+describe.skipIf(!hasProtectedBackups)("legacy Depilation equivalence", () => {
   for (const root of roots) {
     it(`matches the historical engine for ${root}`, () => {
       const report = runLegacyEquivalence(dataset(root));

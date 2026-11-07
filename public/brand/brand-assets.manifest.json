@@ -1,0 +1,21 @@
+{
+  "version": "2026-10-22",
+  "policy": "Assets oficiales. No recrear, recolorear, deformar ni reemplazar sin aprobación de marca y actualización explícita de este manifiesto.",
+  "assets": [
+    { "path": "public/brand/favicon.webp", "role": "favicon", "sha256": "a4506bfc336760ffaf4c514f901859f59eb9708a6c97f7a5a264a70106a9eb2a" },
+    { "path": "public/brand/hero-background-original.jpg", "role": "hero-background", "sha256": "547ba25162623d582f0afc777ca2198691d2b0194de788f7ca6d3141bdcae481" },
+    { "path": "public/brand/hero-logo-original.webp", "role": "hero-logo", "sha256": "dffee532b1da92c992e5fa1d470f42db7a1bac23b670085729433d222705dc43" },
+    { "path": "public/brand/key-visual-care.jpg", "role": "key-visual-care", "sha256": "d1a844a3619f41a1af29fe2c59585f28d8e6f9df54f0fec5c60ff5a79a227bfb" },
+    { "path": "public/brand/key-visual-mark.jpg", "role": "key-visual-mark", "sha256": "b2bab80d4a54abbb527a887444d311e7e656f33311923ed7e09f64a25ba54a1b" },
+    { "path": "public/brand/key-visual-tagline.jpg", "role": "key-visual-tagline", "sha256": "0bd4d89694cfe387bebb8ec2c18e8612e2ffb988b600a8f02f62c6a82aa59a5b" },
+    { "path": "public/brand/logo-horizontal.webp", "role": "header-logo", "sha256": "41e64bbede0c75f7a9a40610fd850232d103b5ffe6c7c419d021f99cedf8c38b" },
+    { "path": "public/brand/logo-primary.webp", "role": "primary-logo", "sha256": "d9b6afb8e5b290da2b5a7101a7104aed3f60454a0c675272b3e173439156c759" },
+    { "path": "public/brand/logo-white.webp", "role": "inverse-logo", "sha256": "dffee532b1da92c992e5fa1d470f42db7a1bac23b670085729433d222705dc43" },
+    { "path": "public/brand/monogram.webp", "role": "monogram", "sha256": "4f44e2a5dc87fc960e166275ef33be55bf2980a1b55347ce3a3ddb9d2ea56fd9" },
+    { "path": "public/brand/profile-key-visual.jpg", "role": "profile-key-visual", "sha256": "c4aeff3c3d1e7566b8fc16b05c58e90fae3575b8a9757283418e0b2038a0ad9e" },
+    { "path": "public/brand/symbol.webp", "role": "symbol", "sha256": "f7d559e1b6b230fa04dac2053392de539ab4975ba4f92c786418441126598933" },
+    { "path": "public/brand/icons/category-bienestar.svg", "role": "category-bienestar", "sha256": "e93c1c724102f187d9f5c2fba9705d461ab14adb83c45ca50a12260c98f72784" },
+    { "path": "public/brand/icons/category-estetica.svg", "role": "category-estetica", "sha256": "46aa38948b6a66dd92b0eb395d07954b5131d7f29be525e6585f2a8e0735ab14" },
+    { "path": "public/brand/icons/category-recuperacion.svg", "role": "category-recuperacion", "sha256": "f97a57a71e522d59b3170e891568e055ce176ef38efe97dc6142e19d2d89435c" }
+  ]
+}
