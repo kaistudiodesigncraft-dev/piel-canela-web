@@ -1,9 +1,14 @@
 name: Validate application
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches: [main]
+
+concurrency:
+  group: validate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -28,7 +33,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Validate release configuration contract
-        run: pnpm exec vitest run src/lib/config/release-environment.test.ts src/app/robots.test.ts src/components/layout/BetaNotice.test.tsx
+        run: pnpm exec vitest run src/lib/config/release-environment.test.ts src/app/robots.test.ts
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
@@ -45,7 +50,7 @@ jobs:
     timeout-minutes: 10
     env:
       NEXT_PUBLIC_DATA_SOURCE: supabase
-      NEXT_PUBLIC_RELEASE_STAGE: beta
+      NEXT_PUBLIC_RELEASE_STAGE: live
       NEXT_PUBLIC_SITE_URL: https://example.invalid
       NEXT_PUBLIC_SUPABASE_URL: https://ci-contract.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_contract_placeholder
