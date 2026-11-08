@@ -4,7 +4,12 @@ create table if not exists private.h8_concurrency_restore (
   treatment_id uuid primary key,
   booking_config jsonb,
   config_enabled boolean not null,
+  is_active boolean not null,
   updated_at timestamptz not null
+);
+create table if not exists private.h8_concurrency_fixture (
+  singleton boolean primary key default true check (singleton),
+  treatment_created boolean not null
 );
 create table if not exists public.h8_concurrency_results (
   worker text primary key,
@@ -13,13 +18,18 @@ create table if not exists public.h8_concurrency_results (
 truncate public.h8_concurrency_results;
 grant insert on public.h8_concurrency_results to authenticated;
 truncate private.h8_concurrency_restore;
-insert into private.h8_concurrency_restore(treatment_id, booking_config, config_enabled, updated_at)
-select id, booking_config, config_enabled, updated_at from public.treatments
-where id = 'e6926fc8-f910-4b26-8c4b-53a9d27be7b7';
+truncate private.h8_concurrency_fixture;
+
+insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data)
+values('88100000-0000-4000-8000-000000000098','authenticated','authenticated','h8-concurrency@example.invalid','',now(),'{}','{}')
+on conflict(id) do nothing;
+insert into public.profiles(user_id,full_name,role,is_active)
+values('88100000-0000-4000-8000-000000000098','H8 concurrency local','admin',true)
+on conflict(user_id) do update set role='admin',is_active=true;
 
 do $setup$
 declare
-  actor_id uuid;
+  actor_id constant uuid := '88100000-0000-4000-8000-000000000098';
   fixture_treatment_id constant uuid := 'e6926fc8-f910-4b26-8c4b-53a9d27be7b7';
   professional_id constant uuid := '88100000-0000-4000-8000-000000000009';
   fixture_specialty_id uuid;
@@ -36,12 +46,36 @@ declare
     "conditionsText": null
   }'::jsonb;
   initial_start timestamptz := ((current_date + 10) + time '10:00') at time zone 'America/Argentina/Cordoba';
+  fixture_created boolean := false;
 begin
-  select profile.user_id into actor_id
-  from public.profiles profile join auth.users account on account.id = profile.user_id
-  where profile.is_active and profile.role in ('admin','manager') limit 1;
   select treatment.specialty_id into fixture_specialty_id
   from public.treatments treatment where treatment.id = fixture_treatment_id;
+
+  if fixture_specialty_id is null then
+    fixture_created := true;
+    fixture_specialty_id := '88100000-0000-4000-8000-000000000091';
+    insert into public.treatment_categories(id,name,slug,short_description,icon_name,is_active)
+    values('88100000-0000-4000-8000-000000000090','H8 concurrency','h8-concurrency','Categoría aislada para concurrencia.','UserFocus',true);
+    insert into public.specialties(id,name,slug,is_active)
+    values(fixture_specialty_id,'H8 concurrency','h8-concurrency',true);
+    insert into public.treatments(
+      id,category_id,specialty_id,name,slug,short_description,description,
+      duration_minutes,buffer_minutes,start_interval_minutes,price_cents,
+      selection_mode,requires_professional_assignment,is_active,config_enabled
+    ) values (
+      fixture_treatment_id,'88100000-0000-4000-8000-000000000090',fixture_specialty_id,
+      'H8 concurrencia','h8-concurrencia','Tratamiento aislado de concurrencia',
+      'Tratamiento local usado únicamente para probar el bloqueo transaccional.',
+      30,0,30,100000,'simple',true,false,false
+    );
+  end if;
+
+  insert into private.h8_concurrency_fixture(singleton,treatment_created)
+  values(true,fixture_created);
+  insert into private.h8_concurrency_restore(treatment_id,booking_config,config_enabled,is_active,updated_at)
+  select id,booking_config,config_enabled,is_active,updated_at from public.treatments
+  where id=fixture_treatment_id;
+
   insert into public.professionals(
     id,specialty_id,full_name,public_name,is_active,display_order
   ) values (
@@ -50,9 +84,11 @@ begin
   insert into public.treatment_professionals(
     treatment_id,professional_id,is_active,display_order
   ) values(fixture_treatment_id,professional_id,true,0);
+  insert into public.professional_specialties(professional_id,specialty_id)
+  values(professional_id,fixture_specialty_id);
 
   execute 'alter table public.treatments disable trigger treatments_enforce_configured_readiness';
-  update public.treatments set config_enabled = true, booking_config = jsonb_build_object(
+  update public.treatments set config_enabled = true, is_active = true, booking_config = jsonb_build_object(
     'version',1,'mode','package','optionsLabel',jsonb_build_object('singular','paquete','plural','paquetes'),
     'selectionMode','single','minSelections',0,'maxSelections',0,
     'allowLooseOptions',false,'allowCombos',true,'allowAddons',false,

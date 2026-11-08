@@ -45,6 +45,7 @@ select setval(
 );
 
 select set_config('request.jwt.claims','{"sub":"1b000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+select set_config('request.jwt.claim.sub','1b000000-0000-4000-8000-000000000001',true);
 set local role authenticated;
 
 do $$
@@ -104,6 +105,10 @@ begin
 
   update public.treatments set config_enabled=true
   where id='4b000000-0000-4000-8000-000000000001';
+  if not exists (
+    select 1 from public.treatments
+    where id='4b000000-0000-4000-8000-000000000001' and config_enabled
+  ) then raise exception 'config activation did not update fixture'; end if;
   rejected := false;
   begin
     update public.treatments set booking_config='{

@@ -10,14 +10,16 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --grep-invert \"H6 universal booking acceptance\"",
+    "test:e2e:h6": "playwright test --grep \"H6 universal booking acceptance\"",
     "test:e2e:ui": "playwright test --ui",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status",
     "supabase:reset": "supabase db reset",
     "supabase:lint": "supabase db lint --local",
-    "supabase:test": "supabase test db"
+    "supabase:test": "node scripts/run-supabase-tests.mjs",
+    "supabase:test:concurrency": "node scripts/run-h8-concurrency.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

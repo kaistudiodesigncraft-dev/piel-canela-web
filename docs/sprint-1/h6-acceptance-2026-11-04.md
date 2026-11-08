@@ -33,6 +33,11 @@ existen únicamente en la base local.
 
 Prueba: `tests/e2e/universal-booking-h6.spec.ts`.
 
+Esta aceptación requiere los cuatro tratamientos QA cargados en un Supabase
+local aislado y se ejecuta con `pnpm test:e2e:h6`. El smoke habitual
+`pnpm test:e2e` usa fixtures estáticos y la excluye de forma explícita porque
+ese entorno no dispone de RPC ni permite crear pre-reservas reales.
+
 - 12/12 recorridos completos aprobados: cuatro modalidades en 375, 768 y
   1440 px;
 - 4/4 controles de teclado, foco inicial y axe WCAG A/AA aprobados;

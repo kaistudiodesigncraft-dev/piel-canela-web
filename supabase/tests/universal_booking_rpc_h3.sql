@@ -49,6 +49,27 @@ values('5a000000-0000-4000-8000-000000000001', '4a000000-0000-4000-8000-00000000
 update public.treatments set is_active = true
 where id = '5a000000-0000-4000-8000-000000000001';
 
+-- A local legacy fixture proves the branch contract without depending on
+-- production Depilation rows or protected backup data.
+insert into public.treatments(
+  id, category_id, specialty_id, professional_id, name, slug,
+  short_description, description, duration_minutes, buffer_minutes,
+  start_interval_minutes, price_cents, selection_mode,
+  requires_professional_assignment, is_active, config_enabled, booking_config
+) values (
+  '5a000000-0000-4000-8000-000000000002',
+  '2a000000-0000-4000-8000-000000000001',
+  '3a000000-0000-4000-8000-000000000001',
+  '4a000000-0000-4000-8000-000000000001',
+  'H3 legacy', 'h3-legacy', 'Flujo legacy aislado suficiente',
+  'Tratamiento local para comprobar que el motor universal no lo absorbe.',
+  30, 0, 30, 100000, 'simple', true, false, false, null
+);
+insert into public.treatment_professionals(treatment_id, professional_id, is_active)
+values('5a000000-0000-4000-8000-000000000002', '4a000000-0000-4000-8000-000000000001', true);
+update public.treatments set is_active=true
+where id='5a000000-0000-4000-8000-000000000002';
+
 insert into public.treatment_options(
   id, treatment_id, name, price_cents, duration_minutes, display_order, is_active
 ) values
@@ -174,7 +195,7 @@ begin
   rejected := false;
   begin
     perform public.get_booking_order_context_v2(
-      'a1f1196c-ff98-4a7b-86d6-355d3273944b', null, '{}'::uuid[]
+      '5a000000-0000-4000-8000-000000000002', null, '{}'::uuid[]
     );
   exception when others then rejected := SQLERRM = 'legacy_flow_required'; end;
   if not rejected then raise exception 'legacy treatment entered generic context'; end if;

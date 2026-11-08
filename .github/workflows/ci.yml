@@ -84,6 +84,8 @@ jobs:
         run: pnpm supabase:lint
       - name: Run database integrity and RLS tests
         run: pnpm supabase:test
+      - name: Run package balance concurrency test
+        run: pnpm supabase:test:concurrency
       - name: Stop isolated Supabase services
         if: always()
         run: pnpm supabase:stop --no-backup

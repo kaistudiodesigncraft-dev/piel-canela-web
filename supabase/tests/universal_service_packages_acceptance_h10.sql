@@ -1,5 +1,6 @@
 -- LOCAL ISOLATED DATABASE ONLY. Complete Release 2 acceptance; all rows roll back.
 \set ON_ERROR_STOP on
+\echo 1..1
 begin;
 
 insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data)
@@ -314,3 +315,4 @@ $test$;
 
 reset role;
 rollback;
+\echo ok 1 - universal service package H10 acceptance passed

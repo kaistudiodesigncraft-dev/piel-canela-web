@@ -1,4 +1,32 @@
+\set ON_ERROR_STOP on
+\echo 1..1
 begin;
+
+insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data)
+values('88000000-0000-4000-8000-000000000098','authenticated','authenticated','h8-admin@example.invalid','',now(),'{}','{}');
+insert into public.profiles(user_id,full_name,role,is_active)
+values('88000000-0000-4000-8000-000000000098','H8 admin local','admin',true);
+insert into public.treatment_categories(id,name,slug,short_description,icon_name,is_active)
+values('88000000-0000-4000-8000-000000000090','H8 QA','h8-qa','Categoría aislada H8.','UserFocus',true);
+insert into public.specialties(id,name,slug,is_active)
+values('88000000-0000-4000-8000-000000000091','H8 QA','h8-qa',true);
+insert into public.professionals(id,specialty_id,full_name,is_active)
+values('88000000-0000-4000-8000-000000000092','88000000-0000-4000-8000-000000000091','Profesional H8 QA',true);
+insert into public.professional_specialties(professional_id,specialty_id)
+values('88000000-0000-4000-8000-000000000092','88000000-0000-4000-8000-000000000091');
+insert into public.treatments(
+  id,category_id,specialty_id,professional_id,name,slug,short_description,description,
+  duration_minutes,buffer_minutes,start_interval_minutes,price_cents,selection_mode,
+  requires_professional_assignment,is_active,config_enabled,booking_config
+) values (
+  'e6926fc8-f910-4b26-8c4b-53a9d27be7b7',
+  '88000000-0000-4000-8000-000000000090','88000000-0000-4000-8000-000000000091',
+  '88000000-0000-4000-8000-000000000092','H8 paquete QA','h8-paquete-qa',
+  'Paquete aislado para pruebas H8','Tratamiento local usado para validar paquetes universales H8.',
+  30,0,30,120000,'simple',true,false,false,null
+);
+insert into public.treatment_professionals(treatment_id,professional_id,is_active)
+values('e6926fc8-f910-4b26-8c4b-53a9d27be7b7','88000000-0000-4000-8000-000000000092',true);
 
 do $test$
 declare
@@ -45,6 +73,7 @@ begin
   execute 'alter table public.treatments disable trigger treatments_enforce_configured_readiness';
   update public.treatments set
     config_enabled = true,
+    is_active = true,
     booking_config = jsonb_build_object(
       'version', 1,
       'mode', 'package',
@@ -375,3 +404,4 @@ end;
 $test$;
 
 rollback;
+\echo ok 1 - universal service package H8 assertions passed

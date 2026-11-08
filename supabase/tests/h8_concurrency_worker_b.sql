@@ -1,9 +1,5 @@
 \set ON_ERROR_STOP on
-select set_config('request.jwt.claim.sub', (
-  select profile.user_id::text from public.profiles profile
-  join auth.users account on account.id=profile.user_id
-  where profile.is_active and profile.role in ('admin','manager') limit 1
-), false);
+select set_config('request.jwt.claim.sub','88100000-0000-4000-8000-000000000098',false);
 set role authenticated;
 do $worker$
 begin

@@ -3,6 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 const port = 3200;
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${port}`;
 const startsLocalServer = !process.env.PLAYWRIGHT_BASE_URL;
+const usesProductionBuild = Boolean(process.env.CI || process.env.PLAYWRIGHT_USE_BUILD);
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -22,7 +23,10 @@ export default defineConfig({
   },
   webServer: startsLocalServer
     ? {
-        command: `node node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port ${port}`,
+        // CI validates the compiled application. Running Next in development
+        // mode would require eval(), which the production CSP intentionally
+        // blocks and can leave client navigation without hydration.
+        command: `node node_modules/next/dist/bin/next ${usesProductionBuild ? "start" : "dev"} --hostname 127.0.0.1 --port ${port}`,
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
