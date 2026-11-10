@@ -54,7 +54,7 @@ do $$ declare stamp timestamptz; rejected boolean := false; begin
   begin
     perform public.save_admin_treatment('50000000-0000-0000-0000-000000000001',
       jsonb_build_object('name','No debe persistir'),array['40000000-0000-0000-0000-000000000001']::uuid[],false,stamp);
-  exception when serialization_failure then rejected := true; end;
+  exception when sqlstate 'PT409' then rejected := true; end;
   if not rejected then raise exception 'stale treatment edit was accepted'; end if;
   if (select name from public.treatments where id='50000000-0000-0000-0000-000000000001') <> 'Tratamiento auditado' then
     raise exception 'stale edit changed treatment';

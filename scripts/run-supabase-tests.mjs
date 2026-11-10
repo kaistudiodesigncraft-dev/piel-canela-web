@@ -24,6 +24,7 @@ const testFiles = [
   "professional_editor_atomic.sql",
   "public_mixed_combos.sql",
   "rls_boundaries.sql",
+  "treatment_version_conflict.sql",
   "universal_booking_admin_h4.sql",
   "universal_booking_public_h5.sql",
   "universal_booking_rpc_h3.sql",

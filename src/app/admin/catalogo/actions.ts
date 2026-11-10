@@ -61,7 +61,8 @@ function newIncidentId() {
 
 function treatmentFailure(error: string, fieldErrors?: Record<string, string[]>): SaveTreatmentState {
   const incidentId = newIncidentId();
-  console.error("admin_treatment_mutation", {
+  const report = error === "stale" ? console.warn : console.error;
+  report("admin_treatment_mutation", {
     stage: error,
     incidentId,
     fieldKeys: fieldErrors ? Object.keys(fieldErrors) : [],

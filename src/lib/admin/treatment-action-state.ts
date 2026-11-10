@@ -6,3 +6,7 @@ export interface SaveTreatmentState {
 }
 
 export const initialSaveTreatmentState: SaveTreatmentState = { status: "idle" };
+
+export function treatmentSaveRequiresReload(state: SaveTreatmentState) {
+  return state.error === "stale";
+}

@@ -19,6 +19,7 @@ import { focalPointToPercentage, linesToAdminText } from "@/lib/admin/catalog";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   initialSaveTreatmentState,
+  treatmentSaveRequiresReload,
   type SaveTreatmentState,
 } from "@/lib/admin/treatment-action-state";
 import {
@@ -98,16 +99,25 @@ function TreatmentActionFeedback({ state, formId }: { state: SaveTreatmentState;
       <strong>{knownTitle ?? "No pudimos guardar los cambios."}</strong>
       {fields.length > 0 ? (
         <ul>{fields.map(([field, messages]) => <li key={field}><a href={`#${formId}-${field}`}>{messages[0]}</a></li>)}</ul>
-      ) : <p>Volvé a intentar. Tus datos siguen en el formulario.</p>}
+      ) : treatmentSaveRequiresReload(state) ? (
+        <p>Recargá la versión actual para continuar. Antes, copiá cualquier texto que quieras conservar.</p>
+      ) : (
+        <p>Volvé a intentar. Tus datos siguen en el formulario.</p>
+      )}
+      {treatmentSaveRequiresReload(state) ? (
+        <button className="button button--quiet" type="button" onClick={() => window.location.reload()}>
+          Recargar versión actual
+        </button>
+      ) : null}
       {unknownCode ? <small>Detalle técnico: {unknownCode}</small> : null}
       {state.incidentId ? <small>Código de soporte: {state.incidentId}</small> : null}
     </div>
   );
 }
 
-function EditorSubmitButtons({ isNew, isPublished, mediaBusy }: { isNew: boolean; isPublished: boolean; mediaBusy: boolean }) {
+function EditorSubmitButtons({ isNew, isPublished, mediaBusy, requiresReload }: { isNew: boolean; isPublished: boolean; mediaBusy: boolean; requiresReload: boolean }) {
   const { pending } = useFormStatus();
-  const disabled = pending || mediaBusy;
+  const disabled = pending || mediaBusy || requiresReload;
   return (
     <div className="admin-treatment-editor-actions">
       <button className="button button--quiet" type="submit" name="submitIntent" value="draft" formNoValidate disabled={disabled}>
@@ -395,7 +405,7 @@ export function TreatmentEditor({ treatmentId, isNew, categories, specialties, p
           <div className="admin-form-grid"><label htmlFor={`${formId}-focalX`}>Foco horizontal: <output>{focalX}%</output><input id={`${formId}-focalX`} name="focalX" type="range" min="0" max="100" value={focalX} onChange={(event) => setFocalX(Number(event.target.value))} /></label><label htmlFor={`${formId}-focalY`}>Foco vertical: <output>{focalY}%</output><input id={`${formId}-focalY`} name="focalY" type="range" min="0" max="100" value={focalY} onChange={(event) => setFocalY(Number(event.target.value))} /></label></div>
         </fieldset>
 
-        <div id="treatment-publication" className="admin-form-footer admin-treatment-editor-footer"><p>La imagen es opcional y puede agregarse o reemplazarse después. Si cargás una, su descripción accesible sí es obligatoria.</p><EditorSubmitButtons isNew={isNew} isPublished={Boolean(treatment?.is_active)} mediaBusy={mediaBusy} /></div>
+        <div id="treatment-publication" className="admin-form-footer admin-treatment-editor-footer"><p>La imagen es opcional y puede agregarse o reemplazarse después. Si cargás una, su descripción accesible sí es obligatoria.</p><EditorSubmitButtons isNew={isNew} isPublished={Boolean(treatment?.is_active)} mediaBusy={mediaBusy} requiresReload={treatmentSaveRequiresReload(actionState)} /></div>
       </form>
 
       <aside className="admin-treatment-editor-side" aria-label="Estado del tratamiento">
