@@ -2,7 +2,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { treatments } from "@/data/fixtures";
-import type { DepilationZone, Treatment, TreatmentCombo } from "@/domain/treatment";
+import type { DepilationZone, Treatment, TreatmentCombo, TreatmentComboExtra } from "@/domain/treatment";
 import { resolveZoneOrder } from "@/lib/depilation-selection";
 import { DepilationOrderSelector } from "./DepilationOrderSelector";
 
@@ -20,6 +20,11 @@ const combo: TreatmentCombo = {
   discountPercent: null, tierMinItems: null, tierDiscountPercent: null, allowPublicExtras: false,
   fixedPriceCents: 2500000, referencePriceCents: 3000000, pricePerSessionCents: 2500000, savingsCents: 500000,
   durationMinutes: 30, validityDays: null, zones: [zones[0]!], extras: [], displayOrder: 1, isActive: true,
+};
+const addOn: TreatmentComboExtra = {
+  id: "89000000-0000-4000-8000-000000000001", treatmentId: treatments[0]!.id,
+  name: "Axilas con tarifa adicional", description: "", audience: "shared",
+  priceCents: 700000, durationMinutes: 5, displayOrder: 1, isActive: true,
 };
 const treatment: Treatment = { ...treatments[0]!, isActive: true, selectionMode: "combo_with_extras", combos: [combo], bufferMinutes: 15,
   zoneOrder: { ready: true, discountPercent: 10, zones } };
@@ -130,6 +135,21 @@ describe("depilation order selector", () => {
     expect(screen.getByRole("radio", { name: /Combo fijo/i })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: /Axilas/i })).toBeChecked();
     expect(screen.getByRole("complementary", { name: "Resumen de tu elección" })).toHaveTextContent("$ 43.000");
+  });
+  it("restores combo add-ons with their own price and uses the legacy authoritative path", async () => {
+    const user = userEvent.setup();
+    const comboWithAddOn = { ...combo, allowPublicExtras: true, extras: [addOn] };
+    render(<DepilationOrderSelector treatment={{ ...treatment, combos: [comboWithAddOn] }} />);
+    await user.click(screen.getByRole("radio", { name: /Combo fijo/i }));
+    await user.click(screen.getByRole("checkbox", { name: /Axilas con tarifa adicional/i }));
+    const summary = screen.getByRole("complementary", { name: "Resumen de tu elección" });
+    expect(summary).toHaveTextContent("$ 32.000");
+    expect(summary).toHaveTextContent("35 minutos");
+    const url = new URL(screen.getByRole("link", { name: "Elegir fecha y horario" }).getAttribute("href")!, "https://example.test");
+    expect(url.searchParams.get("comboId")).toBe(combo.id);
+    expect(url.searchParams.getAll("extraId")).toEqual([addOn.id]);
+    expect(url.searchParams.has("zoneOrder")).toBe(false);
+    expect(url.searchParams.getAll("zoneId")).toEqual([]);
   });
   it("shows empty/error states and never pretends a zero-percent discount exists", async () => {
     const { rerender } = render(<DepilationOrderSelector treatment={{ ...treatment, combos: [], zoneOrder: { ready: true, discountPercent: 0, zones: [] } }} />);

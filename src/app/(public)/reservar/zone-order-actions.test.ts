@@ -58,4 +58,21 @@ describe("server-authoritative zone order", () => {
     expect(await getAvailableSlots({ ...input, date: "2026-10-29", expectedDurationMinutes: 15 })).toEqual({ ok: false, reason: "price_changed" });
     expect(rpc.mock.calls.filter(([name]) => name === "get_available_slots_for_zone_order")).toHaveLength(1);
   });
+  it("keeps existing combo extras bookable through the server-authoritative legacy RPC", async () => {
+    const extraId = "99000000-0000-4000-8000-000000000001";
+    const result = await createPublicBooking({
+      ...input,
+      zoneOrder: false,
+      zoneIds: [],
+      comboId: "79000000-0000-4000-8000-000000000001",
+      extraIds: [extraId],
+      expectedTotalCents: undefined,
+      expectedDurationMinutes: undefined,
+    });
+    expect(result).toMatchObject({ ok: true });
+    expect(rpc).toHaveBeenCalledWith("create_booking_for_selection_v2", expect.objectContaining({
+      requested_extra_ids: [extraId],
+    }));
+    expect(rpc.mock.calls.some(([name]) => name === "create_booking_for_zone_order")).toBe(false);
+  });
 });

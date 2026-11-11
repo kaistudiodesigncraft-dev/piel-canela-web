@@ -278,9 +278,6 @@ export async function saveTreatmentCombo(formData: FormData) {
 }
 
 export async function saveTreatmentComboExtra(formData: FormData) {
-  if (process.env.DEPILATION_ZONES_ENABLED === "true") {
-    redirect(feedbackPath(String(formData.get("treatmentId") ?? ""), "extraError=legacyReadOnly"));
-  }
   const { supabase } = await requireAdmin();
   const parsed = extraSchema.safeParse({
     extraId: formData.get("extraId") || undefined,

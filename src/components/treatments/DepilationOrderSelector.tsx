@@ -6,9 +6,10 @@ import { useState } from "react";
 import type { DepilationAudience, Treatment } from "@/domain/treatment";
 import { DISCOUNT_MIN_ZONES } from "@/lib/depilation-order";
 import { resolveZoneOrder } from "@/lib/depilation-selection";
+import { quoteCombo } from "@/lib/combo-quote";
 import { formatDuration, formatPrice } from "@/lib/format";
 import { sortByNaturalName } from "@/lib/natural-order";
-import { buildBookingHref } from "@/lib/treatments";
+import { buildBookingHref, resolveBookingSelection } from "@/lib/treatments";
 
 const audienceLabels: Record<DepilationAudience, string> = {
   women: "Mujeres", men: "Hombres", shared: "Compartido",
@@ -30,6 +31,13 @@ export function DepilationOrderSelector({ treatment, preview = false }: {
       !included.has(id) && Boolean(catalog?.zones.some((zone) => zone.id === id && zone.isActive && zone.referencePriceCents > 0)),
     );
   });
+  const [extraIds, setExtraIds] = useState<string[]>(() => {
+    const selected = treatment.combos.find((combo) => combo.id === searchParams.get("comboId"));
+    if (!selected?.allowPublicExtras) return [];
+    return [...new Set(searchParams.getAll("extraId"))].filter((id) =>
+      selected.extras.some((extra) => extra.id === id && extra.isActive),
+    );
+  });
   const [comboFilter, setComboFilter] = useState<"all" | "women" | "men">("all");
   const [filter, setFilter] = useState<"all" | DepilationAudience>("all");
   if (!catalog?.ready) {
@@ -42,19 +50,39 @@ export function DepilationOrderSelector({ treatment, preview = false }: {
   const combos = sortByNaturalName(treatment.combos.filter(c => c.isActive && c.fixedPriceCents > 0));
   const visibleCombos = combos.filter(combo => comboFilter === "all" || combo.audience === comboFilter || combo.audience === "shared");
   const selectedCombo = combos.find(c => c.id === comboId);
+  const availableExtras = sortByNaturalName((selectedCombo?.allowPublicExtras ? selectedCombo.extras : [])
+    .filter(extra => extra.isActive && (extra.audience === "shared" || extra.audience === selectedCombo?.audience)));
+  const selectedExtras = availableExtras.filter(extra => extraIds.includes(extra.id));
   const included = new Set(selectedCombo?.zones.map(z => z.id) ?? []);
   const visibleZones = sortByNaturalName(catalog.zones.filter(z => z.isActive && z.referencePriceCents > 0 &&
     (filter === "all" || z.audience === filter)));
   let selection = null;
   let selectionError = "";
   try {
-    selection = comboId || zoneIds.length ? resolveZoneOrder(preview ? { ...treatment, isActive: true } : treatment, comboId, zoneIds) : null;
+    const source = preview ? { ...treatment, isActive: true } : treatment;
+    selection = comboId || zoneIds.length
+      ? comboId && selectedExtras.length
+        ? resolveBookingSelection(source, undefined, selectedCombo, selectedExtras)
+        : resolveZoneOrder(source, comboId, zoneIds)
+      : null;
   } catch { selectionError = "No pudimos calcular esta combinación. Quitá la última zona o elegí otra propuesta."; }
   const order = selection?.orderSnapshot;
+  const comboQuote = selectedCombo ? quoteCombo(selectedCombo, extraIds) : null;
+  const summary = order ?? (selectedCombo && comboQuote ? {
+    items: [
+      { id: selectedCombo.id, name: selectedCombo.name, priceCents: selectedCombo.fixedPriceCents, durationMinutes: selectedCombo.durationMinutes, kind: "combo" as const },
+      ...comboQuote.extras.map(extra => ({ ...extra, kind: "extra" as const })),
+    ],
+    subtotalCents: selectedCombo.fixedPriceCents + comboQuote.extras.reduce((sum, extra) => sum + extra.priceCents, 0),
+    discountPercent: 0,
+    discountCents: 0,
+    totalCents: comboQuote.priceCents,
+    durationMinutes: comboQuote.durationMinutes,
+  } : null);
   function chooseCombo(id: string | undefined) {
-    const next = combos.find(c => c.id === id);
     setComboId(id);
-    setZoneIds(current => current.filter(zone => !next?.zones.some(z => z.id === zone)));
+    setZoneIds([]);
+    setExtraIds([]);
   }
   function filterCombos(value: "all" | "women" | "men") {
     setComboFilter(value);
@@ -91,9 +119,23 @@ export function DepilationOrderSelector({ treatment, preview = false }: {
           </label>)}
           {visibleCombos.length === 0 ? <p>Todavía no hay combos publicados para este filtro.</p> : null}
         </fieldset>
+        {selectedCombo ? <fieldset className="depilation-order__choices depilation-order__panel">
+          <legend>Extras opcionales</legend>
+          <p className="depilation-order__intro">Sumá al combo las zonas habilitadas con su tarifa adicional especial.</p>
+          {availableExtras.length === 0 ? <p>Este combo no tiene extras habilitados.</p> : availableExtras.map(extra =>
+            <label key={extra.id} className="depilation-order__zone">
+              <input type="checkbox" checked={extraIds.includes(extra.id)}
+                onChange={event => {
+                  if (event.target.checked) setZoneIds([]);
+                  setExtraIds(current => event.target.checked ? [...current, extra.id] : current.filter(id => id !== extra.id));
+                }} />
+              <span><strong>{extra.name}</strong><small>{audienceLabels[extra.audience]} · +{formatDuration(extra.durationMinutes)}</small></span>
+              <span className="numeric">+{formatPrice(extra.priceCents)}</span>
+            </label>)}
+        </fieldset> : null}
         <fieldset className="depilation-order__choices depilation-order__panel">
-          <legend>{selectedCombo ? "Zonas adicionales" : "Zonas sueltas"}</legend>
-          <p className="depilation-order__intro">{selectedCombo ? "Sumá únicamente las zonas que no están incluidas en el combo." : "Elegí una zona o armá tu propia combinación."}</p>
+          <legend>{selectedCombo ? "Otras zonas a precio individual" : "Zonas sueltas"}</legend>
+          <p className="depilation-order__intro">{selectedCombo ? "También podés sumar una zona a su precio individual. Al elegirla, reemplaza los extras con tarifa especial." : "Elegí una zona o armá tu propia combinación."}</p>
           <div className="combo-selector__filters" role="group" aria-label="Filtrar zonas">
             {(["all", "women", "men", "shared"] as const).map(value => <button key={value} type="button"
               className={`filter-chip${filter === value ? " is-active" : ""}`} aria-pressed={filter === value}
@@ -102,7 +144,10 @@ export function DepilationOrderSelector({ treatment, preview = false }: {
           {visibleZones.length === 0 ? <p>Todavía no hay zonas disponibles{filter !== "all" ? " para este filtro" : ""}.</p> : visibleZones.map(zone =>
             <label key={zone.id} className={`depilation-order__zone${included.has(zone.id) ? " is-included" : ""}`}>
               <input type="checkbox" checked={included.has(zone.id) || zoneIds.includes(zone.id)} disabled={included.has(zone.id)}
-                onChange={event => setZoneIds(current => event.target.checked ? [...current, zone.id] : current.filter(id => id !== zone.id))} />
+                onChange={event => {
+                  if (event.target.checked) setExtraIds([]);
+                  setZoneIds(current => event.target.checked ? [...current, zone.id] : current.filter(id => id !== zone.id));
+                }} />
               <span><strong>{zone.name}</strong><small>{included.has(zone.id) ? "Incluida en el combo" : `${audienceLabels[zone.audience]} · ${formatDuration(zone.durationMinutes)}`}</small></span>
               <span className="numeric">{included.has(zone.id) ? "Incluida" : formatPrice(zone.referencePriceCents)}</span>
             </label>)}
@@ -111,17 +156,17 @@ export function DepilationOrderSelector({ treatment, preview = false }: {
       <aside className="combo-selection-summary depilation-order__summary" aria-label="Resumen de tu elección">
         <h3>Tu elección</h3>
         <div aria-live="polite" aria-atomic="true">
-          {order ? <><ul>{order.items.map(item => <li key={`${item.kind}-${item.id}`}>{item.name} · {formatPrice(item.priceCents)}</li>)}</ul>
+          {summary ? <><ul>{summary.items.map(item => <li key={`${item.kind}-${item.id}`}>{item.name} · {formatPrice(item.priceCents)}</li>)}</ul>
             <dl className="numeric">
-              <div><dt>Duración</dt><dd>{formatDuration(order.durationMinutes)}</dd></div>
-              <div><dt>Subtotal</dt><dd>{formatPrice(order.subtotalCents)}</dd></div>
-              {order.discountCents > 0 ? <div><dt>Descuento en zonas ({order.discountPercent} %)</dt><dd>−{formatPrice(order.discountCents)}</dd></div> : null}
-              <div><dt>Total</dt><dd>{formatPrice(order.totalCents)}</dd></div>
+              <div><dt>Duración</dt><dd>{formatDuration(summary.durationMinutes)}</dd></div>
+              <div><dt>Subtotal</dt><dd>{formatPrice(summary.subtotalCents)}</dd></div>
+              {summary.discountCents > 0 ? <div><dt>Descuento en zonas ({summary.discountPercent} %)</dt><dd>−{formatPrice(summary.discountCents)}</dd></div> : null}
+              <div><dt>Total</dt><dd>{formatPrice(summary.totalCents)}</dd></div>
             </dl>
           </> : <p>Elegí al menos una zona o un combo para consultar horarios.</p>}
           {selectionError ? <p role="alert">{selectionError}</p> : null}
           {selectedCombo?.validityDays ? <p>Vigencia del paquete: {selectedCombo.validityDays} días desde su activación.</p> : null}
-          {zoneIds.length === 1 && catalog.discountPercent > 0 ? <p className="combo-selection-summary__note">Desde {DISCOUNT_MIN_ZONES} zonas {selectedCombo ? "adicionales" : "sueltas"} tenés un {catalog.discountPercent} % de descuento sobre esas zonas. El combo conserva su precio.</p> : null}
+          {!selectedCombo && zoneIds.length === 1 && catalog.discountPercent > 0 ? <p className="combo-selection-summary__note">Desde {DISCOUNT_MIN_ZONES} zonas sueltas tenés un {catalog.discountPercent} % de descuento sobre esas zonas.</p> : null}
         </div>
         {selection && !preview ? <Link className="button button--primary" href={buildBookingHref(selection)}>Elegir fecha y horario</Link> : <button type="button" className="button button--primary" disabled>{preview ? "Vista previa · sin reservar" : "Elegí una opción para continuar"}</button>}
         <p className="combo-selection-summary__note">La pre-reserva queda pendiente hasta confirmar la seña. No se acumula con Especiales del mes.</p>

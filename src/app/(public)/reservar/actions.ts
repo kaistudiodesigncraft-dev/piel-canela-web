@@ -85,7 +85,7 @@ export async function getAvailableSlots(input: unknown): Promise<AvailabilityRes
   if (!parsed.success) return { ok: false, reason: "invalid" };
 
   // Once enabled, configurable bookings cannot opt back into legacy pricing.
-  if (process.env.DEPILATION_ZONES_ENABLED === "true" && parsed.data.comboId && !parsed.data.zoneOrder) return { ok: false, reason: "invalid" };
+  if (process.env.DEPILATION_ZONES_ENABLED === "true" && parsed.data.comboId && !parsed.data.zoneOrder && parsed.data.extraIds.length === 0) return { ok: false, reason: "invalid" };
 
   const supabase = createSupabasePublicServerClient();
   const offeredResult = await supabase.rpc("is_treatment_offered_on_date", {
@@ -193,7 +193,7 @@ export async function getAvailableDates(input: unknown): Promise<AvailableDatesR
       return { ok: false, reason: "unavailable" };
     }
   }
-  if (process.env.DEPILATION_ZONES_ENABLED === "true" && parsed.data.comboId && !parsed.data.zoneOrder) return { ok: false, reason: "invalid" };
+  if (process.env.DEPILATION_ZONES_ENABLED === "true" && parsed.data.comboId && !parsed.data.zoneOrder && parsed.data.extraIds.length === 0) return { ok: false, reason: "invalid" };
 
   const supabase = createSupabasePublicServerClient();
   if (parsed.data.zoneOrder) {
@@ -231,7 +231,7 @@ export async function createPublicBooking(input: unknown): Promise<CreateBooking
   const parsed = bookingSchema.safeParse(input);
   if (!parsed.success) return { ok: false, reason: "invalid" };
 
-  if (process.env.DEPILATION_ZONES_ENABLED === "true" && parsed.data.comboId && !parsed.data.zoneOrder) return { ok: false, reason: "invalid" };
+  if (process.env.DEPILATION_ZONES_ENABLED === "true" && parsed.data.comboId && !parsed.data.zoneOrder && parsed.data.extraIds.length === 0) return { ok: false, reason: "invalid" };
 
   const guardSecret = process.env.BOOKING_GUARD_SECRET;
   if (!guardSecret || guardSecret.length < 32) {

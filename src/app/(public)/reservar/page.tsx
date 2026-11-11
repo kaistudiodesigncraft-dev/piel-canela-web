@@ -125,13 +125,19 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
     const zoneIds = Array.isArray(query.zoneId) ? query.zoneId : query.zoneId ? [query.zoneId] : [];
     let selection;
     try {
-      // Old extra IDs are never silently converted to zone IDs.
-      if (query.monthlySpecialId || requestedExtraIds.length) throw new Error("incompatible_selection");
-      selection = resolveZoneOrder(treatment, query.comboId, zoneIds);
+      if (query.monthlySpecialId) throw new Error("incompatible_selection");
+      if (requestedExtraIds.length) {
+        if (!combo || zoneIds.length || !combo.allowPublicExtras || selectedExtras.length !== requestedExtraIds.length) {
+          throw new Error("incompatible_selection");
+        }
+        selection = resolveBookingSelection(treatment, undefined, combo, selectedExtras);
+      } else {
+        selection = resolveZoneOrder(treatment, query.comboId, zoneIds);
+      }
     } catch {
       return <div className="site-container route-state"><StatePanel kind="empty"
         title="Revisá tus zonas o combo"
-        description="Elegí al menos una zona o un combo disponible. Los extras anteriores y los especiales no se combinan con esta selección."
+        description="Elegí al menos una zona o un combo disponible. Los extras solo pueden sumarse a los combos donde Piel Canela los habilitó."
         actionHref={`/tratamientos/${treatment.slug}`} actionLabel="Elegir zonas y combos" /></div>;
     }
     return <><h1 className="sr-only">Reservar {treatment.name}</h1><div className="site-container booking-demo-page">
