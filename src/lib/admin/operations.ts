@@ -17,7 +17,7 @@ export const BOOKING_STATUS_TRANSITIONS: Record<BookingStatus, readonly BookingS
   completed: [],
   cancelled: [],
   no_show: [],
-  expired: ["awaiting_deposit", "confirmed"],
+  expired: ["awaiting_deposit", "confirmed", "cancelled"],
 };
 
 export function availableBookingStatusTransitions(

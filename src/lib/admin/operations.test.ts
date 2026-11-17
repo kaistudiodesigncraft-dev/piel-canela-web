@@ -41,10 +41,10 @@ describe("admin operations", () => {
     expect(bookingStatusRequiresReason("confirmed")).toBe(false);
   });
 
-  it("lets reception recover an expired future reservation without reopening a stale pending hold", () => {
-    expect(BOOKING_STATUS_TRANSITIONS.expired).toEqual(["awaiting_deposit", "confirmed"]);
+  it("lets reception recover or cancel an expired future reservation without reopening a stale pending hold", () => {
+    expect(BOOKING_STATUS_TRANSITIONS.expired).toEqual(["awaiting_deposit", "confirmed", "cancelled"]);
     expect(availableBookingStatusTransitions("expired", "2026-11-05T21:00:00.000Z", "2026-10-30T12:00:00.000Z"))
-      .toEqual(["awaiting_deposit", "confirmed"]);
+      .toEqual(["awaiting_deposit", "confirmed", "cancelled"]);
     expect(availableBookingStatusTransitions("expired", "2026-10-29T21:00:00.000Z", "2026-10-30T12:00:00.000Z"))
       .toEqual([]);
     expect(BOOKING_STATUS_TRANSITIONS.cancelled).toEqual([]);
