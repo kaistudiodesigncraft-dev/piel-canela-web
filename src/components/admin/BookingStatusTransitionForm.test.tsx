@@ -22,4 +22,36 @@ describe("BookingStatusTransitionForm", () => {
     await user.selectOptions(screen.getByRole("combobox"), "completed");
     expect(screen.queryByRole("textbox", { name: "Motivo" })).not.toBeInTheDocument();
   });
+
+  it("offers a protected cancellation action only when cancellation is allowed", async () => {
+    const user = userEvent.setup();
+    render(
+      <BookingStatusTransitionForm
+        bookingId="20000000-0000-4000-8000-000000000001"
+        bookingCode="PC-4821"
+        transitions={["completed", "cancelled"]}
+      />,
+    );
+
+    const cancelButton = screen.getByRole("button", { name: "Cancelar turno" });
+    expect(cancelButton).toHaveAttribute("aria-expanded", "false");
+    await user.click(cancelButton);
+
+    expect(cancelButton).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("textbox", { name: "Motivo de cancelación" })).toBeRequired();
+    expect(screen.getByRole("checkbox", { name: "Confirmo la cancelación de este turno." })).toBeRequired();
+    expect(screen.getByRole("button", { name: "Confirmar cancelación" })).toBeInTheDocument();
+  });
+
+  it("does not show cancellation for a status without that transition", () => {
+    render(
+      <BookingStatusTransitionForm
+        bookingId="20000000-0000-4000-8000-000000000001"
+        bookingCode="PC-4821"
+        transitions={["completed"]}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: "Cancelar turno" })).not.toBeInTheDocument();
+  });
 });

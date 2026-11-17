@@ -2804,6 +2804,64 @@ svg {
   padding-inline: .75rem;
 }
 
+.booking-status-actions {
+  display: grid;
+  gap: .55rem;
+  min-width: min(100%, 18rem);
+}
+
+.booking-cancellation {
+  display: grid;
+  gap: .55rem;
+}
+
+.booking-cancellation__form {
+  display: grid;
+  gap: .7rem;
+  padding: .9rem;
+  border: 1px solid color-mix(in srgb, var(--color-error, #a43a3a) 30%, var(--color-border));
+  border-radius: .65rem;
+  background: color-mix(in srgb, var(--color-error, #a43a3a) 5%, var(--color-surface));
+}
+
+.booking-cancellation__form p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: .82rem;
+  line-height: 1.45;
+}
+
+.booking-cancellation__form label:not(.admin-check) {
+  display: grid;
+  gap: .35rem;
+  color: var(--color-text-muted);
+  font-size: .78rem;
+  font-weight: 650;
+}
+
+.booking-cancellation__form input[type="text"] {
+  width: 100%;
+  min-height: 2.75rem;
+  padding-inline: .75rem;
+  border: 1px solid var(--color-border);
+  border-radius: .5rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.booking-cancellation__form input:focus-visible {
+  border-color: var(--color-action);
+  outline: 3px solid color-mix(in srgb, var(--color-action) 22%, transparent);
+  outline-offset: 2px;
+}
+
+.booking-cancellation__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
 .admin-empty--bookings {
   margin-top: 2rem;
   border-block: 1px solid var(--color-border);
@@ -5586,6 +5644,10 @@ svg {
   .booking-status-form,
   .admin-access-row {
     grid-template-columns: 1fr;
+  }
+
+  .booking-status-actions {
+    width: 100%;
   }
 
   .booking-status-form .button,
